@@ -26,18 +26,16 @@
 	 */
 	var ISNode = new Base().extend({
 
-		constructor: function(specName) {
-			this.name = specName;
-			this.status = "Starting";
-		},
+		constructor: function(specName) { this.name = specName; this.status = "Starting"; },
 
 		init: function() {
 			if(package && package.name && package.version) { console.log("\nISNode Blackrock Application Server\nName: \"" + package.name + " v" + package.version + "\"\n"); }
 			modules.logger = {};
-			modules.logger.log = function(level, message, data){
+			modules.logger.log = log = function(level, message, data){
 				var currentDate = new Date();
 				currentDate = currentDate.toISOString();
 				console.log(currentDate + " (" + level + ") " + message);
+				if(data && config.logger.logMetadataObjects) { console.log(data); }
 			}
 			modules.core = function(){};
 			var self = this, started;
@@ -51,30 +49,19 @@
 					stdin.on('data', function(chunk) { if(chunk == "e") { self.shutdown(); } });
 				}
 				started = false;
-				fs.readdirSync(basePath + "/modules").forEach(function(file) {
-					if(!modules[file])
-						loadModule("module", file); 
+				fs.readdirSync(basePath + "/modules").forEach(function(file) { 
+					if(!modules[file]) { loadModule("module", file); } 
 				});
 				fs.readdirSync(basePath + "/interfaces").forEach(function(file) { 
-					if(!modules.interfaces[file])
-						loadModule("interface", file); 
-				}); 
+					if(!modules.interfaces[file]) { loadModule("interface", file); } 
+				});
 				started = true;
-			});
+			}); 
 			var counter = 0;
-			if(config.loader.timeouts.loadDependencies) { var timeout = config.loader.timeouts.loadDependencies; }
-			else { var timeout = 5000; }
+			if(config.loader.timeouts.loadDependencies) { var timeout = config.loader.timeouts.loadDependencies; } else { var timeout = 5000; }
 			var interval = setInterval(function(){
-				if(started == true){ 
-					clearInterval(interval); 
-					self.status = "Started";
-					startEventLoop();
-				}
-				if(counter >= timeout) {
-					modules.logger.log("startup","Blackrock Core > Timed out initiating startup. Terminating application server.");
-					clearInterval(interval);
-					self.shutdown();
-				}
+				if(started == true){ clearInterval(interval); self.status = "Started"; startEventLoop(); }
+				if(counter >= timeout) { log("error","Blackrock Core > Timed out initiating startup. Terminating application server."); clearInterval(interval); self.shutdown(); }
 				counter += 500;
 			}, 500);
 		},
@@ -85,32 +72,21 @@
 
 		shutdown: function() {
 			if(shuttingDown == true) { return; }
-			modules.logger.log("shutdown","Blackrock Core > Initiating System Shutdown.");
+			log("shutdown","Blackrock Core > Initiating System Shutdown.");
 			shuttingDown = true;
 			closeModules(function(){ exitProcess(); });
 			return;
 		},
 
 		module: function(name, type) {
-			if(type && type == "interface"){
-				if(modules.interfaces[name]){ return modules.interfaces[name]; } 
-				else { return false; }
-			} else if (name != "interface") {
-				if(modules[name]) { return modules[name]; } 
-				else { return false; }
-			} else { return false; }
+			if(type && type == "interface"){ if(modules.interfaces[name]){ return modules.interfaces[name]; } else { return false; } }
+			else if (name != "interface") { if(modules[name]) { return modules[name]; } else { return false; } } 
+			else { return false; }
 		},
 
 		globals: {
-			set: function(name, value) {
-				if(!name) { return false; }
-				globals[name] = value;
-				return true;
-			},
-			get: function(name) {
-				if(!globals[name]) { return false; }
-				return globals[name];
-			}
+			set: function(name, value) { if(!name) { return false; } globals[name] = value; return true; },
+			get: function(name) { if(!globals[name]) { return false; } return globals[name]; }
 		}
 
 	});
@@ -119,23 +95,8 @@
 	 * Define ISMod Prototype:
 	 */
 	var ISMod = new ISNode().extend({
-
-		constructor: function(specName) {
-			var self = this;
-			if(specName) {
-				self.name = specName;
-				self.uber.on("shutdown", function(){ self.unload() });
-			}
-		},
-
-		unload: function() {
-			var self = this;
-			modules.logger.log("debug", self.name + " Module > Module Unloaded");
-			self.uber.emit("module-shut-down", self.name);
-			delete self;
-			return;
-		}
-
+		constructor: function(specName) { var self = this; if(specName) { self.name = specName; self.uber.on("shutdown", function(){ self.unload() }); } },
+		unload: function() { var self = this; log("debug", self.name + " Module > Module Unloaded"); self.uber.emit("module-shut-down", self.name); delete self; }
 	});
 
 	/**
@@ -143,36 +104,20 @@
 	 */
 	var ISInterface = new ISMod().extend({
 
-		constructor: function(specName) {
-			var self = this;
-			self.name = specName;
-			self.uber.uber.on("shutdown", function(){ self.unload() });
-			return;
-		},
-
+		constructor: function(specName) { var self = this; self.name = specName; self.uber.uber.on("shutdown", function(){ self.unload() }); },
 		instances: {},
 
 		startInterfaces: function(){
 			var self = this;
 			process.nextTick(function(){
 				var myName = self.name.toLowerCase();
-				if(!isnode.cfg().interfaces || !isnode.cfg().interfaces[myName]) {
-					modules.logger.log("debug", self.name + " Interface Module > No Interfaces Defined in System Configuration File.");
-					return;
-				}
-				if(!isnode.cfg().router || !isnode.cfg().router.instances){
-					modules.logger.log("error", self.name + " Interface Module > Cannot start interfaces as there are no routers defined.");
-					return;
-				}
+				if(!isnode.cfg().interfaces || !isnode.cfg().interfaces[myName]) { log("debug", self.name + " Interface Module > No Interfaces Defined in System Configuration File."); return; }
+				if(!isnode.cfg().router || !isnode.cfg().router.instances){ log("error", self.name + " Interface Module > Cannot start interfaces as there are no routers defined."); return; }
 				for(var interface in isnode.cfg().interfaces[myName]) {
 					var cfg = isnode.cfg().interfaces[myName][interface];
-					if(self.instances[interface]){
-						modules.logger.log("error", self.name + " Interface Module > Attempting to load an interface that has already been loaded (" + interface + ").");
-					} else if (!cfg.enabled || cfg.enabled != true) {
-						modules.logger.log("warning", self.name + " Interface Module > Attempting to load an interface that is not enabled in the system configuration (" + interface + ").");
-					} else {
-						self.startInterface(interface);
-					}
+					if(self.instances[interface]){ log("error", self.name + " Interface Module > Attempting to load an interface that has already been loaded (" + interface + ")."); }
+					else if (!cfg.enabled || cfg.enabled != true) { log("warning", self.name + " Interface Module > Attempting to load an interface that is not enabled in the system configuration (" + interface + ")."); } 
+					else { self.startInterface(interface); }
 				}
 			});
 		},
@@ -186,9 +131,7 @@
 		closeInterfaces: function(cb) {
 			var totalInterfaces = 0, interfacesClosed = 0;
 			for(var name in this.instances){ totalInterfaces ++; }
-			for(var name in this.instances){
-				this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } });
-			}
+			for(var name in this.instances){ this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } }); }
 			var counter = 0, timeout = 5000;
 			var interval = setInterval(function(){
 				if(interfacesClosed >= totalInterfaces){ clearInterval(interval); cb(true); return; };
@@ -200,7 +143,7 @@
 		unload: function(){
 			var self = this;
 			self.closeInterfaces(function(){
-				modules.logger.log("debug", self.name + " Interface > Closing interface instances... Succeeded.");
+				log("debug", self.name + " Interface > Closing interface instances... Succeeded.");
 				self.uber.emit("module-shut-down", self.name);
 				delete self;
 			});
@@ -211,14 +154,7 @@
 	/**
 	 * (Internal) Event Loop Execution Method
 	 */
-	var startEventLoop = function(){
-		if(shuttingDown == true){ return; }
-		else {
-			setTimeout(function(){ if(!shuttingDown) { modules.logger.log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown."); } }, 1000);
-			setInterval(function(){}, 1000);
-			return;
-		}
-	}
+	var startEventLoop = function(){ if(shuttingDown == true){ return; } else { setTimeout(function(){ if(!shuttingDown) { log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown."); } }, 1000); setInterval(function(){}, 1000); } }
 
 	/**
 	 * (Internal) Loads a Module
@@ -236,12 +172,12 @@
 				modules.interfaces[moduleName] = require(basePath + "/" + type + "s/" + moduleName + "/main.js")(isnode);
 		} catch(err) {
 			var error = { success: false, message: "Error Loading '" + moduleName + "' Module (Type: " + type + ")", error: err };
-			modules.logger.log("debug", "Blackrock Core > " + error.message, err);
+			log("debug", "Blackrock Core > " + error.message, error.error);
 			if(cb) { cb(error, null); }
 			return;
 		}
 		var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully" };
-		modules.logger.log("debug", "Blackrock Core > " + output.message);
+		log("debug", "Blackrock Core > " + output.message);
 		if(cb) { cb(null,output); }
 		return;
 	};	
@@ -251,7 +187,7 @@
 	 * @param {function} cb - Callback function
 	 */
 	var closeModules = function(cb) {
-		modules.logger.log("shutdown","Blackrock Core > Attempting to Close All Open Modules.");
+		log("shutdown","Blackrock Core > Attempting to Close All Open Modules.");
 		var modCount = 0, stdModCount = 0, interfaceModCount = 0, counter = 0, timeoutTimer = 0;
 		if(config.loader.timeouts.closeModules) { var timeout = config.loader.timeouts.closeModules }
 		else { var timeout = 2000; }
@@ -261,7 +197,7 @@
 		modCount = stdModCount + interfaceModCount;
 		var interval = setInterval(function(){
 	    	if(counter >= (modCount - 1)) {
-	    		if(modules.logger.log) { modules.logger.log("shutdown","Blackrock Core > Modules All Shutdown Successfully ("+counter+"/"+(modCount - 1)+")."); }
+	    		if(log) { log("shutdown","Blackrock Core > Modules All Shutdown Successfully ("+counter+"/"+(modCount - 1)+")."); }
 	    		else {
 					var currentDate = new Date();
 					currentDate = currentDate.toISOString();
@@ -272,15 +208,13 @@
 			    return;	
 	    	}
 	    	if(timeoutTimer > timeout) {
-	    		if(modules.logger.log) { modules.logger.log("shutdown","Blackrock Core > Module Shutdown Timed Out ("+counter+"/"+(modCount - 1)+" Closed Successfully)."); }
+	    		if(log) { log("shutdown","Blackrock Core > Module Shutdown Timed Out ("+counter+"/"+(modCount - 1)+" Closed Successfully)."); }
 	    		else {
-					var currentDate = new Date();
-					currentDate = currentDate.toISOString();
+					var currentDate = new Date().toISOString();
 					console.log(currentDate + "(shutdown) Blackrock Core > Module Shutdown Timed Out ("+counter+"/"+(modCount - 1)+" Closed Successfully).");
 	    		}
 	    		clearInterval(interval);
-	    		var error = { message: "Module Shutdown Timed Out" };
-	    		cb(error, null);
+	    		cb({ message: "Module Shutdown Timed Out" }, null);
 	    		return;
 	    	}
 	    	timeoutTimer += 500;
@@ -295,12 +229,7 @@
 	/**
 	 * (Internal) Exits the ISNode Blackrock Application Server Process
 	 */
-	var exitProcess = function() {
-		var currentDate = new Date();
-		currentDate = currentDate.toISOString();
-		console.log(currentDate + " (shutdown) Blackrock Core > Shutdown Complete");
-		process.exit();
-	}
+	var exitProcess = function() { var currentDate = new Date().toISOString(); console.log(currentDate + " (shutdown) Blackrock Core > Shutdown Complete"); process.exit(); }
 
 	/**
 	 * (Internal) 

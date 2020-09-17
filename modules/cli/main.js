@@ -15,11 +15,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("CLI"), log = isnode.module("logger").log;
-		start();
-		return ismod;
-	}
+	var init = function(isnodeObj){ isnode = isnodeObj, ismod = new isnode.ISMod("CLI"), log = isnode.module("logger").log; start(); return ismod; }
 
 	/**
 	 * (Internal) Initialises the CLI server interface module

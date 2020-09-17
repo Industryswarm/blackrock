@@ -35,13 +35,8 @@
 				routers.push(isnode.module("router").get(routerName));
 			}
 		}
-		if(routers.length <= 0){
-			log("startup", ismod.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers.");
-			return;
-		} else {
-			log("startup", ismod.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented.");
-			return;			
-		}
+		if(routers.length <= 0){ log("startup", ismod.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers."); } 
+		else { log("startup", ismod.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented."); }
 	}
 
 	/**

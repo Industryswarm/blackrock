@@ -18,21 +18,10 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), log = isnode.module("logger").log, config = isnode.cfg();
-
-		/**
-		 * Define ISService Prototype:
-		 */
-		ISService = new isnode.ISMod().extend({
-			constructor: function() {
-				return;
-			}
-		});
-
+		ISService = new isnode.ISMod().extend({ constructor: function() { return; } });
 		ismod.search = search;
 		ismod.service = service;
-
 		loadServices();
-
 		return ismod;
 	}
 
@@ -243,21 +232,9 @@
 				}				
 			}
 		}
-		var timeout = 5000;
-		var timeoutTimer = 0;
-	    var interval = setInterval(function(){
-	    	if(counter >= ctrlCount){
-	    		log("shutdown","ISNode System > Controllers all shutdown where possible.");
-	    		clearInterval(interval);
-	    		cb();
-	    		return;
-	    	}
-	    	if(timeoutTimer > timeout) {
-	    		log("shutdown","ISNode System > Controller shutdown timed out.");
-	    		clearInterval(interval);
-	    		cb();
-	    		return;
-	    	}
+		var timeout = 5000, timeoutTimer = 0, interval = setInterval(function(){
+	    	if(counter >= ctrlCount){ log("shutdown","ISNode System > Controllers all shutdown where possible."); clearInterval(interval); cb(); return; }
+	    	if(timeoutTimer > timeout) { log("shutdown","ISNode System > Controller shutdown timed out."); clearInterval(interval); cb(); return; }
 	    	timeoutTimer += 500;
 	    }, 500);
     	return;

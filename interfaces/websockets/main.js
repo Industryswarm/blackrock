@@ -17,7 +17,7 @@
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("WebSockets"), log = isnode.module("logger").log;
 		ismod.startInterface = startInterface;
-		ismod.startInterfaces();
+		//ismod.startInterfaces();
 		return ismod;
 	}
 
