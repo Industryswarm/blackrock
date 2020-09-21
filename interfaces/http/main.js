@@ -127,7 +127,7 @@
 					op.map(evt => { if(evt) return streamFns.isRequestSecure(evt); }),
 					op.map(evt => { if(evt) return streamFns.prepareRequestMessage(evt); }),
 					op.map(evt => { if(evt) return streamFns.fixTrailingSlash(evt); }),
-					op.map(evt => { if(evt) return streamFns.lookupRequestRoute(evt); }),
+					streamFns.lookupRequestRoute,
 					op.map(evt => { if(evt) return streamFns.pipeFilesystemFiles(evt); }),
 					op.map(evt => { if(evt) return streamFns.routeRequest(evt); })
 				);
@@ -374,24 +374,34 @@
 	 * (Internal > Stream Methods [11]) Lookup Request Route
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.lookupRequestRoute = function(evt) {
-		const request = evt.req, {theMessage} = request;
-		var route = request.router.route(theMessage.request.host, theMessage.request.path);
-		if(route && route.match && route.match.service){
-			var basePath = isnode.module("services").service(route.match.service).cfg().basePath;
-			if(theMessage.request.path == basePath) { theMessage.request.path += "/"; }
-		}
-		theMessage.request.params = route.param;
-		if(route && route.match && route.match.service){
-			var srv = isnode.module("services").service(route.match.service);
-			if(srv.cfg().basePath) { var base = srv.cfg().basePath; }
-			else { var base = ""; }
-			if(theMessage.request.path.startsWith(base)){ var htmlPath = theMessage.request.path.slice(base.length); }
-			else { var htmlPath = theMessage.request.path; }
-		} else { var htmlPath = theMessage.request.path; }
-		evt.req.route = route;
-		evt.req.htmlPath = htmlPath;
-		return evt;
+	streamFns.lookupRequestRoute = function(source) {
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					const request = evt.req, {theMessage} = request;
+					request.router.route(theMessage.request.host, theMessage.request.path, function(route) {
+						if(route && route.match && route.match.service){
+							var basePath = isnode.module("services").service(route.match.service).cfg().basePath;
+							if(theMessage.request.path == basePath) { theMessage.request.path += "/"; }
+						}
+						theMessage.request.params = route.param;
+						if(route && route.match && route.match.service){
+							var srv = isnode.module("services").service(route.match.service);
+							if(srv.cfg().basePath) { var base = srv.cfg().basePath; }
+							else { var base = ""; }
+							if(theMessage.request.path.startsWith(base)){ var htmlPath = theMessage.request.path.slice(base.length); }
+							else { var htmlPath = theMessage.request.path; }
+						} else { var htmlPath = theMessage.request.path; }
+						evt.req.route = route;
+						evt.req.htmlPath = htmlPath;
+						observer.next(evt);
+					}); 
+					return;
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
 	}
 
 	/**

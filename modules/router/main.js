@@ -71,7 +71,7 @@
 					streamFns.setupListenerMethod,
 
 					// Fires once per incoming request for each router:
-					op.map(evt => { if(evt) return streamFns.determineNewRequestRoute(evt); }),
+					streamFns.determineNewRequestRoute,
 					op.map(evt => { if(evt) return streamFns.buildRequestObject(evt); }),
 					op.map(evt => { if(evt) return streamFns.buildResponseObject(evt); }),
 					op.map(evt => { if(evt) return streamFns.prepareResponseListener(evt); }),
@@ -118,7 +118,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.attachExternalMethods = function(evt) {
-		ismod.get = function(name){ if(routers[name]){ return routers[name]; } else { return false; } }
+		ismod.get = function(name){ if(routers[name]){ return routers[name]; } else { return; } }
 		ismod.count = function(){ return routerCount; }
 		evt.ismod = ismod;
 	    return evt;
@@ -200,11 +200,8 @@
 				}
 			}	
 			log("debug","Blackrock Router > Sending message " + msgObject.msgId + " back to originating interface", msgObject);
-			if(msgObject.sessionId)
-				isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing."+msgObject.sessionId,msg);
-			else
-				isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing."+msgObject.msgId,msg);
-			return;
+			if(msgObject.sessionId) { isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.sessionId,msg); }
+			else { isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.msgId, msg); }
 		}
 	    return evt;
 	}
@@ -214,13 +211,12 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupRouteMethod = function(evt) {
-		evt.Route = function(hostname,url){
-			var searchObj = {
+		evt.Route = function(hostname, url, cb){
+			isnode.module("services").search({
 				hostname: hostname,
 				url: url,
 				services: isnode.cfg().router.instances[evt.instanceName].services
-			}
-			return isnode.module("services").search(searchObj);
+			}, cb);
 		}
 		routers[evt.instanceName].route = evt.Route;
 	    return evt;
@@ -241,8 +237,7 @@
 					}
 					routers[evt.instanceName].incoming = evt.Listener;
 				},
-				error(error) { observer.error(error); }/*,
-				complete() { observer.complete(); }*/
+				error(error) { observer.error(error); }
 			});
 			return () => subscription.unsubscribe();
 		});
@@ -267,18 +262,29 @@
 	 * (Internal > Stream Methods [8]) Determine New Request Route
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.determineNewRequestRoute = function(evt) {
-		evt.routerInternals = {};
-		evt.routerInternals.route = evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path);
-		evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
-		if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
-			evt.parentEvent.ReturnError(evt.routerMsg,"Page Not Found",404); 
-			log("warning","Blackrock Router > Received request from an interface but could not resolve endpoint - 404 - " + evt.routerMsg.msgId, evt.routerMsg);
-		} else {
-			evt.routerInternals.controller = evt.routerInternals.route.match.controller;
-			log("debug","Blackrock Router > Found Route for " + evt.routerMsg.request.host + evt.routerMsg.request.path, evt.routerMsg);			
-		}
-	    return evt;
+	streamFns.determineNewRequestRoute = function(source) {
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					evt.routerInternals = {};
+					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
+					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function(routeResult) {
+						evt.routerInternals.route = routeResult;
+						if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
+							evt.parentEvent.ReturnError(evt.routerMsg,"Page Not Found",404); 
+							log("warning","Blackrock Router > Received request from an interface but could not resolve endpoint - 404 - " + evt.routerMsg.msgId, evt.routerMsg);
+						} else {
+							evt.routerInternals.controller = evt.routerInternals.route.match.controller;
+							log("debug","Blackrock Router > Found Route for " + evt.routerMsg.request.host + evt.routerMsg.request.path, evt.routerMsg);
+							observer.next(evt); 			
+						}
+					});
+				    return;
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
 	}
 
 	/**

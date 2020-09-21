@@ -21,9 +21,9 @@
 
 
 	/**
-	 * =============================
-	 * Logger Initialisation Methods
-	 * =============================
+	 * ====================================
+	 * Error Handler Initialisation Methods
+	 * ====================================
 	 */
 
 	/**
@@ -119,12 +119,12 @@
 			var interval = setInterval(function(){
 				if(errorCount <= 0){
 					clearInterval(interval);
-					log("debug", "Error Handler > Thrown exception(s) handled by a listening module or service - " + err.message, err);
+					log("debug", "Blackrock Error Handler > Thrown exception(s) handled by a listening module or service - " + err.message, err);
 					return;
 				}
 				if(counter >= timeout){
 					clearInterval(interval);
-					log("fatal", "Error Handler > Caught unhandled exception(s). Terminating application server. Error - " + err.message, err);
+					log("fatal", "Blackrock Error Handler > Caught unhandled exception(s). Terminating application server. Error - " + err.message, err);
 					isnode.shutdown();
 					return;
 				}

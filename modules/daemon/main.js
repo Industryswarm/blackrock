@@ -115,7 +115,7 @@
 						evt.name = isnode.pkg().name;
 						evt.isChildProcess = process.send;
 						if(!process.send) { process.nextTick(function(){ observer.next(evt); }); }
-						else { log("fatal", "Daemon Initiated, but running in daemon mode. Terminating..."); }
+						else { log("fatal", "Blackrock Daemon > Initiated, but running in daemon mode. Terminating..."); }
 					});
 				},
 				error(error) { observer.error(error); }
@@ -130,7 +130,7 @@
 	 */
 	streamFns.checkNameAndInit = function(evt){
 		if(!evt.name){
-			log("startup", "Name not passed correctly to daemon module");
+			log("startup", "Blackrock Daemon > Name not passed correctly to daemon module");
 			process.exit();
 		}
 		daemonize = require("./support/daemonize");
@@ -180,35 +180,35 @@
 	streamFns.setupCallbacks = function(evt){
 		evt.daemon
 		    .on("starting", function() {
-		        log("startup", "Starting daemon...");
+		        log("startup", "Blackrock Daemon > Starting...");
 		    })
 		    .on("started", function(pid) {
-		        log("startup", "Daemon started. PID: " + pid);
+		        log("startup", "Blackrock Daemon > Started. PID: " + pid);
 		        process.exit();
 		    })
 		    .on("stopping", function() {
-		        log("startup", "Stopping daemon...");
+		        log("startup", "Blackrock Daemon > Stopping...");
 		    })
 		    .on("running", function(pid) {
-		        log("startup", "Daemon already running. PID: " + pid);
+		        log("startup", "Blackrock Daemon > Already running. PID: " + pid);
 		        process.exit();
 		    })
 		    .on("notrunning", function() {
-		        log("startup", "Daemon is not running");
+		        log("startup", "Blackrock Daemon > Not running");
 		        process.exit();
 		    })
 		    .on("error", function(err) {
-		        log("startup", "Daemon failed to start:  " + err.message);
+		        log("startup", "Blackrock Daemon > Failed to start:  " + err.message);
 		        process.exit();
 		    });
 	    if(evt.status == "restart") {
 		   	evt.daemon.on("stopped", function(pid) {
-		        log("startup", "Daemon stopped.");
+		        log("startup", "Blackrock Daemon > Stopped");
 		        evt.daemon.start();
 		    });
 	    } else {
     		evt.daemon.on("stopped", function(pid) {
-		        log("startup", "Daemon stopped.");
+		        log("startup", "Blackrock Daemon > Stopped");
 		        process.exit();
 		    });
 	    }
@@ -221,7 +221,7 @@
 	 */
 	streamFns.checkRoot = function(evt){
 		if((evt.status == "start" || evt.status == "stop" || evt.status == "restart") && process.getuid() != 0) {
-			log("startup", "Daemon is expected to run as root");
+			log("startup", "Blackrock Daemon > Expected to run as root");
 			process.exit();
 			return;
 		} else {
@@ -269,10 +269,10 @@
 	streamFns.statusDaemon = function(evt){
 		if(evt.status == "status") {
 			if(evt.daemon.status()){
-				log("startup", "Daemon is running.");
+				log("startup", "Blackrock Daemon > Daemon is running.");
 				process.exit();
 			} else {
-				log("startup", "Daemon is not running.");
+				log("startup", "Blackrock Daemon > Daemon is not running.");
 				process.exit();
 			}
 		}

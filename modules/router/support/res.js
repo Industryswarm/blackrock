@@ -148,7 +148,7 @@
 		if(cb) {
 			msg.response.cb = cb;
 		}
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -198,7 +198,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -258,7 +258,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -288,7 +288,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -317,7 +317,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -382,7 +382,7 @@
 		if(cb) {
 			msg.response.cb = cb;
 		}
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -411,7 +411,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router."+this.msgId,msg);
+		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -467,15 +467,6 @@
 
 	/**
 	 * (ENTRY POINT FOR EXECUTION)
-	 *
-	 * Alter module behaviour based on execution use case: 
-	 *
-	 * (i) Attempt to Open Command-Line Interface (CLI) - INVALID; or
-	 * (ii) Export as Node.JS module for inclusion in another application - VALID
 	 */
-	if (!module.parent) { 
-		console.log("ERROR: Response Object cannot be executed independently as it is an isnode application library only.");
-	} else { 
-		module.exports = res;
-	}
+	module.exports = res;
 }();
