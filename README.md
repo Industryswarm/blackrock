@@ -31,7 +31,7 @@ Welcome to the second-generation ISNode Node.JS Web Framework - ISNode Blackrock
 
 Below is a high-level architectural diagram of the Reactive / Event-Driven Architecture for the ISNode Blackrock Web Framework:
 
-![https://web.home.darrensmith.com.au/industryswarm/event-driven-architecture.png]()
+![Reactive Modular Event-Driven Architecture](https://web.home.darrensmith.com.au/industryswarm/event-driven-architecture.png)
 
 
 
