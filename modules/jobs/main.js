@@ -35,6 +35,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Jobs"), ismod.log = log = isnode.module("logger").log;
+		log("debug", "Blackrock Jobs > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var ISPipeline = pipelines.setupJobs();
 		new ISPipeline({}).pipe();
@@ -61,6 +62,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock Jobs > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -106,6 +108,7 @@
 		else { evt.interval = 500; }
 		if(isnode.cfg().jobs && isnode.cfg().jobs.queue && isnode.cfg().jobs.queue.jobsPerInterval) { evt.jobsPerInterval = isnode.cfg().jobs.queue.jobsPerInterval; }
 		else { evt.jobsPerInterval = 5; }
+		log("debug", "Blackrock Jobs > [1] Set Up The Intervals");
 		return evt;
 	}
 
@@ -114,6 +117,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.processQueue = function(evt){
+		log("debug", "Blackrock Jobs > [2] Created 'Process Queue' Method w/ Indefinite Interval. Processing Queue Now...");
 		var iterateThroughQueue = function() {
 			setInterval(function(){
 				if(queue.length > 0) {
@@ -137,16 +141,29 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					var add = function(definition, fn, input){
-						evt.action = "add", evt.input = { definition: definition, fn: fn, input: input }
-						observer.next(evt);
+						var msg = { 
+							action: "add",
+							input: {
+								definition: definition, 
+								fn: fn, 
+								input: input 
+							}
+						}
+						observer.next(msg);
 					}
 					var remove = function(id){
-						evt.action = "remove", evt.input = { id: id }
-						observer.next(evt);
+						var msg = { 
+							action: "remove",
+							input: {
+								id: id
+							}
+						}
+						observer.next(msg);
 					}
 					evt.methods = {}, ismod.jobs = {};
 					evt.methods.add = ismod.jobs.add = add;
 					evt.methods.remove = ismod.jobs.remove = remove;
+					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'");
 				},
 				error(error) { observer.error(error); }
 			});

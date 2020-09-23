@@ -39,7 +39,8 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Utilities"), log = isnode.module("logger").log;
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, ismod.crypto = {};
+		log("debug", "Blackrock Utilities > Initialising...");
+		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, ismod.crypto = {}, ismod.system = {};
 		var ISPipeline = pipelines.setupUtilities();
 		new ISPipeline({}).pipe();
 		return ismod;
@@ -67,6 +68,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock Utilities > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -83,7 +85,11 @@
 					op.map(evt => { if(evt) return streamFns.setupCsvParse(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupEncrypt(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupDecrypt(evt); }),
-					op.map(evt => { if(evt) return streamFns.setupXML(evt); })
+					op.map(evt => { if(evt) return streamFns.setupXML(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetMemoryUse(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetCpuLoad(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetStartTime(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetEndTime(evt); })
 					
 				);
 				stream1.subscribe(function(res) {
@@ -115,6 +121,7 @@
 		ismod.crypto = crypto;
 		ismod.modules = modules;
 		ismod.csv = csv;
+		log("debug", "Blackrock Utilities > [1] Base Object Schema Initialised");
 		return { 
 			methods: {
 				crypto: crypto,
@@ -152,6 +159,7 @@
 			}
 			return uuid;
 		};
+		log("debug", "Blackrock Utilities > [2] 'uuid4' Method Attached To This Module");
 		return evt;
 	}
 
@@ -171,6 +179,7 @@
 			   return "string";
 			}
 		};
+		log("debug", "Blackrock Utilities > [3] 'isJSON' Method Attached To This Module");
 		return evt;
 	}
 
@@ -186,6 +195,7 @@
 	    		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	  		return text;
 		};
+		log("debug", "Blackrock Utilities > [4] 'randomString' Method Attached To This Module");
 		return evt;
 	}
 
@@ -203,6 +213,7 @@
 		    }
 		    return length;
 		};
+		log("debug", "Blackrock Utilities > [5] 'objectLength' Method Attached To This Module");
 		return evt;
 	}
 
@@ -216,6 +227,7 @@
 			currentDate = currentDate.toISOString();
 			return currentDate;
 		};
+		log("debug", "Blackrock Utilities > [6] 'getCurrentDateInISO' Method Attached To This Module");
 		return evt;
 	}
 
@@ -259,6 +271,7 @@
 				return false;
 			}
 		};
+		log("debug", "Blackrock Utilities > [7] 'validateString' Method Attached To This Module");
 		return evt;
 	}
 
@@ -276,6 +289,7 @@
 			}
 			return target;
 		};
+		log("debug", "Blackrock Utilities > [8] 'cloneObject' Method Attached To This Module");
 		return evt;
 	}
 
@@ -288,6 +302,7 @@
 		ismod.modules.loadModule = evt.methods.modules.loadModule = function (name) {
 			return require(name + ".js");
 		};
+		log("debug", "Blackrock Utilities > [9] 'loadModule' Method Attached To This Module");
 		return evt;
 	}
 
@@ -372,6 +387,7 @@
 				return;
 			}
 		};
+		log("debug", "Blackrock Utilities > [10] 'parse' Method Attached To 'csv' Object On This Module");
 		return evt;
 	}
 
@@ -393,6 +409,7 @@
 			var encrypted = key.encrypt(text, encoding);
 			return encrypted;
 		};
+		log("debug", "Blackrock Utilities > [11] 'encrypt' Method Attached To 'crypto' Object On This Module");
 		return evt;
 	}
 
@@ -414,6 +431,7 @@
 			var decrypted = key.decrypt(text, encoding);
 			return decrypted;
 		};
+		log("debug", "Blackrock Utilities > [12] 'decrypt' Method Attached To 'crypto' Object On This Module");
 		return evt;
 	}
 
@@ -428,8 +446,97 @@
 		 * https://github.com/NaturalIntelligence/fast-xml-parser
 		 */
 		ismod.xml = evt.methods.xml = require("./support/xml/parser.js");
+		log("debug", "Blackrock Utilities > [13] XML Parser Library Attached To This Module");
 		return evt;
 	}
+
+	/**
+	 * (Internal > Stream Methods [14]) Setup Get Memory Use Method
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupGetMemoryUse = function(evt){
+		ismod.system.getMemoryUse = function (type) {
+			const used = process.memoryUsage();
+			if(type && used[type]) {
+				return used[type];
+			} else {
+				var memoryUse = 0;
+				for (let key in used) { memoryUse += used[key] }
+				return memoryUse;
+			}
+		};
+		log("debug", "Blackrock Utilities > [14] 'getMemoryUse' Method Attached To 'system' Object On This Module");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [15]) Setup Get CPU Load Method
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupGetCpuLoad = function(evt){
+		ismod.system.getCpuLoad = function (cb) {
+			var os = require("os");
+			function cpuAverage() {
+			  var totalIdle = 0, totalTick = 0;
+			  var cpus = os.cpus();
+			  for(var i = 0, len = cpus.length; i < len; i++) {
+			    var cpu = cpus[i];
+			    for(type in cpu.times) {
+			      totalTick += cpu.times[type];
+			    }     
+			    totalIdle += cpu.times.idle;
+			  }
+			  return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
+			}
+			var startMeasure = cpuAverage();
+			setTimeout(function() { 
+			  var endMeasure = cpuAverage();
+			  var idleDifference = endMeasure.idle - startMeasure.idle;
+			  var totalDifference = endMeasure.total - startMeasure.total;
+			  var percentageCPU = 100 - ~~(100 * idleDifference / totalDifference);
+			  cb(percentageCPU);
+			}, 100);
+			return;
+		};
+		log("debug", "Blackrock Utilities > [15] 'getCpuLoad' Method Attached To 'system' Object On This Module");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [16]) Get Start Time
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupGetStartTime = function(evt){
+		ismod.system.getStartTime = function () {
+			return process.hrtime();
+		};
+		log("debug", "Blackrock Utilities > [16] 'getStartTime' Method Attached To 'system' Object On This Module");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [17]) Get End Time
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupGetEndTime = function(evt){
+		ismod.system.getEndTime = function (start) {
+		    var precision = 3;
+		    var elapsed = process.hrtime(start)[1] / 1000000;
+		    var end = process.hrtime(start)[0];
+		    var ms = elapsed.toFixed(precision) / 1000;
+		    end += ms;
+		    start = process.hrtime();
+		    return end;
+		};
+		log("debug", "Blackrock Utilities > [17] 'getEndTime' Method Attached To 'system' Object On This Module");
+		return evt;
+	}
+
+
+
+
+
+
 
 
 

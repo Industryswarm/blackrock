@@ -15,7 +15,7 @@
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, ISService, log, services = {}, config, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
+	var isnode, ismod, ISService, log, map, orphans, services = {}, config, loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
 
 
 
@@ -36,7 +36,8 @@
 	 * @param {object} isnode - The parent isnode object
 	 */
 	var init = function(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), log = isnode.module("logger").log, config = isnode.cfg();
+		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), log = isnode.module("logger").log, config = isnode.cfg(), map = {}, orphans = {};
+		log("debug", "Blackrock Services > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		ISService = new isnode.ISMod().extend({ constructor: function() { return; } });
 		var ISPipeline = pipelines.setupServicesPipeline();
@@ -67,6 +68,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock Services > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -75,11 +77,15 @@
 					op.map(evt => { if(evt) return streamFns.setupSearchMethod(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupServiceEndpoint(evt); }),
 					streamFns.loadServices,
-					streamFns.fetchControllers,
+					streamFns.fetchControllerNames,
 					op.map(evt => { if(evt) return streamFns.preProcessControllers(evt); }),
 					op.map(evt => { if(evt) return streamFns.removeInvalidControllers(evt); }),
-					op.map(evt => { if(evt) return streamFns.buildRoutesObject(evt); }),
-					op.map(evt => { if(evt) return streamFns.setBasePathCtrlAndServiceRoutes(evt); })
+					op.map(evt => { if(evt) return streamFns.setBasePathCtrl(evt); }),
+					streamFns.generateControllerEvents,
+					streamFns.loadControllerFiles,
+					streamFns.setBasePathAndPattern,
+					streamFns.checkIfWildcardPath,
+					streamFns.buildRoutesObject
 					
 				);
 				stream1.subscribe(function(evt) {});
@@ -97,12 +103,17 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function(cb) {
+				log("debug", "Blackrock Services > Route Search Query Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
 					// Fires once on server initialisation:
 					op.map(evt => { if(evt) return streamFns.parseSearchObject(evt); }),
-					op.map(evt => { if(evt) return streamFns.findCtrlUsingUrl(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupHosts(evt); }),
+					streamFns.generateServiceEvents,
+					op.map(evt => { if(evt) return streamFns.initSearchForService(evt); }),
+					streamFns.iterateOverRoutes,
+					op.map(evt => { if(evt) return streamFns.checkAndMatch(evt); })
 					
 				);
 				stream1.subscribe(function(evt) { cb(evt.result); });
@@ -147,10 +158,10 @@
 						for (var i = 0; i < services[service].routes.length; i++) {
 							var route = services[service].routes[i];
 							if(!route.controller.shutdown || !(route.controller.shutdown instanceof Function)){
-								log("debug", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + "  but no shutdown interface exists.");
+								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + "  but no shutdown interface exists.");
 								counter ++;
 							} else {
-								log("debug", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + ", waiting for controller response...");
+								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + ", waiting for controller response...");
 								route.controller.shutdown(function(){
 									log("debug", "Controller " + route.pattern + " for service " + services[service].cfg.name + " shutdown successful.");
 									counter ++;
@@ -168,6 +179,7 @@
 			}
 			closeControllers(function(){ isnode.emit("module-shut-down", "Services"); });
 		}
+		log("debug", "Blackrock Services > [1] Attached 'unload' Method To This Module");
 		return evt;
 	}
 
@@ -192,6 +204,7 @@
 			var ISPipeline = pipelines.runSearchPipeline();
 			new ISPipeline({ "searchObj": searchObj }).pipe(function(result) { cb(result); });
 		}
+		log("debug", "Blackrock Services > [2] Attached 'search' Method To This Module");
 		return evt;
 	}
 
@@ -267,6 +280,7 @@
 			service.use = middleware.use;
 			return service;
 		}
+		log("debug", "Blackrock Services > [3] Setup & Attached 'service' Method To This Module (incl. Setting Up Middleware)");
 		return evt;
 	}
 
@@ -278,21 +292,19 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					process.nextTick(function(){
-						log("startup","Blackrock Services > Enumerating and loading services...");
-						var fs = require('fs');
-						fs.readdirSync(basePath + "services").forEach(function(file) {
-				        	if(fs.existsSync(basePath + "services/"+file+"/service.json") === true) {
-				        		log("startup","Blackrock Services > Loading " + file + " service.");
-				            	services[file] = new ISService();
-				            	services[file].cfg = require(basePath + "services/" + file + "/service.json");
-				            	evt.service = file;
-				               	observer.next(evt);
-				        	}
-						});
-						return;
-					});
-					
+					log("startup","Blackrock Services > [4] Enumerating and loading services...");
+					var loadService = function(serviceName) {
+			        	if(fs.existsSync(basePath + "services/" + serviceName + "/service.json") === true) {
+			        		log("startup","Blackrock Services > [4a] Loading " + serviceName + " service...");
+			            	services[serviceName] = new ISService();
+			            	services[serviceName].cfg = require(basePath + "services/" + serviceName + "/service.json");
+			            	evt.service = serviceName;
+			               	observer.next(evt);
+			        	}
+			        }
+					if(config.services.runtime.services.allowLoad == true){ ismod.loadService = loadService; }
+					var fs = require('fs');
+					fs.readdirSync(basePath + "services").forEach(function(file) { loadService(file); });
 				},
 				error(error) { observer.error(error); }
 			});
@@ -301,30 +313,28 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [5]) Fetch Controllers
+	 * (Internal > Stream Methods [5]) Fetch Controller Names
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.fetchControllers = function(source){
+	streamFns.fetchControllerNames = function(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					process.nextTick(function(){
-						log("startup","Blackrock Services > Building routes for " + evt.service + " service.");
-						if(services[evt.service].routes) {
-							return {success: false, message: "Service Routes for " + evt.service + " Have Already Been Built"};
-						}
-						if(services[evt.service].cfg.routing && (services[evt.service].cfg.routing == "auto") || !services[evt.service].cfg.routing){
-							var filewalker = require("./support/filewalker.js");
-							filewalker(basePath + "services/" + evt.service + "/controllers", function(err, data){
-								evt.fileWalkerErr = err;
-								evt.data = data;
-								observer.next(evt);	
-							});
-						} else {
-							log("warning","Blackrock Services > Autorouting not enabled on " + evt.service + " service. Abandoning service load.");
-							return;
-						}
-					});		
+					log("startup","Blackrock Services > [5] Building routes for " + evt.service + " service.");
+					if(services[evt.service].routes) {
+						log("startup","Blackrock Services > [5a] Service Routes for " + evt.service + " Have Already Been Built");
+						return {success: false, message: "Service Routes for " + evt.service + " Have Already Been Built"};
+					}
+					if(services[evt.service].cfg.routing && (services[evt.service].cfg.routing == "auto") || !services[evt.service].cfg.routing){
+						var filewalker = require("./support/filewalker.js");
+						filewalker(basePath + "services/" + evt.service + "/controllers", function(err, data){
+							evt.fileWalkerErr = err;
+							evt.data = data;
+							observer.next(evt);	
+						});
+					} else {
+						return;
+					}	
 				},
 				error(error) { observer.error(error); }
 			});
@@ -350,6 +360,7 @@
 			return a.length - b.length || a.localeCompare(b);
 		});
 		evt.controllerBasePath = evt.basePath[0];
+		log("debug","Blackrock Services > [6] Controllers Have Been Pre-Processed");
 		return evt;
 	}
 
@@ -363,71 +374,16 @@
 			if (evt.data[i].endsWith("controller.js") && evt.data[i] != "/controller.js") { delete evt.data[i]; }
 			else if (evt.data[i].endsWith("controller.js") && evt.data[i] == "/controller.js") { evt.data[i] = "/"; }
 		}
+		log("debug","Blackrock Services > [7] Invalid Controllers Have Been Removed");
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [8]) Build Routes Object
+	 * (Internal > Stream Methods [8]) Set Base Path Controller
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.buildRoutesObject = function(evt){
-		evt.Routes = [], evt.map = {}, evt.orphans = {}, j = 0;
-		for (i = 0; i < evt.data.length; i++) { 
-			if(evt.data[i]){
-				var path = evt.controllerBasePath + evt.data[i] + "/controller.js"
-				path = path.replace("//", "/");
-				var fs = require("fs");
-				if (fs.existsSync(path)) {
-					var controller = require(path);
-					if (controller.init && typeof controller.init === 'function') { 
-						if(controller.init.length >= 1) {
-    						var restrictedISNode = {};
-    						restrictedISNode.cfg = isnode.cfg;
-    						restrictedISNode.pkg = isnode.pkg;
-    						restrictedISNode.module = isnode.module;
-    						restrictedISNode.globals = isnode.globals;
-    						if(config && config.services && config.services.allowShutdownFromControllers)
-    							restrictedISNode.shutdown = isnode.shutdown;
-    						controller.init(restrictedISNode);
-						} else { controller.init(); }
-					}
-				} else { controller = {}; }
-				if(!services[evt.service].cfg.basePath && isnode.cfg().loader && isnode.cfg().loader.basePath){
-					services[evt.service].cfg.basePath = isnode.cfg().loader.basePath;
-				}
-				if(services[evt.service].cfg.basePath){ evt.pattern = services[evt.service].cfg.basePath + evt.data[i]; }
-				else { evt.pattern = evt.data[i]; }
-				if(evt.pattern.endsWith("{*}")) {
-					var parentPattern = evt.pattern.slice(0, -3);
-					if(!evt.map[parentPattern] && !evt.Routes[evt.map[parentPattern]]) { evt.orphans[parentPattern] = true; }
-					if(!evt.Routes[evt.map[parentPattern]]) { evt.Routes[evt.map[parentPattern]] = {}; }
-					if(evt.Routes[evt.map[parentPattern]]) { evt.Routes[evt.map[parentPattern]].wildcard = true; evt.pattern = null; }
-					if(evt.map[parentPattern]) { evt.Routes[evt.map[parentPattern]].wildcard = true; evt.pattern = null; }
-				}
-				if(evt.pattern) {
-					evt.map[evt.pattern] = j;
-					evt.Routes[j] = {
-						path: path,
-						pattern: evt.pattern,
-						controller: controller,
-						service: evt.service
-					};
-					if(evt.orphans[evt.pattern]) {
-						evt.Routes[j].wildcard = true;
-					}
-					j++;
-				}
-			}
-		}
-		evt.Routes.push({ path: "/", pattern: "/uisdgdsi-mock-endpoint-to-fix-problem", controller: {}, service: evt.service });
-		return evt;
-	}
-
-	/**
-	 * (Internal > Stream Methods [9]) Set Base Path Controller
-	 * @param {object} evt - The Request Event
-	 */
-	streamFns.setBasePathCtrlAndServiceRoutes = function(evt){
+	streamFns.setBasePathCtrl = function(evt){
+		services[evt.service].routes = [];
 		if(services[evt.service].cfg.basePath){
 			var pathBits = services[evt.service].cfg.basePath.split("/");
 			var pathBitsCount = pathBits.length;
@@ -447,7 +403,7 @@
 						res.redirect(services[evt.service].cfg.basePath);
 					}
 				}
-				evt.Routes.push({
+				services[evt.service].routes.push({
 					path: "",
 					pattern: urls_piece,
 					controller: ctrl,
@@ -455,9 +411,181 @@
 				});
 			}
 		}
-		services[evt.service].routes = evt.Routes;
+		if(!loadMessages["1-8"]) {
+			loadMessages["1-8"] = true;
+			log("debug","Blackrock Services > [8] Have Set Base Path Controller & Service Routes");
+		}
 		return evt;
 	}
+
+	/**
+	 * (Internal > Stream Methods [9]) Generate Controller Events
+	 * @param {observable} source - The Source Observable
+	 */
+	streamFns.generateControllerEvents = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(!loadMessages["1-9"]) {
+						loadMessages["1-9"] = true;
+						log("debug","Blackrock Services > [9] Controller Events Being Generated");
+					}
+					for (i = 0; i < evt.data.length; i++) { 
+						if(evt.data[i]){
+							evt.path = evt.controllerBasePath + evt.data[i] + "/controller.js"
+							evt.path = evt.path.replace("//", "/");
+							evt.i = i;
+							observer.next(evt);
+						}
+					}
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [10]) Load Controller Files in to Memory
+	 * @param {observable} source - The Source Observable
+	 */
+	streamFns.loadControllerFiles = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(config.services.sandbox.default == true) { var type = "sandbox"; var typeString = "Via Sandbox"; }
+					else { var type = "require"; var typeString = "Direct"; }
+					if(!loadMessages["1-10"]) {
+						loadMessages["1-10"] = true;
+						log("debug","Blackrock Services > [10] Loading Controller Files In To Memory (" + typeString + ")");
+					}
+					var fs = require("fs");
+					if (fs.existsSync(evt.path)) {
+						var prepareRestrictedISNode = function(event) {
+							if (event.controller.init && typeof event.controller.init === 'function') { 
+								if(event.controller.init.length >= 1) {
+									var restrictedISNode = {
+		    							cfg: isnode.cfg,
+		    							pkg: isnode.pkg,
+		    							module: isnode.module,
+		    							globals: isnode.globals,
+		    							getBasePath: isnode.getBasePath
+		    						};
+		    						if(config && config.services && config.services.allowShutdownFromControllers) {
+		    							restrictedISNode.shutdown = isnode.shutdown;
+		    						}
+		    						event.controller.init(restrictedISNode);
+								} else { 
+									event.controller.init(); 
+								}
+								observer.next(event);
+							} else { observer.next(event); }
+						}
+						if(type == "sandbox") {
+							var event = evt;
+							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i }, function(obj) {
+								event.controller = obj.ctrl;
+								event.path = obj.file;
+								event.i = obj.i;
+								prepareRestrictedISNode(event);
+							});
+						} else {
+							evt.controller = require(evt.path);
+							prepareRestrictedISNode(evt);
+						}
+					} else { 
+						evt.controller = {}; 
+						observer.next(evt);
+					}
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [11]) Set Base Path & Pattern
+	 * @param {observable} source - The Source Observable
+	 */
+	streamFns.setBasePathAndPattern = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(!loadMessages["1-11"]) {
+						loadMessages["1-11"] = true;
+						log("debug","Blackrock Services > [11] Base Path & Pattern Being Set Now");
+					}
+					if(!services[evt.service].cfg.basePath && isnode.cfg().loader && isnode.cfg().loader.basePath){
+						services[evt.service].cfg.basePath = isnode.cfg().loader.basePath;
+					}
+					if(services[evt.service].cfg.basePath){ evt.pattern = "" + services[evt.service].cfg.basePath + evt.data[evt.i]; }
+					else { evt.pattern = "" + evt.data[evt.i]; }
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [12]) Check If Wildcard Path
+	 * @param {observable} source - The Source Observable
+	 */
+	streamFns.checkIfWildcardPath = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(evt.pattern.endsWith("{*}")) {
+						var parentPattern = evt.pattern.slice(0, -3);
+						if(!map[parentPattern] && !services[evt.service].routes[map[parentPattern]]) { orphans[parentPattern] = true; }
+						if(!services[evt.service].routes[map[parentPattern]]) { services[evt.service].routes[map[parentPattern]] = {}; }
+						if(services[evt.service].routes[map[parentPattern]]) { services[evt.service].routes[map[parentPattern]].wildcard = true; evt.pattern = null; }
+						if(map[parentPattern]) { services[evt.service].routes[map[parentPattern]].wildcard = true; evt.pattern = null; }
+					}
+					if(!loadMessages["1-12"]) {
+						loadMessages["1-12"] = true;
+						log("debug","Blackrock Services > [12] Checked If Wildcard Path");
+					}
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [13]) Build Routes Object
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.buildRoutesObject = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(evt.pattern) {
+						var routeObject = {
+							path: evt.path,
+							pattern: evt.pattern,
+							controller: evt.controller,
+							service: evt.service
+						}
+						if(orphans[evt.pattern]) { routeObject.wildcard = true; }
+						map[evt.pattern] = services[evt.service].routes.push(routeObject) - 1;
+					}
+					if(!loadMessages["1-13"]) {
+						loadMessages["1-13"] = true;
+						log("debug","Blackrock Services > [13] Routes Added To Routes Object");
+					}
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
 
 
 
@@ -480,155 +608,173 @@
 	streamFns.parseSearchObject = function(evt){
 		if(!evt.searchObj) { evt.searchComplete = true; 
 		} else if (evt.searchObj.hostname && evt.searchObj.url && !evt.searchObj.services) {
-			evt.hostname = evt.searchObj.hostname;
-			evt.url = evt.searchObj.url;
+			evt.hostname = evt.searchObj.hostname, evt.url = evt.searchObj.url;
 		} else if (evt.searchObj.hostname && evt.searchObj.url && evt.searchObj.services) {
 			if(evt.searchObj.services.includes("*")) {
-				evt.hostname = evt.searchObj.hostname;
-				evt.url = evt.searchObj.url;
+				evt.hostname = evt.searchObj.hostname, evt.url = evt.searchObj.url;
 			} else {
-				evt.hostname = evt.searchObj.hostname;
-				evt.url = evt.searchObj.url;
-				evt.services = evt.searchObj.services;
+				evt.hostname = evt.searchObj.hostname, evt.url = evt.searchObj.url, evt.services = evt.searchObj.services;
 			}
 		} else { evt.searchComplete = true; }
+		log("debug","Blackrock Services > [1] Search object has been parsed");
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [2]) Find Controller Using URL
+	 * (Internal > Stream Methods [2]) Setup Hosts
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.findCtrlUsingUrl = function(evt){
-		var results = [], hostname = evt.hostname, url = evt.url, srvs = evt.srvs;
-		function isEmpty(obj) {
-		    for(var prop in obj) { if(obj.hasOwnProperty(prop)) { return false; } }
-		    return JSON.stringify(obj) === JSON.stringify({});
-		}
-		var srvsArray = [];
-		var hosts = [];
+	streamFns.setupHosts = function(evt){
+		evt.results = [], evt.hosts = [];
 		for (var sv in services) { 
 			if(!services[sv].cfg.host && isnode.cfg().loader && isnode.cfg().loader.host) {
 				services[sv].cfg.host = isnode.cfg().loader.host;
 			}
-			hosts.push(services[sv].cfg.host); 
+			evt.hosts.push(services[sv].cfg.host); 
 		}
-		for(var service in services) {
-			srvs = srvsArray;
-			if(hostname == services[service].cfg.host) { srvs.push(service); }
-			else if (services[service].cfg.host == "*" && !hosts.includes(hostname)) { srvs.push(service); }
-			if(!srvs || srvs.includes(service)) {
-			    var urlParts = url.split("/");
-			    var param = {};
-			    var currentRoute = null;
-			    var override = false;
-			    var routes = {};
-			    routes[services[service].cfg.host] = services[service].routes;
-			    var urlParts = url.split("/");
-			    var param = {};
-			    var currentRoute = null;
-			    var override = false;
-			    var directMatch = false;
-			    var wildcardSet = null;
-			    if(routes[hostname]) { var host = hostname; }
-			    else if(routes["*"] && !routes[hostname] && services[service].cfg.host == "*") { var host = "*"; }
-			    if(routes[host]) {
-				    for(var index = 0, total = routes[host].length; index<total; index++){
-				        var match = true;
-				        var patternSplit = routes[host][index].pattern.split("/");
-				        if (urlParts.length === patternSplit.length || (url.startsWith(routes[host][index].pattern) && routes[host][index].wildcard)) {
-				        	if(routes[host][index].wildcard) {
-				        		wildcardSet = { "host": host, "index": index }
+		log("debug","Blackrock Services > [2] Hosts Have Been Setup");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [3]) Generate Service Events
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.generateServiceEvents = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					log("debug","Blackrock Services > [3] Generating Service Events...");
+					for(var service in services) {
+						if(evt.hostname == services[service].cfg.host) { evt.srv = service; }
+						else if (services[service].cfg.host == "*" && !evt.hosts.includes(evt.hostname)) { evt.srv = service; }
+						observer.next(evt);
+					}
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [4]) Initialise The Search For This Service
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.initSearchForService = function(evt){
+	    evt.urlParts = evt.url.split("/");
+	    evt.param = {}, evt.currentRoute = null, evt.override = false, evt.routes = {};
+	    evt.routes[services[evt.srv].cfg.host] = services[evt.srv].routes;
+	    evt.directMatch = false, evt.wildcardSet = null;
+	    if(evt.routes[evt.hostname]) { evt.host = evt.hostname; }
+	    else if(evt.routes["*"] && !evt.routes[evt.hostname] && services[evt.srv].cfg.host == "*") { evt.host = "*"; }
+		log("debug","Blackrock Services > [4] Search has been initialised for this service (" + evt.srv + ")");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [5]) Iterate Over Routes
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.iterateOverRoutes = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					log("debug","Blackrock Services > [5] Iterating Over Service Routes");
+					if(!evt.routes[evt.host]) { observer.next(evt); }
+					var processIteration = function(index) {
+				        evt.match = true;
+				        var patternSplit = evt.routes[evt.host][index].pattern.split("/");
+				        if (evt.urlParts.length === patternSplit.length || (evt.url.startsWith(evt.routes[evt.host][index].pattern) && evt.routes[evt.host][index].wildcard)) {
+				        	if(evt.routes[evt.host][index].wildcard) { evt.wildcardSet = { "host": evt.host, "index": index } }
+				        	if(evt.url == evt.routes[evt.host][index].pattern){
+				        		evt.directMatch = true;
+				        		evt.override = evt.routes[evt.host][index];
+				        		if(evt.host == "*") { evt.override.matchType = "wildcard"; }
+				        		else { evt.override.matchType = "direct"; }
 				        	}
-				        	if(url == routes[host][index].pattern){
-				        		directMatch = true;
-				        		override = routes[host][index];
-				        		if(host == "*")
-				        			override.matchType = "wildcard";
-				        		else
-				        			override.matchType = "direct";
-				        	}
-				        	if(!directMatch) {
-					        	var patternReplaced = routes[host][index].pattern.replace(/{.*}/, '{}');
+				        	if(!evt.directMatch) {
+					        	var patternReplaced = evt.routes[evt.host][index].pattern.replace(/{.*}/, '{}');
 					        	var patternReplacedSplit = patternReplaced.split("/");
-					        	if (urlParts.length === patternReplacedSplit.length) {
+					        	if (evt.urlParts.length === patternReplacedSplit.length) {
 					        		var patternReplacedMatch = true;
-					        		for (var i = 0; i < urlParts.length; i++) {
-					        			if(urlParts[i] != patternReplacedSplit[i] && patternReplacedSplit[i] != "{}")
+					        		for (var i = 0; i < evt.urlParts.length; i++) {
+					        			if(evt.urlParts[i] != patternReplacedSplit[i] && patternReplacedSplit[i] != "{}")
 					        				patternReplacedMatch = false;
 					        		}
 					        		if(patternReplacedMatch) {
-						        		override = routes[host][index];
-						        		if(host == "*")
-						        			override.matchType = "wildcard";
-						        		else
-						        			override.matchType = "direct";
+						        		evt.override = evt.routes[evt.host][index];
+						        		if(evt.host == "*") { evt.override.matchType = "wildcard"; }
+						        		else { evt.override.matchType = "direct"; }
 					        		}
 					        	}
 				        	}
-				            for (var i = 0, l = urlParts.length;i<l;i++) {
+				            for (var i = 0, l = evt.urlParts.length; i < l; i++) {
 				            	var workaround = false;
 				            	if(!patternSplit[i]) {
 				            		workaround = true;
 				            		patternSplit[i] = "";
 				            	}
 				                var reg = patternSplit[i].match(/{(.*)}/);
-				                if (reg) {
-				                	param[reg[1]] = urlParts[i];
-				                } else if (workaround) {
-				                	null;
-				                } else { 
-				                	if (patternSplit[i] !== urlParts[i] && !wildcardSet) { match = false; break; } 
-				                }
+				                if (reg) { evt.param[reg[1]] = evt.urlParts[i]; } 
+				                else if (workaround) { null; } 
+				                else { if (patternSplit[i] !== evt.urlParts[i] && !evt.wildcardSet) { evt.match = false; break; } }
 				            }
 				        } else { 
-				        	if(!currentRoute)
-				        		match = false; 
+				        	if(!evt.currentRoute) {evt.match = false; }
 				        }
-				        if (match === true && !currentRoute && !override) { 
-				        	currentRoute = routes[host][index]; 
-			        		if(host == "*")
-			        			currentRoute.matchType = "wildcard";
-			        		else
-			        			currentRoute.matchType = "direct";
+				        if (evt.match === true && !evt.currentRoute && !evt.override) { 
+				        	evt.currentRoute = evt.routes[evt.host][index]; 
+			        		if(evt.host == "*") { evt.currentRoute.matchType = "wildcard"; }
+			        		else { evt.currentRoute.matchType = "direct"; }
 				        }
-				    }
-				    if(!match){
-				    	var match = true;
-				    	if(wildcardSet && routes[wildcardSet[host]] && routes[wildcardSet[host]][wildcardSet[index]]) {
-				    		currentRoute = routes[wildcardSet[host]][wildcardSet[index]];
+					}
+					for(var index = 0, total = evt.routes[evt.host].length; index<total; index++){ processIteration(index); }
+				    if(!evt.match){
+				    	evt.match = true;
+				    	if(evt.wildcardSet && evt.routes[evt.wildcardSet[evt.host]] && evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]]) {
+				    		evt.currentRoute = evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]];
 				    	} else {
-				    		currentRoute = { service: routes[host][0].service }	
+				    		evt.currentRoute = { service: evt.routes[evt.host][0].service }	
 				    	}
-		        		if(host == "*")
-		        			currentRoute.matchType = "wildcard";
+		        		if(evt.host == "*")
+		        			evt.currentRoute.matchType = "wildcard";
 		        		else
-		        			currentRoute.matchType = "direct";	    	
+		        			evt.currentRoute.matchType = "direct";	    	
 				    }
-				}
-				if(override) { currentRoute = override; }
-			    if(match && currentRoute){
-			    	results.push({match: currentRoute, param: param});
-			    }
-			}
-		}
-		if(results.length != 1) {
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [6]) Check Overrides & Match
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.checkAndMatch = function(evt){
+		if(evt.override) { evt.currentRoute = evt.override; }
+	    if(evt.match && evt.currentRoute){ evt.results.push({match: evt.currentRoute, param: evt.param}); }
+		if(evt.results.length != 1) {
 			var intermediateResults = [];
-			for (var i = 0; i < results.length; i++) {
-				if(results[i].match.matchType == "direct")
-					intermediateResults.push(results[i]);
+			for (var i = 0; i < evt.results.length; i++) {
+				if(evt.results[i].match.matchType == "direct")
+					intermediateResults.push(evt.results[i]);
 			}
 			if(intermediateResults && intermediateResults.length == 1) {
-				results = intermediateResults;
-				evt.result = results[0];
-			} else {
-				evt.result = false;
-			}
-		} else {
-			evt.result = results[0];
-		}
+				evt.results = intermediateResults;
+				evt.result = evt.results[0];
+			} 
+			else { evt.result = false; }
+		} 
+		else { evt.result = evt.results[0]; }
+		log("debug","Blackrock Services > [6] Overrides and matches have been checked");
 		return evt;
 	}
+
+
 
 
 

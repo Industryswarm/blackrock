@@ -819,6 +819,7 @@
         this.configNow({wildcard: true, delimiter: '.', newListener: false, maxListeners: 1000, verboseMemoryLeak: false});
         this.lib.add("rxjs", require("./rxjs.js"));
         this.lib.add("operators", require("./operators/index.js"));
+        this.lib.add("dayjs", require("./dayjs/dayjs.min.js"));
       },
 
       extend: function Extend (attr1, attr2) {

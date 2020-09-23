@@ -38,6 +38,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Daemon"), log = isnode.module("logger").log, config = isnode.cfg();
+		log("debug", "Blackrock Daemon > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var ISPipeline = pipelines.setupDaemon();
 		new ISPipeline({}).pipe();
@@ -65,6 +66,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock Daemon > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -111,7 +113,9 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
+					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event");
 					isnode.on("startDaemon", function(){
+						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received");
 						evt.name = isnode.pkg().name;
 						evt.isChildProcess = process.send;
 						if(!process.send) { process.nextTick(function(){ observer.next(evt); }); }
@@ -130,7 +134,7 @@
 	 */
 	streamFns.checkNameAndInit = function(evt){
 		if(!evt.name){
-			log("startup", "Blackrock Daemon > Name not passed correctly to daemon module");
+			log("error", "Blackrock Daemon > Name not passed correctly to daemon module");
 			process.exit();
 		}
 		daemonize = require("./support/daemonize");
@@ -142,6 +146,7 @@
     		cwd: process.cwd(),
     		silent: true
 		});
+		log("debug", "Blackrock Daemon > [2] Daemon Name Checked & Daemon Initialised");
 		return evt;
 	}
 
@@ -170,6 +175,7 @@
 			process.exit();
 			return;
 		}
+		log("debug", "Blackrock Daemon > [3] Status Calculated From Command-Line Arguments");
 		return evt;
 	}
 
@@ -212,6 +218,7 @@
 		        process.exit();
 		    });
 	    }
+	    log("debug", "Blackrock Daemon > [4] Callbacks Set For All Execution States");
 	    return evt;
 	}
 
@@ -221,10 +228,11 @@
 	 */
 	streamFns.checkRoot = function(evt){
 		if((evt.status == "start" || evt.status == "stop" || evt.status == "restart") && process.getuid() != 0) {
-			log("startup", "Blackrock Daemon > Expected to run as root");
+			log("error", "Blackrock Daemon > Expected to run as root");
 			process.exit();
 			return;
 		} else {
+			log("debug", "Blackrock Daemon > [5] Checked and verified that user is root");
 			return evt;
 		}
 	}
@@ -234,8 +242,10 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.startDaemon = function(evt){
-		if(evt.status == "start")
+		if(evt.status == "start") {
 			evt.daemon.start();
+			log("debug", "Blackrock Daemon > [6] Daemon Started");
+		}
 		return evt;
 	}
 
@@ -244,8 +254,10 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.stopDaemon = function(evt){
-		if(evt.status == "stop")
+		if(evt.status == "stop") {
 			evt.daemon.stop();
+			log("debug", "Blackrock Daemon > [6] Daemon Stopped");
+		}
 		return evt;
 	}
 
@@ -258,6 +270,7 @@
 			var status = evt.daemon.status();
 			if(status){ evt.daemon.stop(); } 
 			else { evt.daemon.start(); }
+			log("debug", "Blackrock Daemon > [6] Daemon Restarted");
 		}
 		return evt;
 	}
@@ -275,6 +288,7 @@
 				log("startup", "Blackrock Daemon > Daemon is not running.");
 				process.exit();
 			}
+			log("debug", "Blackrock Daemon > [6] Daemon Status Returned");
 		}
 		return evt;
 	}

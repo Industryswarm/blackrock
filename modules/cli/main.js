@@ -15,7 +15,12 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){ isnode = isnodeObj, ismod = new isnode.ISMod("CLI"), log = isnode.module("logger").log; start(); return ismod; }
+	var init = function(isnodeObj){ 
+		isnode = isnodeObj, ismod = new isnode.ISMod("CLI"), log = isnode.module("logger").log; 
+		log("debug", "Blackrock CLI > Initialising...");
+		start(); 
+		return ismod; 
+	}
 
 	/**
 	 * (Internal) Initialises the CLI server interface module
@@ -48,6 +53,8 @@
 				return;
  			}
 
+ 			log("debug", "Blackrock CLI > Server Initialisation Pipeline Created - Executing Now:");
+
  			stream.pipe(
 
  				op.filter(function(evt) { 
@@ -58,7 +65,17 @@
  						], evt);
  				}),
 
+ 				op.map(function(evt) {
+ 					log("debug", "Blackrock CLI > [1] Command-Line Arguments Filtered");
+ 					return evt; 
+ 				}),
+
  				op.reduce(function(acc, one) { return acc + " " + one }),
+
+  				op.map(function(evt) {
+ 					log("debug", "Blackrock CLI > [2] Remaining Arguments Reduced");
+ 					return evt; 
+ 				})
 
  			).subscribe(function(val) {
  				subRec = true;
@@ -66,15 +83,21 @@
 				if((val && daemonOptions.includes(val) && isnode.module("daemon")) || (isnode.cfg().cli && isnode.cfg().cli.mode && isnode.cfg().cli.mode == "daemon")) {
 					isnode.emit("startDaemon");
 					isnode.emit("loadDependencies");
+					log("debug", "Blackrock CLI > [3] Events sent to 'Start Daemon' and 'Load Dependencies'");
 				} else if (process.send || val == "start console" || (isnode.cfg().cli && isnode.cfg().cli.mode && isnode.cfg().cli.mode == "console")) {
 					isnode.emit("loadDependencies");
+					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies' (but not to 'Start Daemon')");
 				} else {
 					showHelp();
+					log("debug", "Blackrock CLI > [3] No valid commands received - Displaying Command-Line Help");
 				}
 			  
 			}).unsubscribe();
 
-			setTimeout(function(){ if(!subRec) { showHelp(); } }, 1);
+			setTimeout(function(){ if(!subRec) {
+				showHelp(); 
+				log("debug", "Blackrock CLI > [4] Timed Out Whilst Processing Command-Line Arguments - Displaying Command-Line Help");
+			} }, 1);
 
 		});
 	}

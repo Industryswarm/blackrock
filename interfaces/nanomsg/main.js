@@ -16,6 +16,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("NanoMSG"), log = isnode.module("logger").log;
+		log("debug", "Blackrock NanoMSG Interface > Initialising...");
 		ismod.startInterface = startInterface;
 		ismod.startInterfaces();
 		return ismod;

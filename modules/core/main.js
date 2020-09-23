@@ -16,7 +16,33 @@
 		console.log(err);
 		var currentDate = new Date();
 		currentDate = currentDate.toISOString();
-		console.log("\nISNode Blackrock Application Server\n");
+				console.log(`
+
+
+
+================================================================================================
+
+                    *                   
+              ,%%      ,%#              
+          &%    /%%%%%%#    %%          
+      %%    #%%%%%%%%%%%%%(     #%,     
+  %%     %%%%%%%%%%%%%%%%           /%  
+ %        %%%%%%%%%%%%%%%             %        IndustrySwarm
+ %       #%%%%%%%%%%%%%%%%            %        ISNode "Blackrock" Application Server
+ %  ,%% #%%%%%%%%%%%%%%%,*%%%     %&  %        Copyright 2020, Darren Smith.
+ %  ,%%% %%%%%%%%%%%%# %%%%%%%%%%%%&  % 
+ %  ,%%%%.%%%%%%%%# %%%%%%%%%%%%%%%&  %        Server Name:
+ %  ,%%%%    (%% %%%%%%%%%%%%%%%%%%&  %        ` + package.name + " v" + package.version + `
+ %  ,%%         %%%%%%%%%%%%%%%%%%%&  % 
+ ##  %           %%%%%%%%%%%%%%%%%%  .% 
+   %%           %%%%%%%%%%%%%%%    &%   
+       %%     %%%%%%%%%%%%.    %%       
+           .%#    %%%%    ,%(           
+                %%    %%                 
+
+------------------------------------------------------------------------------------------------
+
+				`);
 		console.log(currentDate + "(fatal) Blackrock Core > Missing Critical System File - Terminating");
 		process.exit();
 	}
@@ -24,18 +50,49 @@
 	/**
 	 * Define ISNode Prototype:
 	 */
-	var ISNode = new Base().extend({
+
+	var isnodeInitObj = {
 
 		constructor: function(specName) { this.name = specName; this.status = "Starting"; },
 
 		init: function() {
-			if(package && package.name && package.version) { console.log("\nISNode Blackrock Application Server\nName: \"" + package.name + " v" + package.version + "\"\n"); }
+			if(package && package.name && package.version) { 
+				console.log(`
+
+
+
+================================================================================================
+
+                    *                   
+              ,%%      ,%#              
+          &%    /%%%%%%#    %%          
+      %%    #%%%%%%%%%%%%%(     #%,     
+  %%     %%%%%%%%%%%%%%%%           /%  
+ %        %%%%%%%%%%%%%%%             %        IndustrySwarm
+ %       #%%%%%%%%%%%%%%%%            %        ISNode "Blackrock" Application Server
+ %  ,%% #%%%%%%%%%%%%%%%,*%%%     %&  %        Copyright 2020, Darren Smith.
+ %  ,%%% %%%%%%%%%%%%# %%%%%%%%%%%%&  % 
+ %  ,%%%%.%%%%%%%%# %%%%%%%%%%%%%%%&  %        Server Name:
+ %  ,%%%%    (%% %%%%%%%%%%%%%%%%%%&  %        ` + package.name + " v" + package.version + `
+ %  ,%%         %%%%%%%%%%%%%%%%%%%&  % 
+ ##  %           %%%%%%%%%%%%%%%%%%  .% 
+   %%           %%%%%%%%%%%%%%%    &%   
+       %%     %%%%%%%%%%%%.    %%       
+           .%#    %%%%    ,%(           
+                %%    %%                 
+
+------------------------------------------------------------------------------------------------
+
+				`);
+			}
 			modules.logger = {};
 			modules.logger.log = log = function(level, message, data){
-				var currentDate = new Date();
-				currentDate = currentDate.toISOString();
-				console.log(currentDate + " (" + level + ") " + message);
-				if(data && config.logger.logMetadataObjects) { console.log(data); }
+				if(config.logger.levels.includes(level)){
+					var currentDate = new Date();
+					currentDate = currentDate.toISOString();
+					console.log(currentDate + " (" + level + ") " + message);
+					if(data && config.logger.logMetadataObjects) { console.log(data); }
+				}
 			}
 			modules.core = function(){};
 			var self = this, started;
@@ -70,6 +127,8 @@
 
 		cfg: function() { return config; },
 
+		getBasePath: function() { return __dirname + "/../../../.."; },
+
 		shutdown: function() {
 			if(shuttingDown == true) { return; }
 			log("shutdown","Blackrock Core > Initiating System Shutdown.");
@@ -89,7 +148,14 @@
 			get: function(name) { if(!globals[name]) { return false; } return globals[name]; }
 		}
 
+	}
+
+	isnodeInitObj.globals = Object.create(null, {
+		set: function(name, value) { if(!name) { return false; } globals[name] = value; return true; },
+		get: function(name) { if(!globals[name]) { return false; } return globals[name]; }
 	});
+
+	var ISNode = new Base().extend(isnodeInitObj);
 
 	/**
 	 * Define ISMod Prototype:
@@ -237,7 +303,7 @@
 	 * "isnode" Object and then Export It
 	 */
 	isnode = new ISNode("Core"), isnode.ISNode = ISNode;
-	isnode.ISMod = ISMod, isnode.ISInterface = ISInterface, isnode.init();
+	isnode.ISMod = ISMod, isnode.ISInterface = ISInterface, isnode.Base = Base, isnode.init();
 	module.exports = isnode;
 
 }();

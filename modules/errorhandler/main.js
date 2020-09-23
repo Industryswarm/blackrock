@@ -32,6 +32,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("ErrorHandler"), ismod.log = log = isnode.module("logger").log;
+		log("debug", "Blackrock Error Handler > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var ISPipeline = pipelines.setupErrorHandler();
 		new ISPipeline({}).pipe();
@@ -58,6 +59,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock Error Handler > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -102,6 +104,7 @@
 				return;
 			}
 		});
+		log("debug", "Blackrock Error Handler > [1] Setup Listener Method for the 'errorhandled' event");
 		return evt;
 	}
 
@@ -131,6 +134,7 @@
 				counter += 10;
 			}, 10);
 		});
+		log("debug", "Blackrock Error Handler > [2] Setup Listener Method for the 'uncaughtexception' event");
 		return evt;
 	}
 

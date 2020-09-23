@@ -33,6 +33,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("HTTP"), log = isnode.module("logger").log, config = isnode.cfg();
+		log("debug", "Blackrock HTTP Interface > Initialising...");
 		ismod.client = client;
 		ismod.startInterface = startInterface;
 		ismod.startInterfaces();
@@ -47,19 +48,19 @@
 		const cfg = config.interfaces.http[name];
 		if(cfg.ssl == true) { var protocol = "HTTPS" }
 		else { var protocol = "HTTP" }
-		log("startup","HTTP Interface Module > Attempting to start " + protocol + " interface (" + name + ") on port " + cfg.port + ".");
+		log("startup","Blackrock HTTP Interface > Attempting to start " + protocol + " interface (" + name + ") on port " + cfg.port + ".");
 		var routers = [];
 		for(var routerName in config.router.instances){
 			if(config.router.instances[routerName].interfaces && (config.router.instances[routerName].interfaces.includes("*") || config.router.instances[routerName].interfaces.includes(name))) {
 				routers.push(isnode.module("router").get(routerName));
 			}
 		}
-		if(routers.length <= 0){ log("startup","HTTP Interface Module > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers."); return; }
+		if(routers.length <= 0){ log("error","Blackrock HTTP Interface > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers."); return; }
 		var ISPipeline = pipelines.processRequestStream();
 		utils.isPortTaken(cfg.port, function(err, result){
 			var inst;
-			if(result != false){ log("error","HTTP Interface Module > Cannot load HTTP interface (" + name + ") as the defined port (" + cfg.port + ") is already in use."); return; }
-			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","HTTP Interface Module > Cannot load SSL interface as either the key or cert has not been defined (" + name + ")."); return; }
+			if(result != false){ log("error","Blackrock HTTP Interface > Cannot load HTTP interface (" + name + ") as the defined port (" + cfg.port + ") is already in use."); return; }
+			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ")."); return; }
 			try {
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
 				instances[name] = inst = new isnode.ISNode().extend({});
@@ -68,11 +69,20 @@
 				if(cfg.ssl) { inst.server = serverLib(cfg.key, cfg.cert) } else { inst.server = serverLib() };
 				
 			} catch (err) {
-				log("error","HTTP Interface Module > Error instantiating " + httpLib.toUpperCase() + " interface (" + name + ").",err);
+				log("error","Blackrock HTTP Interface > Error instantiating " + httpLib.toUpperCase() + " interface (" + name + ").",err);
 				if(inst) { delete inst; }
 				return;
 			}
 			inst.server.on('request', (request, response) => {
+				var myMsg = {
+					httpVersion: request.httpVersion,
+					host: request.headers.host,
+					verb: request.method,
+					url: request.url,
+					headers: request.headers,
+
+				}
+				log("debug","Blackrock HTTP Interface > Received Incoming Request", myMsg);
 				request.interface = name;
 				for (var i = 0; i < routers.length; i++) {
 					request.router = routers[i];
@@ -81,7 +91,7 @@
 				}
 			});
 			inst.server.listen(cfg.port, function(){
-				log("startup","HTTP Interface Module > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port); inst.listening = true;
+				log("startup","Blackrock HTTP Interface > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port); inst.listening = true;
 			});
 			ismod.instances = instances;
 		});
@@ -107,6 +117,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock HTTP Interface > Request Event Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 					op.map(evt => { if(evt) return streamFns.checkErrors(evt); }),
@@ -148,6 +159,7 @@
 			constructor: function(evt) { this.evt = evt; },
 			callback: function(cb) { return cb(this.evt); },
 			pipe: function() {
+				log("debug", "Blackrock HTTP Interface > Response Event Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 					op.map(evt => { if(evt) return streamFns.preventDuplicateResponses(evt); }),
@@ -194,6 +206,7 @@
 		evt.res.resReturned = false;
 	    evt.req.on('error', (err) => { log("error","HTTP Interface > Error processing incoming request", err); evt.res.statusCode = 400; evt.res.end(); evt.res.resReturned = true; });
 	    evt.res.on('error', (err) => { log("error","HTTP Interface > Error processing outgoing response", err); });
+	    log("debug", "Blackrock HTTP Interface > [1] Checked Request for Errors");
 	    return evt;
 	}
 
@@ -213,7 +226,10 @@
 	    		if(contentType[i].startsWith("boundary=")){ var boundary = contentType[i].split("="); boundary = boundary[1]; }
 	    	}
 	    }
-	    if(!boundary) { var boundary = "" }; if(multipart) { evt.req.multipart = true; } else { evt.req.multipart = false; }; return evt;
+	    if(!boundary) { var boundary = "" }; 
+	    if(multipart) { evt.req.multipart = true; } else { evt.req.multipart = false; }; 
+	    log("debug", "Blackrock HTTP Interface > [2] Content Type Determined");
+	    return evt;
 	}
 
 	/**
@@ -229,6 +245,7 @@
 			else { form.maxFileSize = 50 * 1024 * 1024; }
 			try { form.parse(req, function(err, fields, files) { var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
 			catch (err) { evt.data = {error: "File Upload Size Was Too Large"}; resolve(evt); }
+			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message");
 		});
 	}
 
@@ -245,6 +262,7 @@
 		    	evt.data = data; 
 		    	resolve(evt); 
 		    });
+		    log("debug", "Blackrock HTTP Interface > [3] Parsed Non-Multi-Part Request Message");
 	    });
 	}
 
@@ -259,6 +277,7 @@
         else if (data && isnode.module("utilities").isJSON(data) == "json_object") { data = data; }
         else if (data) { data = require('querystring').parse(data); }
         evt.data = data;
+        log("debug", "Blackrock HTTP Interface > [4] Request Body Data Processed");
 		return evt;
 	}
 
@@ -273,6 +292,7 @@
 	        list[parts.shift().trim()] = decodeURI(parts.join('='));
 	    });
 	    evt.req.cookieObject = list;
+	    log("debug", "Blackrock HTTP Interface > [5] Cookies Parsed");
 	    return evt;
 	}
 
@@ -300,6 +320,7 @@
 		evt.req.theHost = host;
 		evt.req.thePort = port;
 		evt.req.thePath = splitPath[0];
+		log("debug", "Blackrock HTTP Interface > [6] Host Path & Query Processed");
 		return evt;
 	}
 
@@ -317,6 +338,7 @@
 			var ipv4 = reqIpAddress.slice(startPos + 1, endPos), ipv6 = reqIpAddress.slice(0, startPos - 1);
 			evt.req.reqIpAddress = ipv4; evt.req.reqIpAddressV6 = ipv6;
 		}
+		log("debug", "Blackrock HTTP Interface > [7] IP Addresses Processed");
 		return evt;
 	}
 
@@ -329,6 +351,7 @@
 		if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "http") { evt.req.reqSecure = false; }
 		else if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "https") { evt.req.reqSecure = true; }
 		else { evt.req.reqSecure = request.secure; }
+		log("debug", "Blackrock HTTP Interface > [8] Request SSL (Secure) Enabled Flag Processed");
 		return evt;
 	}
 
@@ -346,6 +369,7 @@
 				"ip": evt.req.reqIpAddress, "ipv6": evt.req.reqIpAddressV6, "verb": method, "secure": evt.req.reqSecure, "body": evt.data,
 			}
 		}
+		log("debug", "Blackrock HTTP Interface > [9] Request Message Prepared");
 		return evt;
 	}
 
@@ -367,6 +391,7 @@
 			response.end();
 			return;
 		}
+		log("debug", "Blackrock HTTP Interface > [10] Trailing Slash Fixed If Present");
 		return evt;
 	}
 
@@ -379,6 +404,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					const request = evt.req, {theMessage} = request;
+					log("debug", "Blackrock HTTP Interface > [11] Searching For Request Route");
 					request.router.route(theMessage.request.host, theMessage.request.path, function(route) {
 						if(route && route.match && route.match.service){
 							var basePath = isnode.module("services").service(route.match.service).cfg().basePath;
@@ -420,14 +446,15 @@
 		if(stats && stats.isFile()){
 			if(directPath == true){ var pathToRead = rootBasePath + "services/" + route.match.service + "/html/" + htmlPath; }
 			else { var pathToRead = rootBasePath + "services/" + route.match.service+"/html/" + htmlPath + "/index.html"; }
-			log("debug","HTTP Interface > File " + theMessage.request.path + " found and returned to interface for message " + theMessage.msgId, theMessage);
 			var filename = theMessage.request.path.split("/"), mimeType = utils.checkMIMEType(filename[filename.length - 1].split('.').pop());
 			if (!mimeType) { mimeType = 'application/octet-stream'; }
 			response.writeHead(200, { "Content-Type": mimeType });
 			fs.createReadStream(pathToRead).pipe(response);
 			evt.res.resReturned = true;
-			return evt;
+			log("debug", "Blackrock HTTP Interface > [12] Filesystem file piped directly through", { file: theMessage.request.path, msgId: theMessage.msgId });
+			return;
 		} else {
+			log("debug", "Blackrock HTTP Interface > [12] Requested File is Not a Filesystem File (would have piped if so)");
 			return evt;
 		}
 	}
@@ -460,7 +487,7 @@
 				clearInterval(interval);
 			}
 		}, 500);
-		log("debug","HTTP Interface > Routing incoming message " + request.theMessage.msgId, request.theMessage);
+		log("debug","HTTP Interface > [13] Sending incoming message " + request.theMessage.msgId + " to router", request.theMessage);
 		request.router.incoming(request.theMessage);
 		return evt;
 	}
@@ -486,8 +513,8 @@
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
 	streamFns.preventDuplicateResponses = function(evt) {
+		log("debug", "Blackrock HTTP Interface > [1] Received response from router, Mitigating Against Duplicate Responses", { msgId: evt.msg.msgId });
  		if(!evt.msg.interface) { return; }; if(evt.res.resReturned) { return; }
-		log("debug","HTTP Interface > Received response " + evt.msg.msgId + " from router", evt.msg);
 		evt.res.resReturned = true;
 		return evt;
 	}
@@ -513,6 +540,7 @@
 				evt.res.setHeader(header, evt.msg.response.headers[header]);
 			}
 		}
+		log("debug", "Blackrock HTTP Interface > [2] Status, Headers & Cookies Set Against the Response Message");
 		return evt;
 	}
 
@@ -524,8 +552,10 @@
 		if(evt.msg.response.location){
 			evt.res.setHeader('Location', evt.msg.response.location);
 			evt.res.end();
+			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & Redirected Request");
 			return;
 		} else {
+			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & It Was Not");
 			return evt;
 		}
 	}
@@ -538,8 +568,10 @@
 		if(!evt.msg.response.view && evt.msg.response.body){
 			evt.res.setHeader('Content-Type', 'application/json');
 			evt.res.end(JSON.stringify(evt.msg.response.body));
+			log("debug", "Blackrock HTTP Interface > [4] Checked If No View & Finalised Response");
 			return;
 		} else {
+			log("debug", "Blackrock HTTP Interface > [4] Checked If No View But There Was One");
 			return evt;
 		}
 	}
@@ -555,7 +587,7 @@
 			catch(e) { var stats = false; }
 			if(stats && stats.isFile()){
 				var pathToRead = evt.msg.response.file;
-				log("debug","HTTP Interface > Sending File " + pathToRead + " to client. " + evt.msg.msgId, evt.msg);
+				log("debug","Blackrock HTTP Interface > [5] Found File - Sending to client ", {file: pathToRead, msgId: evt.msg.msgId });
 				var filename = pathToRead.split("/");
 				var mimeType = utils.checkMIMEType(filename[filename.length - 1].split('.').pop());
 				if (!mimeType) { mimeType = 'application/octet-stream'; }
@@ -570,11 +602,13 @@
 				});
 				return;
 			} else {
+				log("debug", "Blackrock HTTP Interface > [5] Could Not Find File - Responding With Error");
 				evt.res.setHeader('Content-Type', 'application/json');
 				evt.res.end(JSON.stringify({error: "Cannot Find File"}));
 				return;
 			}
 		} else {
+			log("debug", "Blackrock HTTP Interface > [5] Checked If This Was a File Response But It Was Not");
 			return evt;
 		}
 	}
@@ -590,6 +624,7 @@
 		var mimeType = utils.checkMIMEType(fileType);
 		if (!mimeType) { mimeType = 'text/html'; }
 		evt.res.setHeader('Content-Type', mimeType);
+		log("debug", "Blackrock HTTP Interface > [6] Checked & Set MIME Type for This Response", {mimeType: mimeType});
 		return evt;
 	}
 
@@ -602,6 +637,7 @@
 			evt.msg.viewType = "object";
 		else
 			evt.msg.viewType = "file";
+		log("debug", "Blackrock HTTP Interface > [7] View Type Detected", {viewType: evt.msg.viewType});
 		return evt;
 	}
 
@@ -617,16 +653,17 @@
 					try {
 						fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function (err, htmlData) {
 						    if (err) {
-								log("error","HTTP Server Interface > " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg);
+								log("error","Blackrock HTTP Interface > [8] " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg);
 								evt.res.setHeader('Content-Type', 'application/json');
 								evt.res.end(JSON.stringify(evt.msg.response.body));	
 								return;							    	
 						    }       
 						    renderView(evt.msg, evt.res, mustache, htmlData);
+						    log("debug","Blackrock HTTP Interface > [8] Object-Type View Rendered Successfully");
 						    return;
 						});
 					} catch(err){
-						log("error","HTTP Interface > "+evt.msg.response.view+" view does not exist.", evt.msg);
+						log("error","Blackrock HTTP Interface > [8] View does not exist", { view: evt.msg.response.view });
 						evt.res.setHeader('Content-Type', 'application/json');
 						evt.res.end(JSON.stringify(evt.msg.response.body));	
 						return;	
@@ -634,14 +671,16 @@
 				} else if (evt.msg.response.view.html) {
 					var htmlData = evt.msg.response.view.html;
 					utils.renderView(evt.msg, evt.res, mustache, htmlData);
+					log("debug","Blackrock HTTP Interface > [8] Successfully Rendered HTML View");
 					return;
 				} else {
-					log("error","HTTP Interface > Error loading view - unknown type.", evt.msg);
+					log("error","Blackrock HTTP Interface > [8] Error Loading View - Unknown Type.");
 					evt.res.setHeader('Content-Type', 'application/json');
 					evt.res.end(JSON.stringify(evt.msg.response.body));
 					return;	
 				}
 			} else {
+				log("error","Blackrock HTTP Interface > [8] Skipped Method to Process Object View Response");
 				resolve(evt);
 			}
 		});
@@ -657,16 +696,17 @@
 			try {
 				fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view, "utf8", function (err, htmlData) {
 				    if (err) {
-						log("error","HTTP Server Interface > " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view + " view does not exist.", evt.msg);
+						log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view });
 						evt.res.setHeader('Content-Type', 'application/json');
 						evt.res.end(JSON.stringify(evt.msg.response.body));	
 						return;							    	
 				    }       
 				    utils.renderView(evt.msg, evt.res, mustache, htmlData);
+				    log("debug","Blackrock HTTP Interface > [9] File-Type View Rendered Successfully");
 				    return;
 				});
 			} catch(err){
-				log("error","HTTP Interface > " + evt.msg.response.view + " view does not exist...", evt.msg);
+				log("error","Blackrock HTTP Interface > [9] View does not exist...", {view: evt.msg.response.view });
 				evt.res.setHeader('Content-Type', 'application/json');
 				evt.res.end(JSON.stringify(evt.msg.response.body));
 			}
