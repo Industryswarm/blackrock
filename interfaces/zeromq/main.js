@@ -19,6 +19,56 @@
 		log("debug", "Blackrock ZeroMQ Interface > Initialising...");
 		ismod.startInterface = startInterface;
 		ismod.startInterfaces();
+/*
+		console.log('testing zeromq');
+		const zmq = require("./support/zeromq/v5-compat");
+
+		var WORKERS_NUM = 10;
+		var router = zmq.socket('router');
+
+		var d = new Date();
+		var endTime = d.getTime() + 5000;
+
+		router.bind('tcp://*:9000', function(err) {
+			if(err) console.log('error binding', err);
+			router.on('message', function () {
+			  var identity = Array.prototype.slice.call(arguments)[0];
+			  var d = new Date();
+			  var time = d.getTime();
+			  if (time < endTime) {
+			    router.send([identity, '', 'Work harder!'])
+			  } else {
+			    router.send([identity, '', 'Fired!']);
+			  }
+			});
+
+			for (var i = 0; i < WORKERS_NUM; i++) {
+			  (function () {
+			    var worker = zmq.socket('req');
+
+			    worker.connect('tcp://127.0.0.1:9000');
+
+			    var total = 0;
+			    worker.on('message', function (msg) {
+			      var message = msg.toString();
+			      if (message === 'Fired!'){
+			        console.log('Completed %d tasks', total);
+			        worker.close();
+			      }
+			      total++;
+
+			      setTimeout(function () {
+			        worker.send('Hi boss!');
+			      }, 1000)
+			    });
+
+			    worker.send('Hi boss!');
+			  })();
+			}
+		});
+*/
+
+
 		return ismod;
 	}
 

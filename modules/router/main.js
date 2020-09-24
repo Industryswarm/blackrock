@@ -78,7 +78,7 @@
 					op.map(evt => { if(evt) return streamFns.buildResponseObject(evt); }),
 					op.map(evt => { if(evt) return streamFns.logAnalyticsNotificationForRequest(evt); }),
 					op.map(evt => { if(evt) return streamFns.prepareResponseListener(evt); }),
-					op.map(evt => { if(evt) return streamFns.routeRequest(evt); })
+					op.map(evt => { if(evt) return streamFns.routeRequestToController(evt); })
 					
 				);
 				stream1.subscribe(function(res) {
@@ -412,10 +412,10 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [6]) Route Request
+	 * (Internal > Stream Methods [6]) Route Request To Controller
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.routeRequest = function(evt) {
+	streamFns.routeRequestToController = function(evt) {
 		var verbs = ["get", "post", "put", "delete", "update", "patch", "head", "options", "trace"];
 		if(evt.routerMsg.request.verb && evt.routerInternals.controller && evt.routerInternals.controller[evt.routerInternals.verb] && verbs.includes(evt.routerInternals.verb)) {
 			var service = isnode.module("services").service(evt.routerInternals.route.match.service);

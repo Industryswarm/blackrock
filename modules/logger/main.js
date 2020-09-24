@@ -14,7 +14,8 @@
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, fileStream, sinks = {}, log, pipelines = {}, utils = {}, streamFns = {}, lib, rx, op, Observable, analyticsStore = { sessionEventCount: 0 };
+	var isnode, ismod, fileStream, sinks = {}, log, pipelines = {}, utils = {}, streamFns = {};
+	var lib, rx, op, Observable, analyticsStore = { sessionEventCount: 0 }, latestHeartbeat = {};
 
 
 
@@ -75,6 +76,7 @@
 					op.map(evt => { if(evt) return streamFns.detectAvailableSinks(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupViewAnalytics(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupJobs(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetAndUpdateLatestHeartbeat(evt); }),
 					op.map(evt => { if(evt) return streamFns.loadCachedHeartbeats(evt); }),
 					op.map(evt => { if(evt) return streamFns.fireServerBootAnalyticsEvent(evt); }),
 					streamFns.setupLogEndpoints
@@ -311,9 +313,9 @@
 					});				
 				} else {
 					array.sort(function(b, a) { 
-						if(!a[intField] && b[intField]) { return 0 - b[intField][param]; }
-						else if (!a[intField] && !b[intField]) { return 0; }
-						else if (a[intField] && !b[intField]) { return a[intField][param] - 0; }
+						if(((a && !a[intField]) || !a) && b && b[intField]) { return 0 - b[intField][param]; }
+						else if (((a && !a[intField]) || !a) && ((b && !b[intField]) || !b)) { return 0; }
+						else if (a && a[intField] && ((b && !b[intField]) || !b)) { return a[intField][param] - 0; }
 						else { return a[intField][param] - b[intField][param]; }
 					});	
 				}
@@ -344,7 +346,7 @@
 				var daysEvts = analyticsStore[dp.year][dp.month][dp.day];
 				var sumTotal = 0;
 				for (var i = 0; i < daysEvts.length; i++) {
-					if(daysEvts[i][intField] && daysEvts[i][intField][param]) { sumTotal += daysEvts[i][intField][param]; }
+					if(daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) { sumTotal += daysEvts[i][intField][param]; }
 				}
 				return sumTotal;
 			},
@@ -355,7 +357,7 @@
 				var daysEvts = analyticsStore[dp.year][dp.month][dp.day];
 				var avgValue = 0, sumTotal = 0, recordCount = 0;
 				for (var i = 0; i < daysEvts.length; i++) {
-					if(daysEvts[i][intField] && daysEvts[i][intField][param]) { sumTotal += daysEvts[i][intField][param]; recordCount ++; }
+					if(daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) { sumTotal += daysEvts[i][intField][param]; recordCount ++; }
 				}
 				avgValue = sumTotal / recordCount;
 				return avgValue;
@@ -367,7 +369,7 @@
 				var daysEvts = analyticsStore[dp.year][dp.month][dp.day];
 				var recordCount = 0;
 				for (var i = 0; i < daysEvts.length; i++) {
-					if(daysEvts[i][intField] && daysEvts[i][intField][param]) { recordCount ++; }
+					if(daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) { recordCount ++; }
 				}
 				return recordCount;
 			}
@@ -389,7 +391,7 @@
 	 */
 	streamFns.setupJobs = function(evt){
 		log("debug", "Blackrock Logger > [4] Setting Up Heartbeat + Cache Jobs");
-		if(isnode.cfg().logger.heartbeat && isnode.cfg().logger.heartbeat.console) {
+		if(isnode.cfg().logger.heartbeat) {
 			var heartbeatJob = function HeartbeatJob() {
 				var beat = isnode.module("logger").analytics.view();
 				var roundAndLabel = function(param) {
@@ -408,13 +410,21 @@
 					}
 					return param;				
 				}
-				beat.msgs.totalReqSize = roundAndLabel(beat.msgs.totalReqSize);
-				beat.msgs.totalResSize = roundAndLabel(beat.msgs.totalResSize);
-				beat.msgs.avgReqSize = roundAndLabel(beat.msgs.avgReqSize);
-				beat.msgs.avgResSize = roundAndLabel(beat.msgs.avgResSize);
-				beat.msgs.avgMemUsed = roundAndLabel(beat.msgs.avgMemUsed);
-				beat.msgs.avgCpuLoad = Math.round(beat.msgs.avgCpuLoad) + "%";
-				console.log(`
+				latestHeartbeat.totalReqSize = beat.msgs.totalReqSize = roundAndLabel(beat.msgs.totalReqSize);
+				latestHeartbeat.totalResSize = beat.msgs.totalResSize = roundAndLabel(beat.msgs.totalResSize);
+				latestHeartbeat.avgReqSize = beat.msgs.avgReqSize = roundAndLabel(beat.msgs.avgReqSize);
+				latestHeartbeat.avgResSize = beat.msgs.avgResSize = roundAndLabel(beat.msgs.avgResSize);
+				latestHeartbeat.avgMemUsed = beat.msgs.avgMemUsed = roundAndLabel(beat.msgs.avgMemUsed);
+				latestHeartbeat.avgCpuLoad = beat.msgs.avgCpuLoad = Math.round(beat.msgs.avgCpuLoad) + "%";
+				latestHeartbeat.totalReqCount = beat.msgs.totalReqCount;
+				latestHeartbeat.totalResCount = beat.msgs.totalResCount;
+				latestHeartbeat.avgProcessingTime = beat.msgs.avgProcessingTime;
+				latestHeartbeat.dateLastBoot = beat.msgs.dateLastBoot;
+				latestHeartbeat.dateCacheLastSaved = beat.msgs.dateCacheLastSaved;
+				if(!latestHeartbeat.peerCount) { latestHeartbeat.peerCount = 1 }
+
+				if(isnode.cfg().logger.heartbeat.console) {
+					console.log(`
 
 	========================================================================================================
 
@@ -435,14 +445,26 @@
 	                 "
 
 
-	 Notes:
 
-	 1. We only count responses that have returned via the router (not those directly piped by the interface)
-	 2. Average processing time is the time taken by the router and controller that it calls
-	 3. Memory use is across all RAM assigned to the server's Node.JS process
+	   ,ad8PPPP88b,     ,d88PPPP8ba,        OTHER
+	  d8P"      "Y8b, ,d8P"      "Y8b       Servers In Farm: ` + latestHeartbeat.peerCount + `
+	 dP'           "8a8"           \`Yd      
+	 8(              "              )8      
+	 I8                             8I      
+	  Yb,                         ,dP       
+	   "8a,                     ,a8"        
+	     "8a,                 ,a8"          
+	       "Yba             adP"            
+	         \`Y8a         a8P'              
+	           \`88,     ,88'
+	             "8b   d8"                  
+	              "8b d8"                   
+	               \`888'                    
+	                 "
 
 	=========================================================================================================
-				`);
+				`	);
+				}
 			}
 
 			var cacheJob = function CacheJob() {
@@ -454,52 +476,69 @@
 			}
 
 			setTimeout(function(){
-				isnode.module("jobs").jobs.add({ id: "CH01", name: "Console Server Heartbeat Job", type: "recurring", delay: isnode.cfg().logger.heartbeat.heartbeatFreq }, heartbeatJob, {});
-				isnode.module("jobs").jobs.add({ id: "SH02", name: "Server Heartbeat Cache Job", type: "recurring", delay: isnode.cfg().logger.heartbeat.cacheFreq }, cacheJob, {});
-			}, 1000);
+				isnode.module("jobs").jobs.add({ id: "CH01", name: "Console Server Heartbeat Job", type: "recurring", delay: isnode.cfg().logger.heartbeat.heartbeatFreq, local: true }, heartbeatJob, {});
+				isnode.module("jobs").jobs.add({ id: "SH02", name: "Server Heartbeat Cache Job", type: "recurring", delay: isnode.cfg().logger.heartbeat.cacheFreq, local: true }, cacheJob, {});
+			}, 50);
 
 		}
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [5]) Load Cached Heartbeats
+	 * (Internal > Stream Methods [5]) Setup Get & Update Latest Heartbeat Method
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupGetAndUpdateLatestHeartbeat = function(evt){
+		log("debug", "Blackrock Logger > [5] Setting up the 'getLatestHeartbeat' and 'updateLatestHeartbeat' Methods on Logger");
+		ismod.getLatestHeartbeat = function GetLatestHeartbeat() {
+			return latestHeartbeat;
+		}
+		ismod.updateLatestHeartbeat = function GetLatestHeartbeat(key, value) {
+			latestHeartbeat[key] = value;
+			return true;
+		}
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [6]) Load Cached Heartbeats
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.loadCachedHeartbeats = function(evt){
-		log("debug", "Blackrock Logger > [5] Loading cached heartbeats if they exist");
+		log("debug", "Blackrock Logger > [6] Loading cached heartbeats if they exist");
 		setTimeout(function() {
 			var fs = require("fs");
 			var path = isnode.getBasePath() + "/cache/heartbeat/heartbeats.json";
 			fs.readFile(path, 'utf8', function(err, content){
 				if(content) { analyticsStore = JSON.parse(content); }
+				isnode.module("jobs").jobs.execute("CH01");
 			});
-		}, 500);
+		}, 70);
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [6]) Fire the "Server Boot" Analytics Event
+	 * (Internal > Stream Methods [7]) Fire the "Server Boot" Analytics Event
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.fireServerBootAnalyticsEvent = function(evt){
-		log("debug", "Blackrock Logger > [6] Firing the \"Server Boot\" Analytics Event");
+		log("debug", "Blackrock Logger > [7] Firing the \"Server Boot\" Analytics Event");
 		setTimeout(function() {
 			var dayjs = lib.dayjs;
 			isnode.module("logger").analytics.log({ "server": { "dateLastBoot": dayjs().format() } });
-		}, 1000);
+		}, 80);
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [7]) Setup Log Endpoints
+	 * (Internal > Stream Methods [8]) Setup Log Endpoints
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.setupLogEndpoints = function(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug", "Blackrock Logger > [7] Setting Up Analytics & Log Endpoint On The Logger Module");
+					log("debug", "Blackrock Logger > [8] Setting Up Analytics & Log Endpoint On The Logger Module");
 					ismod.log = log = function(level, logMsg, attrObj){
 						var evt2 = {};
 						for(var sink in evt.sinks) { 

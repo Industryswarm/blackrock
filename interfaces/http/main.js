@@ -36,6 +36,7 @@
 		log("debug", "Blackrock HTTP Interface > Initialising...");
 		ismod.client = client;
 		ismod.startInterface = startInterface;
+		ismod.get = get;
 		ismod.startInterfaces();
 		return ismod;
 	}
@@ -98,6 +99,16 @@
 
 	}
 
+
+
+
+	/**
+	 * (Internal > Init) Exports the HTTP/S Server Interface
+	 * @param {string} name - The name of the interface
+	 */
+	var get = function(name){
+		return instances[name];
+	}
 
 
 

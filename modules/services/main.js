@@ -15,7 +15,8 @@
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, ISService, log, map, orphans, services = {}, config, loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
+	var isnode, ismod, ISService, log, map, orphans, services = {}, config;
+	var loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
 
 
 
@@ -662,6 +663,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.initSearchForService = function(evt){
+	    if(!services[evt.srv]) { throw new Error('Service does not exist'); return; }
 	    evt.urlParts = evt.url.split("/");
 	    evt.param = {}, evt.currentRoute = null, evt.override = false, evt.routes = {};
 	    evt.routes[services[evt.srv].cfg.host] = services[evt.srv].routes;
@@ -680,6 +682,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
+					if(!evt) { throw new Error('Event does not exist'); return; }
 					log("debug","Blackrock Services > [5] Iterating Over Service Routes");
 					if(!evt.routes[evt.host]) { observer.next(evt); }
 					var processIteration = function(index) {

@@ -14,7 +14,7 @@
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, queue = [], recurring = {}, pipelines = {}, streamFns = {};
+	var isnode, ismod, log, queue = [], recurring = {}, pipelines = {}, streamFns = {}, recurringFns = {};
 
 
 
@@ -73,7 +73,8 @@
 
 					// Fires once per Job Endpoint Request:
 					op.map(evt => { if(evt) return streamFns.addJobToQueue(evt); }),
-					op.map(evt => { if(evt) return streamFns.removeJobFromQueue(evt); })
+					op.map(evt => { if(evt) return streamFns.removeJobFromQueue(evt); }),
+					op.map(evt => { if(evt) return streamFns.executeJob(evt); })
 					
 				);
 				stream1.subscribe(function(res) {
@@ -160,9 +161,19 @@
 						}
 						observer.next(msg);
 					}
+					var execute = function(id){
+						var msg = {
+							action: "execute",
+							input: {
+								id: id
+							}
+						}
+						observer.next(msg);
+					}
 					evt.methods = {}, ismod.jobs = {};
 					evt.methods.add = ismod.jobs.add = add;
 					evt.methods.remove = ismod.jobs.remove = remove;
+					evt.methods.execute = ismod.jobs.execute = execute;
 					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'");
 				},
 				error(error) { observer.error(error); }
@@ -192,7 +203,7 @@
 			if(evt.input.definition && !evt.input.definition.name) {
 				log("error", "Blackrock Jobs > Attempted to Add Job But Job Name Not Set", evt.input.definition);
 				return false;
-			}
+			}			
 			if (evt.input.definition && evt.input.definition.type == "queue") {
 				queue.push({definition: evt.input.definition, fn: evt.input.fn, input: evt.input.input});
 				log("debug", "Blackrock Jobs > Job #"+evt.input.definition.id+" ("+evt.input.definition.name+") Queued Successfully", evt.input.definition);
@@ -202,8 +213,13 @@
 					log("error", "Blackrock Jobs > Attempted to Add Recurring Job But Delay Not Set", evt.input.definition);
 					return false;
 				}
+				recurringFns[evt.input.definition.id] = {
+					fn: evt.input.fn,
+					input: evt.input.input
+				}
 				recurring[evt.input.definition.id] = setInterval(function(){
-					evt.input.fn(evt.input.input);
+					if(evt.input.definition.local == true || (evt.input.definition.local == false && isnode.module("farm").isJobServer() == true))
+						evt.input.fn(evt.input.input);
 				}, evt.input.definition.delay)
 				log("debug", "Blackrock Jobs > Recurring Job #" + evt.input.definition.id+" (" + evt.input.definition.name + ") Queued Successfully", evt.input.definition);
 				return true;
@@ -232,6 +248,7 @@
 			if(recurring[id]){
 				clearInterval(recurring[id]);
 				delete recurring[id];
+				delete recurringFns[id];
 				found = true;
 				log("debug", "Blackrock Jobs > Job #" + id + " removed from recurring queue successfully");
 			} else {
@@ -245,6 +262,21 @@
 			}
 			if(!found)
 				log("error", "Blackrock Jobs > Could not find and remove Job #" + id);
+		}
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [6]) Execute Job
+	 */
+	streamFns.executeJob = function(evt){
+		if(evt.action == "execute") {
+			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
+				log("error", "Blackrock Jobs > Attempted to Execute Job But Jobs Module Not Enabled");
+				return;
+			}
+			var fnInfo = recurringFns[evt.input.id];
+			fnInfo.fn(fnInfo.input);
 		}
 		return evt;
 	}

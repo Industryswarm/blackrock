@@ -8,7 +8,7 @@
 ;!function(undefined) {
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log;
+	var isnode, ismod, log, instances = {};
 
 	/**
 	 * (Constructor) Initialises the module
@@ -18,7 +18,7 @@
 		isnode = isnodeObj, ismod = new isnode.ISInterface("WebSockets"), log = isnode.module("logger").log;
 		log("debug", "Blackrock WebSockets Interface > Initialising...");
 		ismod.startInterface = startInterface;
-		//ismod.startInterfaces();
+		ismod.startInterfaces();
 		return ismod;
 	}
 
@@ -39,15 +39,16 @@
 			log("startup","WebSockets Interface Module > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers.");
 			return;
 		}
-		var httpInterface = isnode.module("http", "interface").get(cfg.httpInterface);
 		var	WebSocket = require('./support/ws/ws');
 		var timeoutCounter = 0;
 		var timeout = 10000;
 		var intervalObject = setInterval(function(){
 			timeoutCounter = timeoutCounter + 100;
+			var httpInterface = isnode.module("http", "interface").get(cfg.httpInterface);
 			if(httpInterface.server && httpInterface.listening == true){
 				clearInterval(intervalObject);
 				var server = httpInterface.server;
+				if(!instances[name]) { instances[name] = {}; }
 				instances[name].wss = new WebSocket.Server({server});
 				listen(instances[name].wss);
 				log("startup","WebSockets Interface > Started, Bound to HTTP Server Interface and Listening.");
@@ -58,7 +59,7 @@
 				log("error","WebSockets Interface > Error binding to HTTP interface.");
 				return false;
 			}
-		},5);
+		},100);
 	}
 
 	/**
