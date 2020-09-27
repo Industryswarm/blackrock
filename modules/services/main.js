@@ -15,7 +15,7 @@
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, ISService, log, map, orphans, services = {}, config;
+	var isnode, ismod, ISService, log, map, orphans, services = {}, config, util;
 	var loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
 
 
@@ -37,7 +37,8 @@
 	 * @param {object} isnode - The parent isnode object
 	 */
 	var init = function(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), log = isnode.module("logger").log, config = isnode.cfg(), map = {}, orphans = {};
+		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), util = isnode.module("utilities");
+		log = isnode.module("logger").log, config = isnode.cfg(), map = {}, orphans = {};
 		log("debug", "Blackrock Services > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		ISService = new isnode.ISMod().extend({ constructor: function() { return; } });
@@ -74,15 +75,20 @@
 				const stream1 = stream.pipe(
 
 					// Fires once on server initialisation:
-					op.map(evt => { if(evt) return streamFns.setupUnloadMethod(evt); }),
-					op.map(evt => { if(evt) return streamFns.setupSearchMethod(evt); }),
-					op.map(evt => { if(evt) return streamFns.setupServiceEndpoint(evt); }),
+					op.map(evt => { if(evt) return streamFns.bindUnloadMethod(evt); }),
+					op.map(evt => { if(evt) return streamFns.bindSearchMethod(evt); }),
+					op.map(evt => { if(evt) return streamFns.bindServiceEndpoint(evt); }),
+					streamFns.bindSupportMethods,
 					streamFns.loadServices,
+
+					// Fires once per loaded service:
 					streamFns.fetchControllerNames,
-					op.map(evt => { if(evt) return streamFns.preProcessControllers(evt); }),
-					op.map(evt => { if(evt) return streamFns.removeInvalidControllers(evt); }),
-					op.map(evt => { if(evt) return streamFns.setBasePathCtrl(evt); }),
+					streamFns.preProcessControllers,
+					streamFns.removeInvalidControllers,
+					streamFns.setBasePathCtrl,
 					streamFns.generateControllerEvents,
+
+					// Fires once per controller within each loaded service:
 					streamFns.loadControllerFiles,
 					streamFns.setBasePathAndPattern,
 					streamFns.checkIfWildcardPath,
@@ -108,7 +114,7 @@
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
-					// Fires once on server initialisation:
+					// Fires once per service route search query:
 					op.map(evt => { if(evt) return streamFns.parseSearchObject(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupHosts(evt); }),
 					streamFns.generateServiceEvents,
@@ -141,10 +147,10 @@
 	 */
 
 	/**
-	 * (Internal > Stream Methods [1]) Setup Unload Method
+	 * (Internal > Stream Methods [1]) Bind Unload Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupUnloadMethod = function(evt){
+	streamFns.bindUnloadMethod = function(evt){
 		ismod.unload = function(){
 			var closeControllers = function closeControllers(cb) {
 				var ctrlCount = 0, counter = 0;
@@ -185,10 +191,10 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [2]) Setup Search Method
+	 * (Internal > Stream Methods [2]) Bind Search Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupSearchMethod = function(evt){
+	streamFns.bindSearchMethod = function(evt){
 		/**
 		 * (External) Searches for a Controller
 		 *
@@ -210,36 +216,46 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [3]) Setup Service Endpoint
+	 * (Internal > Stream Methods [3]) Bind Service Endpoint
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupServiceEndpoint = function(evt){
+	streamFns.bindServiceEndpoint = function(evt){
+
 		/**
 		 * (Internal) Middleware Router
 		 *
 		 * @param {object} req - Request Object
 		 * @param {object} res - Response Object
 		 */
-		var middleware = (function(req, res){
-			var stackCounter = 0;
-			return function (req, res) {
-				if(middleware.stack[stackCounter]) {
-					middleware.stack[stackCounter](req, res, function(){
-						stackCounter++;
-						if(middleware.stack[stackCounter]) { middleware(req, res) }
-						else { middleware.handler(req, res); stackCounter = 0; }
-					});
-				} else {
-					middleware.handler(req, res);
-					stackCounter = 0;
-				}
+		evt.MiddlewareRouter = new isnode.Base().extend({
+			constructor: function() {
+				var self = this;
+				self.myRouter = (function(req, res){
+					var stackCounter = 0;
+					return function (req, res) {
+						if(self.myRouter.stack[stackCounter]) {
+							self.myRouter.stack[stackCounter](req, res, function(){
+								stackCounter++;
+								if(self.myRouter.stack[stackCounter]) { 
+									self.myRouter(req, res) 
+								} else { 
+									self.myRouter.handler(req, res); 
+									stackCounter = 0;
+								}
+							});
+						} else {
+							self.myRouter.handler(req, res);
+							stackCounter = 0;
+						}
+					}
+				})();
+				self.myRouter.stack = [];
+				self.myRouter.handler = null;
+				self.myRouter.use = function(fn) { self.myRouter.stack.push(fn) };
+				self.myRouter.handle = function(fn) { self.myRouter.handler = fn }
+				self.myRouter.count = function() { return self.myRouter.stack.length }
 			}
-		})();
-		middleware.stack = [];
-		middleware.handler = null;
-		middleware.use = function(fn) { middleware.stack.push(fn) };
-		middleware.handle = function(fn) { middleware.handler = fn }
-		middleware.count = function() { return middleware.stack.length }
+		});
 
 		/**
 		 * (External) Gets A Service Object (By Name)
@@ -264,7 +280,7 @@
 				if(options && options.port) { var port = options.port; }
 				var host = services[name].cfg.host;
 				if(services[name].cfg.basePath) { var basePath = services[name].cfg.basePath; }
-				else if (isnode.cfg().loader && isnode.cfg().loader.basePath) { var basePath = isnode.cfg().loader.basePath; }
+				else if (isnode.cfg().core && isnode.cfg().core.basePath) { var basePath = isnode.cfg().core.basePath; }
 				else { var basePath = ""; }
 				if(options && options.full == true){
 					if(!protocol) { var protocol = "http"; }
@@ -277,8 +293,16 @@
 					return basePath + path;				
 				}
 			}
-			service.middleware = middleware;
-			service.use = middleware.use;
+			service.vars = {};
+			service.vars.get = function(key) {
+				return services[name].vars[key];
+			}
+			service.vars.set = function(key, val) {
+				services[name].vars[key] = val;
+				return true;
+			}			
+			service.middleware = services[name].middleware;
+			service.use = service.middleware.use;
 			return service;
 		}
 		log("debug", "Blackrock Services > [3] Setup & Attached 'service' Method To This Module (incl. Setting Up Middleware)");
@@ -286,21 +310,72 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [4]) Load Services
+	 * (Internal > Stream Methods [4]) Bind Support Methods
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.bindSupportMethods = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					log("debug","Blackrock Services > [4] Binding Support Methods");
+					ismod.serviceStats = function(name) {
+						var stats = {};
+						stats.servicesRouteCount = 0;
+						if(!name) {
+							stats.servicesCount = Object.keys(services).length;
+							if(isnode.module("utilities")) { stats.servicesMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services); }
+						} else {
+							if(services[name]) { 
+								stats.servicesCount = 1; 
+								if(isnode.module("utilities")) { stats.servicesMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services[name]); }
+							} else { 
+								stats.servicesCount = 0; 
+								stats.servicesMemoryUse = 0;
+							}
+
+						}
+						stats.services = {};
+						for (var service in services) {
+							if((name && service == name) || !name) {
+								stats.services[service] = {};
+								if(isnode.module("utilities")) { stats.services[service].serviceMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services[service]); }
+								if(services[service].routes) {
+									stats.services[service].serviceRouteCount = services[service].routes.length;
+									stats.servicesRouteCount += services[service].routes.length;
+								}
+							}
+						}
+						return stats;
+					}
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [5]) Load Services
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.loadServices = function(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("startup","Blackrock Services > [4] Enumerating and loading services...");
+					log("startup","Blackrock Services > [5] Enumerating and loading services...");
 					var loadService = function(serviceName) {
 			        	if(fs.existsSync(basePath + "services/" + serviceName + "/service.json") === true) {
-			        		log("startup","Blackrock Services > [4a] Loading " + serviceName + " service...");
-			            	services[serviceName] = new ISService();
-			            	services[serviceName].cfg = require(basePath + "services/" + serviceName + "/service.json");
-			            	evt.service = serviceName;
-			               	observer.next(evt);
+			        		var cfg = require(basePath + "services/" + serviceName + "/service.json");
+			        		if(cfg.active) {
+				        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...");
+				            	services[serviceName] = new ISService();
+				            	services[serviceName].cfg = require(basePath + "services/" + serviceName + "/service.json");
+				            	var middlewareRouter = new evt.MiddlewareRouter();
+				            	services[serviceName].middleware = middlewareRouter.myRouter;
+				            	evt.service = serviceName;
+				            	process.nextTick(function(){ observer.next({ service: serviceName }); });
+				            }
 			        	}
 			        }
 					if(config.services.runtime.services.allowLoad == true){ ismod.loadService = loadService; }
@@ -313,18 +388,37 @@
 		});
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
-	 * (Internal > Stream Methods [5]) Fetch Controller Names
+	 * =====================================
+	 * Services Stream Processing Functions
+	 * (Fires Once Per Loaded Service)
+	 * =====================================
+	 */
+
+	/**
+	 * (Internal > Stream Methods [6]) Fetch Controller Names
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.fetchControllerNames = function(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("startup","Blackrock Services > [5] Building routes for " + evt.service + " service.");
+					log("startup","Blackrock Services > [6] Building routes for " + evt.service + " service.");
 					if(services[evt.service].routes) {
-						log("startup","Blackrock Services > [5a] Service Routes for " + evt.service + " Have Already Been Built");
-						return {success: false, message: "Service Routes for " + evt.service + " Have Already Been Built"};
+						log("startup","Blackrock Services > [6a] Service Routes for " + evt.service + " Have Already Been Built");
+						return;
 					}
 					if(services[evt.service].cfg.routing && (services[evt.service].cfg.routing == "auto") || !services[evt.service].cfg.routing){
 						var filewalker = require("./support/filewalker.js");
@@ -344,93 +438,112 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [6]) Pre-Process Controllers
+	 * (Internal > Stream Methods [7]) Pre-Process Controllers
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.preProcessControllers = function(evt){
-		if(evt.fileWalkerErr){throw evt.fileWalkerErr;}
-		evt.dataPreProcess = evt.data;
-		if(!evt.data){ return {success: false, message: "No controllers exist for the " + evt.service + " service."}; }
-		evt.data = [];
-		evt.basePath = [];
-		for (var i = 0; i < evt.dataPreProcess.length; i++) {
-			if(!evt.dataPreProcess[i].endsWith(".DS_Store")){ evt.data.push(evt.dataPreProcess[i]); }
-			if(evt.dataPreProcess[i].endsWith("controller.js")){ evt.basePath.push(evt.dataPreProcess[i].substring(0, evt.dataPreProcess[i].length - 14)); }
-		}
-		evt.basePath.sort(function(a, b) {
-			return a.length - b.length || a.localeCompare(b);
-		});
-		evt.controllerBasePath = evt.basePath[0];
-		log("debug","Blackrock Services > [6] Controllers Have Been Pre-Processed");
-		return evt;
-	}
-
-	/**
-	 * (Internal > Stream Methods [7]) Remove Invalid Controllers
-	 * @param {object} evt - The Request Event
-	 */
-	streamFns.removeInvalidControllers = function(evt){
-		for (i = 0; i < evt.data.length; i++) { 
-			evt.data[i] = evt.data[i].replace(evt.controllerBasePath, "");
-			if (evt.data[i].endsWith("controller.js") && evt.data[i] != "/controller.js") { delete evt.data[i]; }
-			else if (evt.data[i].endsWith("controller.js") && evt.data[i] == "/controller.js") { evt.data[i] = "/"; }
-		}
-		log("debug","Blackrock Services > [7] Invalid Controllers Have Been Removed");
-		return evt;
-	}
-
-	/**
-	 * (Internal > Stream Methods [8]) Set Base Path Controller
-	 * @param {object} evt - The Request Event
-	 */
-	streamFns.setBasePathCtrl = function(evt){
-		services[evt.service].routes = [];
-		if(services[evt.service].cfg.basePath){
-			var pathBits = services[evt.service].cfg.basePath.split("/");
-			var pathBitsCount = pathBits.length;
-			for (var i = 0; i < pathBitsCount - 1; i++) {
-				if(i == 0 && pathBits[i] == "")
-					var urls_piece = "/" + pathBits[0];
-				else
-					var urls_piece = "";
-				for (var j = 1; j <= i; j++) { 
-					urls_piece += "/" + pathBits[j]; 
-				};
-				var ctrl = {
-					"init": function(isnodeObj) {
-						return ctrl;
-					},
-					"get": function(req, res) {
-						res.redirect(services[evt.service].cfg.basePath);
+	streamFns.preProcessControllers = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					log("debug","Blackrock Services > [7] Controllers Are Being Pre-Processed (" + evt.service + ")");
+					if(evt.fileWalkerErr){throw evt.fileWalkerErr;}
+					evt.dataPreProcess = evt.data;
+					if(!evt.data){ return {success: false, message: "No controllers exist for the " + evt.service + " service."}; }
+					evt.data = [];
+					evt.basePath = [];
+					for (var i = 0; i < evt.dataPreProcess.length; i++) {
+						if(!evt.dataPreProcess[i].endsWith(".DS_Store")){ evt.data.push(evt.dataPreProcess[i]); }
+						if(evt.dataPreProcess[i].endsWith("controller.js")){ evt.basePath.push(evt.dataPreProcess[i].substring(0, evt.dataPreProcess[i].length - 14)); }
 					}
-				}
-				services[evt.service].routes.push({
-					path: "",
-					pattern: urls_piece,
-					controller: ctrl,
-					service: evt.service
-				});
-			}
-		}
-		if(!loadMessages["1-8"]) {
-			loadMessages["1-8"] = true;
-			log("debug","Blackrock Services > [8] Have Set Base Path Controller & Service Routes");
-		}
-		return evt;
+					evt.basePath.sort(function(a, b) {
+						return a.length - b.length || a.localeCompare(b);
+					});
+					evt.controllerBasePath = evt.basePath[0];
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
 	}
 
 	/**
-	 * (Internal > Stream Methods [9]) Generate Controller Events
+	 * (Internal > Stream Methods [8]) Remove Invalid Controllers
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.removeInvalidControllers = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					for (i = 0; i < evt.data.length; i++) { 
+						evt.data[i] = evt.data[i].replace(evt.controllerBasePath, "");
+						if (evt.data[i].endsWith("controller.js") && evt.data[i] != "/controller.js") { delete evt.data[i]; }
+						else if (evt.data[i].endsWith("controller.js") && evt.data[i] == "/controller.js") { evt.data[i] = "/"; }
+					}
+					log("debug","Blackrock Services > [8] Invalid Controllers Have Been Removed (" + evt.service + ")");
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [9]) Set Base Path Controller
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setBasePathCtrl = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					services[evt.service].routes = [];
+					services[evt.service].vars = {};
+					if(services[evt.service].cfg.basePath){
+						var pathBits = services[evt.service].cfg.basePath.split("/");
+						var pathBitsCount = pathBits.length;
+						for (var i = 0; i < pathBitsCount - 1; i++) {
+							if(i == 0 && pathBits[i] == "")
+								var urls_piece = "/" + pathBits[0];
+							else
+								var urls_piece = "";
+							for (var j = 1; j <= i; j++) { 
+								urls_piece += "/" + pathBits[j]; 
+							};
+							var ctrl = {
+								"init": function(isnodeObj) {
+									return ctrl;
+								},
+								"get": function(req, res) {
+									res.redirect(services[evt.service].cfg.basePath);
+								}
+							}
+							services[evt.service].routes.push({
+								path: "",
+								pattern: urls_piece,
+								controller: ctrl,
+								service: evt.service
+							});
+						}
+					}
+					log("debug","Blackrock Services > [9] Have Set Base Path Controller & Service Routes");
+					observer.next(evt);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [10]) Generate Controller Events
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.generateControllerEvents = function(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					if(!loadMessages["1-9"]) {
-						loadMessages["1-9"] = true;
-						log("debug","Blackrock Services > [9] Controller Events Being Generated");
-					}
+					log("debug","Blackrock Services > [10] Controller Events Being Generated");
 					for (i = 0; i < evt.data.length; i++) { 
 						if(evt.data[i]){
 							evt.path = evt.controllerBasePath + evt.data[i] + "/controller.js"
@@ -446,8 +559,27 @@
 		});
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
-	 * (Internal > Stream Methods [10]) Load Controller Files in to Memory
+	 * ===================================================
+	 * Services Stream Processing Functions
+	 * (Fires Once Per Controller For Each Loaded Service)
+	 * ===================================================
+	 */
+
+	/**
+	 * (Internal > Stream Methods [11]) Load Controller Files in to Memory
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.loadControllerFiles = function(source){
@@ -458,41 +590,85 @@
 					else { var type = "require"; var typeString = "Direct"; }
 					if(!loadMessages["1-10"]) {
 						loadMessages["1-10"] = true;
-						log("debug","Blackrock Services > [10] Loading Controller Files In To Memory (" + typeString + ")");
+						log("debug","Blackrock Services > [11] Loading Controller Files In To Memory (" + typeString + ")");
 					}
 					var fs = require("fs");
 					if (fs.existsSync(evt.path)) {
-						var prepareRestrictedISNode = function(event) {
+						var prepareRestrictedCore = function(event) {
+							var srv = event.service;
 							if (event.controller.init && typeof event.controller.init === 'function') { 
 								if(event.controller.init.length >= 1) {
-									var restrictedISNode = {
-		    							cfg: isnode.cfg,
-		    							pkg: isnode.pkg,
-		    							module: isnode.module,
-		    							globals: isnode.globals,
-		    							getBasePath: isnode.getBasePath
-		    						};
-		    						if(config && config.services && config.services.allowShutdownFromControllers) {
-		    							restrictedISNode.shutdown = isnode.shutdown;
-		    						}
-		    						event.controller.init(restrictedISNode);
-								} else { 
-									event.controller.init(); 
-								}
+
+									var RestrictedCore = new isnode.Base().extend({
+
+										// Permutation of this RestrictedCore Object is Dictated By Config:
+										constructor: function(cfg) {
+											self = this; 
+											if(cfg.globals) { self.globals = isnode.globals; }
+											if(cfg.shutdown) { self.shutdown = isnode.shutdown; }
+											if(cfg.cfg) { self.cfg = isnode.cfg; }
+											if(cfg.pkg) { self.pkg = isnode.pkg; }
+											if(cfg.getBasePath) { self.getBasePath = isnode.getBasePath; }
+											if(cfg.getCurrentService) { self.pkg = function() { return srv; } }
+											return self;
+										},
+
+										// Config Governs Which Modules & Methods Within Are Available to The Controller:
+		    							module: function(name) {
+		    								if(util.prop(config, "services.allow.modules")) { var mods = config.services.allow.modules; }
+		    								else { var mods = {}; }
+		    								if(!mods) { return mods; }
+		    								var methods = mods[name], loadedMethods = {}, fnNames = {};
+		    								for (var i = 0; i < methods.length; i++) {
+	    										if(isnode.module(name) && isnode.module(name)[methods[i]]) {
+	    											loadedMethods[methods[i]] = isnode.module(name)[methods[i]];
+	    										} else if(isnode.module(name) && methods[i].includes(".")) {
+	    											var methodSplit = methods[i].split("."), nestedObject;
+	    											util.assign(loadedMethods, methodSplit, util.prop(isnode.module(name), methods[i]));
+	    										} else if(isnode.module(name) && methods[i].includes("(")) {
+	    											var splitOne = methods[i].split("("), splitTwo = splitOne[1].split(")");
+	    											var methodName = splitOne[0], fnName = splitTwo[0];
+	    											loadedMethods[methodName] = util.prop(isnode.module(name), methods[i]);
+	    											fnNames[methodName] = fnName;
+	    										}
+		    								}
+		    								if(loadedMethods && !fnNames) {
+		    									return loadedMethods;
+		    								} else {
+		    									var filteredMethods = loadedMethods;
+		    									for (var methodName in loadedMethods) {
+		    										if(fnNames[methodName] == "serviceName") {
+		    											var newService = {}, myService = isnode.module(name)[methodName](srv);
+		    											for(var subMethod in myService) { newService[subMethod] = myService[subMethod]; };
+		    											filteredMethods[methodName] = function AutoExecutionHandler(args) { return newService; }
+		    										} else {
+		    											filteredMethods[methodName] = loadedMethods[methodName];
+		    										}
+		    									}
+		    									return filteredMethods;
+		    								}
+		    							}
+		    						});
+									if(util.prop(config, "services.allow")) { var restrictedCore = new RestrictedCore(config.services.allow) }								
+		    						else { var restrictedCore = {}; }
+		    						event.controller.init(restrictedCore);
+								} else { event.controller.init(); }
 								observer.next(event);
 							} else { observer.next(event); }
 						}
 						if(type == "sandbox") {
 							var event = evt;
-							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i }, function(obj) {
+							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i, "service": evt.service }, function(obj) {
 								event.controller = obj.ctrl;
 								event.path = obj.file;
 								event.i = obj.i;
-								prepareRestrictedISNode(event);
+								event.service = obj.service;
+								prepareRestrictedCore(event);
+								observer.next(event);
 							});
 						} else {
 							evt.controller = require(evt.path);
-							prepareRestrictedISNode(evt);
+							prepareRestrictedCore(evt);
 						}
 					} else { 
 						evt.controller = {}; 
@@ -506,7 +682,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [11]) Set Base Path & Pattern
+	 * (Internal > Stream Methods [12]) Set Base Path & Pattern
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.setBasePathAndPattern = function(source){
@@ -515,10 +691,10 @@
 				next(evt) {
 					if(!loadMessages["1-11"]) {
 						loadMessages["1-11"] = true;
-						log("debug","Blackrock Services > [11] Base Path & Pattern Being Set Now");
+						log("debug","Blackrock Services > [12] Base Path & Pattern Being Set Now");
 					}
-					if(!services[evt.service].cfg.basePath && isnode.cfg().loader && isnode.cfg().loader.basePath){
-						services[evt.service].cfg.basePath = isnode.cfg().loader.basePath;
+					if(!services[evt.service].cfg.basePath && isnode.cfg().core && isnode.cfg().core.basePath){
+						services[evt.service].cfg.basePath = isnode.cfg().core.basePath;
 					}
 					if(services[evt.service].cfg.basePath){ evt.pattern = "" + services[evt.service].cfg.basePath + evt.data[evt.i]; }
 					else { evt.pattern = "" + evt.data[evt.i]; }
@@ -531,7 +707,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [12]) Check If Wildcard Path
+	 * (Internal > Stream Methods [13]) Check If Wildcard Path
 	 * @param {observable} source - The Source Observable
 	 */
 	streamFns.checkIfWildcardPath = function(source){
@@ -547,7 +723,7 @@
 					}
 					if(!loadMessages["1-12"]) {
 						loadMessages["1-12"] = true;
-						log("debug","Blackrock Services > [12] Checked If Wildcard Path");
+						log("debug","Blackrock Services > [13] Checked If Wildcard Path");
 					}
 					observer.next(evt);
 				},
@@ -558,7 +734,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [13]) Build Routes Object
+	 * (Internal > Stream Methods [14]) Build Routes Object
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.buildRoutesObject = function(source){
@@ -577,7 +753,7 @@
 					}
 					if(!loadMessages["1-13"]) {
 						loadMessages["1-13"] = true;
-						log("debug","Blackrock Services > [13] Routes Added To Routes Object");
+						log("debug","Blackrock Services > [14] Routes Added To Routes Object");
 					}
 					observer.next(evt);
 				},
@@ -586,6 +762,9 @@
 			return () => subscription.unsubscribe();
 		});
 	}
+
+
+
 
 
 
@@ -628,8 +807,8 @@
 	streamFns.setupHosts = function(evt){
 		evt.results = [], evt.hosts = [];
 		for (var sv in services) { 
-			if(!services[sv].cfg.host && isnode.cfg().loader && isnode.cfg().loader.host) {
-				services[sv].cfg.host = isnode.cfg().loader.host;
+			if(!services[sv].cfg.host && isnode.cfg().core && isnode.cfg().core.host) {
+				services[sv].cfg.host = isnode.cfg().core.host;
 			}
 			evt.hosts.push(services[sv].cfg.host); 
 		}
@@ -646,10 +825,17 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug","Blackrock Services > [3] Generating Service Events...");
+					var hostname = evt.hostname, url = evt.url, eServices = evt.services, hosts = evt.hosts;
 					for(var service in services) {
-						if(evt.hostname == services[service].cfg.host) { evt.srv = service; }
-						else if (services[service].cfg.host == "*" && !evt.hosts.includes(evt.hostname)) { evt.srv = service; }
-						observer.next(evt);
+						var evt2 = {
+							hostname: hostname,
+							url: url,
+							services: eServices,
+							hosts: hosts
+						};
+						if(hostname == services[service].cfg.host) { evt2.srv = service; }
+						else if (services[service].cfg.host == "*" && !evt.hosts.includes(hostname)) { evt2.srv = service; }
+						if(evt2.srv) { observer.next(evt2); }
 					}
 				},
 				error(error) { observer.error(error); }
@@ -758,6 +944,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.checkAndMatch = function(evt){
+		if(!evt.results) { evt.results = []; }
 		if(evt.override) { evt.currentRoute = evt.override; }
 	    if(evt.match && evt.currentRoute){ evt.results.push({match: evt.currentRoute, param: evt.param}); }
 		if(evt.results.length != 1) {

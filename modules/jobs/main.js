@@ -171,9 +171,9 @@
 						observer.next(msg);
 					}
 					evt.methods = {}, ismod.jobs = {};
-					evt.methods.add = ismod.jobs.add = add;
-					evt.methods.remove = ismod.jobs.remove = remove;
-					evt.methods.execute = ismod.jobs.execute = execute;
+					evt.methods.add = ismod.jobs.add = ismod.add = add;
+					evt.methods.remove = ismod.jobs.remove = ismod.remove = remove;
+					evt.methods.execute = ismod.jobs.execute = ismod.execute = execute;
 					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'");
 				},
 				error(error) { observer.error(error); }

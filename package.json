@@ -1,7 +1,7 @@
 {
-  "name": "isnode-blackrock",
+  "name": "is-blackrock",
   "version": "0.0.1",
-  "description": "ISNode Blackrock Next Generation Framework",
+  "description": "Blackrock Application Server Module",
   "author": {
     "name": "Darren Smith",
     "email": "darren.smith@industryswarm.com",

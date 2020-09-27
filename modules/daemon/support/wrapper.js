@@ -20,13 +20,7 @@
 
 "use strict";
 
-try {
-    var read = require("./read.js");
-    var constants = require("./constants.jsc");
-} catch(e1) {
-    try { var constants = require("./constants.js"); }
-    catch(e2) { null; };
-}
+var constants = require("./constants.js");
 
 // wrapper is spawned with no stdio attached so redirect exceptions via ipc
 var exceptionHandler = null;
@@ -38,7 +32,7 @@ process.on("uncaughtException", exceptionHandler = function(err) {
 
 // now sit and wait for options via ipc
 process.on("message", function(message) {
-
+    process.send({test: "test"});
     if (message.type == "init") {
         init(message.options);
     }
@@ -108,6 +102,11 @@ var init = function(options) {
 
     // run main module
     var setup = require(options.main);
+    /*function() { 
+        setInterval(function(){
+            null;
+        }, 1000);
+    }*/
 
     // pass options to exported function
     if (typeof setup == "function") {

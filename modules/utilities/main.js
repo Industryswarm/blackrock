@@ -39,6 +39,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Utilities"), log = isnode.module("logger").log;
+		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
 		log("debug", "Blackrock Utilities > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, ismod.crypto = {}, ismod.system = {};
 		var ISPipeline = pipelines.setupUtilities();
@@ -89,8 +90,9 @@
 					op.map(evt => { if(evt) return streamFns.setupGetMemoryUse(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupGetCpuLoad(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupGetStartTime(evt); }),
-					op.map(evt => { if(evt) return streamFns.setupGetEndTime(evt); })
-					
+					op.map(evt => { if(evt) return streamFns.setupGetEndTime(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupGetObjectMemoryUsage(evt); }),
+					op.map(evt => { if(evt) return streamFns.setupSimplify(evt); })
 				);
 				stream1.subscribe(function(res) {
 					//console.log(res);
@@ -503,7 +505,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [16]) Get Start Time
+	 * (Internal > Stream Methods [16]) Setup Get Start Time
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetStartTime = function(evt){
@@ -515,7 +517,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [17]) Get End Time
+	 * (Internal > Stream Methods [17]) Setup Get End Time
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetEndTime = function(evt){
@@ -532,9 +534,78 @@
 		return evt;
 	}
 
+	/**
+	 * (Internal > Stream Methods [18]) Setup Get Object Memory Usage
+	 * @param {object} evt - The Request Event
+	 *
+	 * Derived From: sizeof.js
+	 * A function to calculate the approximate memory usage of objects
+	 * Created by Kate Morley - http://code.iamkate.com/
+	 * http://creativecommons.org/publicdomain/zero/1.0/legalcode
+	 */
+	streamFns.setupGetObjectMemoryUsage = function(evt){
+		ismod.system.getObjectMemoryUsage = function (object) {
+			var objects = [object];
+			var size = 0;
+			for (var index = 0; index < objects.length; index ++){
+				switch (typeof objects[index]){
+				  case 'boolean': size += 4; break;
+				  case 'number': size += 8; break;
+				  case 'string': size += 2 * objects[index].length; break;
+				  case 'object':
+				    if (Object.prototype.toString.call(objects[index]) != '[object Array]'){
+				      for (var key in objects[index]) size += 2 * key.length;
+				    }
+				    for (var key in objects[index]){
+				      var processed = false;
+				      for (var search = 0; search < objects.length; search ++){
+				        if (objects[search] === objects[index][key]){
+				          processed = true;
+				          break;
+				        }
+				      }
+				      if (!processed) objects.push(objects[index][key]);
+				    }
+				}
+			}
+			return size;
+		};
+		log("debug", "Blackrock Utilities > [18] 'getObjectMemoryUsage' Method Attached To 'system' Object On This Module");
+		return evt;
+	}
 
+	/**
+	 * (Internal > Stream Methods [19]) Setup Simplify Methods
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.setupSimplify = function(evt){
 
+		// https://www.reddit.com/r/javascript/comments/9zhvuw/is_there_a_better_way_to_check_for_nested_object/
+		ismod.isUndefined = function UtilsSimplifyIsUndefined(value) {  return typeof value === 'undefined'; }
+		ismod.isNull = function UtilsSimplifyIsNull(value) { return value === null; }
+		ismod.isNil = function UtilsSimplifyIsNil(value) { return ismod.isUndefined(value) || ismod.isNull(value); }
+		ismod.path = function UtilsSimplifyPath(object, keys) {
+		  return keys.reduce((object, key) => {
+		    let value;
+		    return ismod.isNil(object) || ismod.isNil(value = object[key]) ? null : value;
+		  }, object);
+		}
+		ismod.prop = function UtilsSimplifyProp(object, key) { return ismod.path(object, key.split('.')); }
+		ismod.assign = function UtilsSimplifyAssign(obj, keyPath, value) {
+		   lastKeyIndex = keyPath.length-1;
+		   for (var i = 0; i < lastKeyIndex; ++ i) {
+		     key = keyPath[i];
+		     if (!(key in obj)){
+		       obj[key] = {}
+		     }
+		     obj = obj[key];
+		   }
+		   obj[keyPath[lastKeyIndex]] = value;
+		}
+		log("debug", "Blackrock Utilities > [19] Setup Simplify Coding Methods");
 
+		return evt;
+	}
 
 
 

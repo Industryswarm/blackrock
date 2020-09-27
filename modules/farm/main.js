@@ -13,7 +13,7 @@
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, scuttleBucketInstance;
-	var jobServer = false, serverModel, serverEmitter, farmServers = {};
+	var jobServer = false, serverModel, serverEmitter, farmServers = {}, utils = {};
 
 
 
@@ -65,10 +65,10 @@
 
 					// Fires once on server initialisation:
 					op.map(evt => { if(evt) return streamFns.loadScuttlebutt(evt); }),
-					op.map(evt => { if(evt) return streamFns.createModelAndServer(evt); }),
+					streamFns.createModelAndServer,
 					op.map(evt => { if(evt) return streamFns.persistToDisk(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupUpdateListener(evt); }),
-					op.map(evt => { if(evt) return streamFns.connectToSeed(evt); }),
+					op.map(evt => { if(evt) return streamFns.connectToSeeds(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupGetAndSetMethods(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupIsJobServer(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupEventEmitter(evt); }),
@@ -124,27 +124,45 @@
 	 * (Internal > Stream Methods [2]) Create Server
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.createModelAndServer = function(evt){
-		var sl = evt.lib.sb;
-		if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
-		if(farm.server && farm.server.port) { var port = farm.server.port; } else { var port = 8000; }
-		function create() {
-		  return new sl.ScuttleBucket()
-		    .add('model', new sl.Model())
-		    .add('events', new sl.Events("evts"))
-		}
-		scuttleBucketInstance = create();
-		evt.lib.net.createServer(function (stream) {
-			var ms = scuttleBucketInstance.createStream();
-			stream.pipe(ms).pipe(stream);
-			ms.on('error', function () { stream.destroy(); });
-			stream.on('error', function () { ms.destroy(); });
-		}).listen(port, function () {
-			log("debug", "Blackrock Farm > [2] Created New Scuttlebutt Model + TCP Server Listening On Port " + port);
+	streamFns.createModelAndServer = function(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					log("debug", "Blackrock Farm > [2] Attempting to create model and start server");
+					if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
+					if(farm.server && farm.server.port) { var port = farm.server.port; } else { var port = 8000; }
+					utils.isPortTaken(port, function(err, result){
+						if(result != false){ 
+							evt.serverNotStarted = true;
+							log("error","Blackrock Farm > Cannot start Scuttlebutt as the defined port (" + port + ") is already in use"); 
+							observer.next(evt);
+							return; 
+						}
+						var sl = evt.lib.sb;
+						function create() {
+						  return new sl.ScuttleBucket()
+						    .add('model', new sl.Model())
+						    .add('events', new sl.Events("evts"))
+						}
+						scuttleBucketInstance = create();
+						evt.lib.net.createServer(function (stream) {
+							var ms = scuttleBucketInstance.createStream();
+							stream.pipe(ms).pipe(stream);
+							ms.on('error', function () { stream.destroy(); });
+							stream.on('error', function () { ms.destroy(); });
+						}).listen(port, function () {
+							log("debug", "Blackrock Farm > Created New Scuttlebutt Model + TCP Server Listening On Port " + port);
+						});
+						serverModel = scuttleBucketInstance.get("model");
+						serverEmitter = scuttleBucketInstance.get("events");
+						observer.next(evt);
+						return;
+					});
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
 		});
-		serverModel = scuttleBucketInstance.get("model");
-		serverEmitter = scuttleBucketInstance.get("events");
-		return evt;
 	}
 
 	/**
@@ -180,13 +198,22 @@
 	 * (Internal > Stream Methods [5]) Connect To Seed
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.connectToSeed = function(evt){
+	streamFns.connectToSeeds = function(evt){
 		log("debug", "Blackrock Farm > [5] Connecting To Seed Server...");
+		var connectToSeed = function ConnectToSeed(host, port) {
+			var stream = evt.lib.net.connect(port);
+			var ms = scuttleBucketInstance.createStream();
+			stream.pipe(ms).pipe(stream);			
+		}
+		if(evt.serverNotStarted) { return evt; }
 		if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
-		if(farm.seed && farm.seed.port) { var port = farm.seed.port; } else { var port = 8000; }
-		var stream = evt.lib.net.connect(port);
-		var ms = scuttleBucketInstance.createStream();
-		stream.pipe(ms).pipe(stream);
+		if(farm.seeds) {
+			for (var i = 0; i < farm.seeds.length; i++) {
+				var host = farm.seeds[i].split(":")[0];
+				var port = farm.seeds[i].split(":")[1];
+				connectToSeed(host, port);
+			}
+		}
 		return evt;
 	}
 
@@ -318,7 +345,7 @@
 	 * If no other servers in the farm have this role then selection will be based on a vote.
 	 */
 	streamFns.toggleLocalAsJobServer = function(evt){
-		setTimeout(function(){
+		//setTimeout(function(){
 			var serverCount = 0;
 			for(var key in farmServers) { if(farmServers[key].status == "active") { serverCount++; } }
 			if(serverCount <= 1) {
@@ -327,7 +354,7 @@
 			} else {
 				log("debug", "Blackrock Farm > [12] This server is part of a farm and may be allocated the Primary Job Server role in the future");
 			}
-		}, 10000);
+		//}, 10000);
 		return evt;
 	}
 
@@ -349,6 +376,35 @@
 	streamFns.checkAndVoteOnJobServerRoles = function(evt){
 		return evt;
 	}
+
+
+
+
+
+
+
+
+
+
+
+	/**
+	 * ===============
+	 * Utility Methods
+	 * ===============
+	 */
+
+	/**
+	 * (Internal > Utilities) Checks if a port is already taken or in use
+	 * @param {integer} port - The port number to check
+	 * @param {function} cb - Callback function
+	 */
+	utils.isPortTaken = function(port, cb) {
+	  var tester = require('net').createServer()
+	  	.once('error', function (err) { if (err.code != 'EADDRINUSE') { return cb(err); }; cb(null, true); })
+	  	.once('listening', function() { tester.once('close', function() { cb(null, false) }).close(); })
+	  	.listen(port)
+	}
+
 
 
 

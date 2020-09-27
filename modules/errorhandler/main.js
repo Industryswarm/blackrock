@@ -34,8 +34,10 @@
 		isnode = isnodeObj, ismod = new isnode.ISMod("ErrorHandler"), ismod.log = log = isnode.module("logger").log;
 		log("debug", "Blackrock Error Handler > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupErrorHandler();
-		new ISPipeline({}).pipe();
+		if(isnode.cfg().errorHandler && isnode.cfg().errorHandler.enabled == true){
+			var ISPipeline = pipelines.setupErrorHandler();
+			new ISPipeline({}).pipe();
+		}
 		return ismod;
 	}
 

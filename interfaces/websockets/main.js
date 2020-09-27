@@ -45,7 +45,7 @@
 		var intervalObject = setInterval(function(){
 			timeoutCounter = timeoutCounter + 100;
 			var httpInterface = isnode.module("http", "interface").get(cfg.httpInterface);
-			if(httpInterface.server && httpInterface.listening == true){
+			if(httpInterface && httpInterface.server && httpInterface.listening == true){
 				clearInterval(intervalObject);
 				var server = httpInterface.server;
 				if(!instances[name]) { instances[name] = {}; }

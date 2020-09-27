@@ -38,6 +38,7 @@
 	 */
 	var init = function(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Daemon"), log = isnode.module("logger").log, config = isnode.cfg();
+		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
 		log("debug", "Blackrock Daemon > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var ISPipeline = pipelines.setupDaemon();
@@ -118,7 +119,7 @@
 						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received");
 						evt.name = isnode.pkg().name;
 						evt.isChildProcess = process.send;
-						if(!process.send) { process.nextTick(function(){ observer.next(evt); }); }
+						if(!process.send) {  observer.next(evt); }
 						else { log("fatal", "Blackrock Daemon > Initiated, but running in daemon mode. Terminating..."); }
 					});
 				},
@@ -186,39 +187,39 @@
 	streamFns.setupCallbacks = function(evt){
 		evt.daemon
 		    .on("starting", function() {
-		        log("startup", "Blackrock Daemon > Starting...");
+		        console.log("Blackrock Daemon > Starting...\n");
 		    })
 		    .on("started", function(pid) {
-		        log("startup", "Blackrock Daemon > Started. PID: " + pid);
+		        console.log("Blackrock Daemon > Started. PID: " + pid + "\n");
 		        process.exit();
 		    })
 		    .on("stopping", function() {
-		        log("startup", "Blackrock Daemon > Stopping...");
+		        console.log("Blackrock Daemon > Stopping...\n");
 		    })
 		    .on("running", function(pid) {
-		        log("startup", "Blackrock Daemon > Already running. PID: " + pid);
+		        console.log("Blackrock Daemon > Already running. PID: " + pid + "\n");
 		        process.exit();
 		    })
 		    .on("notrunning", function() {
-		        log("startup", "Blackrock Daemon > Not running");
+		        console.log("Blackrock Daemon > Not running\n");
 		        process.exit();
 		    })
 		    .on("error", function(err) {
-		        log("startup", "Blackrock Daemon > Failed to start:  " + err.message);
+		        console.log("Blackrock Daemon > Failed to start:  " + err.message + "\n");
 		        process.exit();
 		    });
 	    if(evt.status == "restart") {
 		   	evt.daemon.on("stopped", function(pid) {
-		        log("startup", "Blackrock Daemon > Stopped");
+		        console.log("Blackrock Daemon > Stopped\n");
 		        evt.daemon.start();
 		    });
 	    } else {
     		evt.daemon.on("stopped", function(pid) {
-		        log("startup", "Blackrock Daemon > Stopped");
+		        console.log("Blackrock Daemon > Stopped\n");
 		        process.exit();
 		    });
 	    }
-	    log("debug", "Blackrock Daemon > [4] Callbacks Set For All Execution States");
+	    log("debug", "Blackrock Daemon > [4] Setup callbacks for daemon");
 	    return evt;
 	}
 
@@ -228,11 +229,10 @@
 	 */
 	streamFns.checkRoot = function(evt){
 		if((evt.status == "start" || evt.status == "stop" || evt.status == "restart") && process.getuid() != 0) {
-			log("error", "Blackrock Daemon > Expected to run as root");
+			console.log("Blackrock Daemon > Expected to run as root\n");
 			process.exit();
 			return;
 		} else {
-			log("debug", "Blackrock Daemon > [5] Checked and verified that user is root");
 			return evt;
 		}
 	}
@@ -244,7 +244,6 @@
 	streamFns.startDaemon = function(evt){
 		if(evt.status == "start") {
 			evt.daemon.start();
-			log("debug", "Blackrock Daemon > [6] Daemon Started");
 		}
 		return evt;
 	}
@@ -256,7 +255,6 @@
 	streamFns.stopDaemon = function(evt){
 		if(evt.status == "stop") {
 			evt.daemon.stop();
-			log("debug", "Blackrock Daemon > [6] Daemon Stopped");
 		}
 		return evt;
 	}
@@ -270,7 +268,6 @@
 			var status = evt.daemon.status();
 			if(status){ evt.daemon.stop(); } 
 			else { evt.daemon.start(); }
-			log("debug", "Blackrock Daemon > [6] Daemon Restarted");
 		}
 		return evt;
 	}
@@ -282,13 +279,12 @@
 	streamFns.statusDaemon = function(evt){
 		if(evt.status == "status") {
 			if(evt.daemon.status()){
-				log("startup", "Blackrock Daemon > Daemon is running.");
+				console.log("Blackrock Daemon > Daemon is running\n");
 				process.exit();
 			} else {
-				log("startup", "Blackrock Daemon > Daemon is not running.");
+				console.log("Blackrock Daemon > Daemon is not running\n");
 				process.exit();
 			}
-			log("debug", "Blackrock Daemon > [6] Daemon Status Returned");
 		}
 		return evt;
 	}

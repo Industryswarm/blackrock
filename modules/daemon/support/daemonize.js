@@ -139,7 +139,6 @@ Daemon.prototype.start = function(listener) {
 
     // wrapper.js will exit with special exit codes
     child.once("exit", this._childExitHandler = function(code, signal) {
-
         child.removeListener("disconnect", this._childDisconnectHandler);
         clearTimeout(this._childDisconnectTimer);
 
