@@ -303,7 +303,7 @@ export declare class Observer {
  * const proxy = new Proxy(new Router, new Dealer)
  * await proxy.frontEnd.bind("tcp://*:3001")
  * await proxy.backEnd.bind("tcp://*:3002")
- * setTimeout(() => proxy.terminate(), 5000)
+ * setTimeout(zeromqNativeTimeout() => proxy.terminate(), 5000)
  * await proxy.run()
  * ```
  *

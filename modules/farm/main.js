@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function FarmWrapper(undefined) {
 
 
 
@@ -30,7 +30,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function FarmInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Farm"), ismod.log = log = isnode.module("logger").log;
 		log("debug", "Blackrock Farm > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -54,11 +54,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Farm
 	 */
-	pipelines.setupFarm = function(){
+	pipelines.setupFarm = function FarmSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function FarmSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function FarmSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function FarmSetupPipelinePipe() {
 				log("debug", "Blackrock Farm > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -79,7 +79,7 @@
 					op.map(evt => { if(evt) return streamFns.checkAndVoteOnJobServerRoles(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function FarmSetupPipelineSubscribeCallback(res) {
 					//console.log(res);
 				});
 			}
@@ -106,7 +106,7 @@
 	 * (Internal > Stream Methods [1]) Setup Module
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.loadScuttlebutt = function(evt){
+	streamFns.loadScuttlebutt = function FarmLoadScuttlebutt(evt){
 		evt.lib = {
 			sb: {
 				Model: require("./support/scuttlebutt/model"),
@@ -124,14 +124,14 @@
 	 * (Internal > Stream Methods [2]) Create Server
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.createModelAndServer = function(source){
+	streamFns.createModelAndServer = function FarmCreateModelAndServer(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Farm > [2] Attempting to create model and start server");
 					if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
 					if(farm.server && farm.server.port) { var port = farm.server.port; } else { var port = 8000; }
-					utils.isPortTaken(port, function(err, result){
+					utils.isPortTaken(port, function FarmCreateModelAndServerPortTakenCallback(err, result){
 						if(result != false){ 
 							evt.serverNotStarted = true;
 							log("error","Blackrock Farm > Cannot start Scuttlebutt as the defined port (" + port + ") is already in use"); 
@@ -139,17 +139,17 @@
 							return; 
 						}
 						var sl = evt.lib.sb;
-						function create() {
+						var create = function FarmCreateModelAndServerCreateScuttleBucket() {
 						  return new sl.ScuttleBucket()
 						    .add('model', new sl.Model())
 						    .add('events', new sl.Events("evts"))
 						}
 						scuttleBucketInstance = create();
-						evt.lib.net.createServer(function (stream) {
+						evt.lib.net.createServer(function FarmCreateModelAndServerCreateServerCallback(stream) {
 							var ms = scuttleBucketInstance.createStream();
 							stream.pipe(ms).pipe(stream);
-							ms.on('error', function () { stream.destroy(); });
-							stream.on('error', function () { ms.destroy(); });
+							ms.on('error', function FarmCreateModelAndServerOnMSError() { stream.destroy(); });
+							stream.on('error', function FarmCreateModelAndServerOnStreamError() { ms.destroy(); });
 						}).listen(port, function () {
 							log("debug", "Blackrock Farm > Created New Scuttlebutt Model + TCP Server Listening On Port " + port);
 						});
@@ -169,7 +169,7 @@
 	 * (Internal > Stream Methods [3]) Persist To Disk (NOT WORKING)
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.persistToDisk = function(evt){
+	streamFns.persistToDisk = function FarmPersistToDisk(evt){
 		log("debug", "Blackrock Farm > [3] Setting Up Disk Persistance...");
 		if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
 		if(farm.server && farm.server.cache) { var cache = farm.server.cache; } else { var cache = null; }
@@ -177,7 +177,7 @@
 			var file = isnode.getBasePath() + "/cache/" + cache;
 			var fs = require('fs');
 			fs.createReadStream(file).pipe(scuttleBucketInstance.createWriteStream());
-			scuttleBucketInstance.on('sync', function () {
+			scuttleBucketInstance.on('sync', function FarmPersistToDiskSyncCallback() {
 				scuttleBucketInstance.createReadStream().pipe(fs.createWriteStream(file));
 			});
 		}
@@ -188,9 +188,9 @@
 	 * (Internal > Stream Methods [4]) Setup Update Listener
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupUpdateListener = function(evt){
+	streamFns.setupUpdateListener = function FarmSetupUpdateListener(evt){
 		log("debug", "Blackrock Farm > [4] Setting Up Update Listener...");
-		ismod.updateListener = function(fn) { return serverModel.on('update', fn); }
+		ismod.updateListener = function FarmUpdateListener(fn) { return serverModel.on('update', fn); }
 		return evt;
 	}	
 
@@ -198,9 +198,9 @@
 	 * (Internal > Stream Methods [5]) Connect To Seed
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.connectToSeeds = function(evt){
+	streamFns.connectToSeeds = function FarmConnectToSeeds(evt){
 		log("debug", "Blackrock Farm > [5] Connecting To Seed Server...");
-		var connectToSeed = function ConnectToSeed(host, port) {
+		var connectToSeed = function FarmConnectToSeed(host, port) {
 			var stream = evt.lib.net.connect(port);
 			var ms = scuttleBucketInstance.createStream();
 			stream.pipe(ms).pipe(stream);			
@@ -221,10 +221,10 @@
 	 * (Internal > Stream Methods [6]) Setup "Get From Store" & "Set Against Store" Methods
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetAndSetMethods = function(evt){
+	streamFns.setupGetAndSetMethods = function FarmSetupGetAndSetMethods(evt){
 		log("debug", "Blackrock Farm > [6] Setting Up Model Get & Set Methods...");
-		ismod.get = function(key) { return serverModel.get(key); }
-		ismod.set = function(key, value) { return serverModel.set(key, value); }
+		ismod.get = function FarmGetDataValue(key) { return serverModel.get(key); }
+		ismod.set = function FarmSetDataValue(key, value) { return serverModel.set(key, value); }
 		return evt;
 	}
 
@@ -232,9 +232,9 @@
 	 * (Internal > Stream Methods [7]) Setup the "isJobServer()" Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupIsJobServer = function(evt){
+	streamFns.setupIsJobServer = function FarmSetupIsJobServer(evt){
 		log("debug", "Blackrock Farm > [7] Setting Up 'isJobServer' Method...");
-		ismod.isJobServer = function() { return jobServer; }
+		ismod.isJobServer = function FarmIsJobServer() { return jobServer; }
 		return evt;
 	}
 
@@ -242,16 +242,16 @@
 	 * (Internal > Stream Methods [8]) Setup Distributed Event Emitter
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupEventEmitter = function(evt){
+	streamFns.setupEventEmitter = function FarmSetupEventEmitter(evt){
 		log("debug", "Blackrock Farm > [8] Setting Up Event Emitter...");
 		ismod.events = {
-			emit: function(event, data) {
+			emit: function FarmEventEmitterEmit(event, data) {
 				return serverEmitter.emit(event, data);
 			},
-			on: function(event, listener) {
+			on: function FarmEventEmitterOn(event, listener) {
 				return serverEmitter.on(event, listener);
 			},
-			history: function(filter) {
+			history: function FarmEventEmitterHistory(filter) {
 				return serverEmitter.history(filter);
 			}
 		}
@@ -264,9 +264,9 @@
 	 *
 	 * This method sets up an Update Router
 	 */
-	streamFns.setupUpdateRouter = function(evt){
+	streamFns.setupUpdateRouter = function FarmSetupUpdateRouter(evt){
 		log("debug", "Blackrock Farm > [9] Setting Up The Update Router...");
-		serverModel.on('update', function(f1, f2, f3) {
+		serverModel.on('update', function FarmSetupUpdateRouterOnUpdate(f1, f2, f3) {
 			var key = f1[0], val = f1[1];
 			if(key.startsWith("servers")) {
 				key = key.split("[");
@@ -288,10 +288,10 @@
 	 * AND to count the number of servers in the farm, and then to update the farm-wide property
 	 * for this server with the latest information from these sources. This job runs every 2 seconds.
 	 */
-	streamFns.updateServerStatus = function(evt){
+	streamFns.updateServerStatus = function FarmUpdateServerStatus(evt){
 		log("debug", "Blackrock Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...");
 		var dayjs = lib.dayjs
-		var interval = setInterval(function(){
+		var interval = setInterval(function FarmUpdateServerStatusInterval(){
 			var latestHeartbeat = isnode.module("logger").getLatestHeartbeat();
 			var serverCount = 0;
 			for(var key in farmServers) { if(farmServers[key].status == "active") { serverCount++; } }
@@ -316,10 +316,10 @@
 	 * more than 3 seconds ago, it's status will be updated within the farm-wide
 	 * properties to become "inactive"
 	 */
-	streamFns.inactivateStaleServers = function(evt){
+	streamFns.inactivateStaleServers = function FarmInactivateStaleServers(evt){
 		log("debug", "Blackrock Farm > [11] Setting Up Job to Inactivate Stale Servers...");
 		var dayjs = lib.dayjs;
-		var interval = setInterval(function(){
+		var interval = setInterval(function FarmInactivateStaleServersInterval(){
 			var currentDateStamp = dayjs();
 			for(var server in farmServers) {
 				var lastUpdated = dayjs(farmServers[server].lastUpdated);
@@ -344,8 +344,8 @@
 	 * applied to this server. If it later joins a farm then it will relinquish this role.
 	 * If no other servers in the farm have this role then selection will be based on a vote.
 	 */
-	streamFns.toggleLocalAsJobServer = function(evt){
-		//setTimeout(function(){
+	streamFns.toggleLocalAsJobServer = function FarmToggleAsJobServer(evt){
+		//setTimeout(function farmToggleAsJobServerTimeout(){
 			var serverCount = 0;
 			for(var key in farmServers) { if(farmServers[key].status == "active") { serverCount++; } }
 			if(serverCount <= 1) {
@@ -373,7 +373,7 @@
 	 * assign themselves the corresponding role and will update the farm-wide property for
 	 * the role that they were allocated with a value of their server IP + port.
 	 */
-	streamFns.checkAndVoteOnJobServerRoles = function(evt){
+	streamFns.checkAndVoteOnJobServerRoles = function FarmCheckAndVoteOnJobServerRoles(evt){
 		return evt;
 	}
 
@@ -398,10 +398,10 @@
 	 * @param {integer} port - The port number to check
 	 * @param {function} cb - Callback function
 	 */
-	utils.isPortTaken = function(port, cb) {
+	utils.isPortTaken = function FarmIsPortTaken(port, cb) {
 	  var tester = require('net').createServer()
-	  	.once('error', function (err) { if (err.code != 'EADDRINUSE') { return cb(err); }; cb(null, true); })
-	  	.once('listening', function() { tester.once('close', function() { cb(null, false) }).close(); })
+	  	.once('error', function FarmIsPortTakenOnError(err) { if (err.code != 'EADDRINUSE') { return cb(err); }; cb(null, true); })
+	  	.once('listening', function FarmIsPortTakenOnListening() { tester.once('close', function() { cb(null, false) }).close(); })
 	  	.listen(port)
 	}
 

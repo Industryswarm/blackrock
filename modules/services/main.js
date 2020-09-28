@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function ServicesWrapper(undefined) {
 
 
 
@@ -14,7 +14,7 @@
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
+	String.prototype.endsWith = function ServicesEndWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var isnode, ismod, ISService, log, map, orphans, services = {}, config, util;
 	var loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
 
@@ -36,12 +36,12 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function ServicesInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), util = isnode.module("utilities");
 		log = isnode.module("logger").log, config = isnode.cfg(), map = {}, orphans = {};
 		log("debug", "Blackrock Services > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		ISService = new isnode.ISMod().extend({ constructor: function() { return; } });
+		ISService = new isnode.ISMod().extend({ constructor: function ServicesISServiceConstructor() { return; } });
 		var ISPipeline = pipelines.setupServicesPipeline();
 		new ISPipeline({}).pipe();
 		return ismod;
@@ -65,11 +65,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Services Pipeline
 	 */
-	pipelines.setupServicesPipeline = function(){
+	pipelines.setupServicesPipeline = function ServicesSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function ServicesSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function ServicesSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function ServicesSetupPipelinePipe() {
 				log("debug", "Blackrock Services > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -95,7 +95,7 @@
 					streamFns.buildRoutesObject
 					
 				);
-				stream1.subscribe(function(evt) {});
+				stream1.subscribe(function ServicesSetupPipelineSubscribe(evt) {});
 			}
 		});
 	};
@@ -105,11 +105,11 @@
 	/**
 	 * (Internal > Pipeline [2]) Run Search Pipeline
 	 */
-	pipelines.runSearchPipeline = function(){
+	pipelines.runSearchPipeline = function ServicesRunSearchPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function(cb) {
+			constructor: function ServicesRunSearchPipelineConstructor(evt) { this.evt = evt; },
+			callback: function ServicesRunSearchPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function ServicesRunSearchPipelinePipe(cb) {
 				log("debug", "Blackrock Services > Route Search Query Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -123,7 +123,7 @@
 					op.map(evt => { if(evt) return streamFns.checkAndMatch(evt); })
 					
 				);
-				stream1.subscribe(function(evt) { cb(evt.result); });
+				stream1.subscribe(function ServicesRunSearchPipelineSubscribe(evt) { cb(evt.result); });
 			}
 		});
 	};
@@ -150,9 +150,9 @@
 	 * (Internal > Stream Methods [1]) Bind Unload Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.bindUnloadMethod = function(evt){
-		ismod.unload = function(){
-			var closeControllers = function closeControllers(cb) {
+	streamFns.bindUnloadMethod = function ServicesBindUnloadMethod(evt){
+		ismod.unload = function ServicesUnload(){
+			var closeControllers = function ServicesCloseControllers(cb) {
 				var ctrlCount = 0, counter = 0;
 				if(services) {
 					for(var service in services) {
@@ -169,7 +169,7 @@
 								counter ++;
 							} else {
 								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + ", waiting for controller response...");
-								route.controller.shutdown(function(){
+								route.controller.shutdown(function ServicesUnloadShutdownCallback(){
 									log("debug", "Controller " + route.pattern + " for service " + services[service].cfg.name + " shutdown successful.");
 									counter ++;
 								});
@@ -177,14 +177,14 @@
 						}				
 					}
 				}
-				var timeout = 5000, timeoutTimer = 0, interval = setInterval(function(){
+				var timeout = 5000, timeoutTimer = 0, interval = setInterval(function ServicesCloseControllersTimeout(){
 			    	if(counter >= ctrlCount){ log("shutdown","Blackrock Services > Controllers all shutdown where possible."); clearInterval(interval); cb(); return; }
 			    	if(timeoutTimer > timeout) { log("shutdown","Blackrock Services > Controller shutdown timed out."); clearInterval(interval); cb(); return; }
 			    	timeoutTimer += 500;
 			    }, 500);
 				return;
 			}
-			closeControllers(function(){ isnode.emit("module-shut-down", "Services"); });
+			closeControllers(function ServicesCloseControllersCallback(){ isnode.emit("module-shut-down", "Services"); });
 		}
 		log("debug", "Blackrock Services > [1] Attached 'unload' Method To This Module");
 		return evt;
@@ -194,7 +194,7 @@
 	 * (Internal > Stream Methods [2]) Bind Search Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.bindSearchMethod = function(evt){
+	streamFns.bindSearchMethod = function ServicesBindSearchMethod(evt){
 		/**
 		 * (External) Searches for a Controller
 		 *
@@ -207,7 +207,7 @@
 		 *	  url: "/web/users/1"
 		 * }
 		 */
-		ismod.search = function(searchObj, cb){
+		ismod.search = function ServicesSearch(searchObj, cb){
 			var ISPipeline = pipelines.runSearchPipeline();
 			new ISPipeline({ "searchObj": searchObj }).pipe(function(result) { cb(result); });
 		}
@@ -219,7 +219,7 @@
 	 * (Internal > Stream Methods [3]) Bind Service Endpoint
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.bindServiceEndpoint = function(evt){
+	streamFns.bindServiceEndpoint = function ServicesBindServiceEndpoint(evt){
 
 		/**
 		 * (Internal) Middleware Router
@@ -228,7 +228,7 @@
 		 * @param {object} res - Response Object
 		 */
 		evt.MiddlewareRouter = new isnode.Base().extend({
-			constructor: function() {
+			constructor: function ServicesMiddlewareRouterConstructor() {
 				var self = this;
 				self.myRouter = (function(req, res){
 					var stackCounter = 0;
@@ -251,9 +251,9 @@
 				})();
 				self.myRouter.stack = [];
 				self.myRouter.handler = null;
-				self.myRouter.use = function(fn) { self.myRouter.stack.push(fn) };
-				self.myRouter.handle = function(fn) { self.myRouter.handler = fn }
-				self.myRouter.count = function() { return self.myRouter.stack.length }
+				self.myRouter.use = function ServicesMiddlewareRouterUse(fn) { self.myRouter.stack.push(fn) };
+				self.myRouter.handle = function ServicesMiddlewareRouterHandle(fn) { self.myRouter.handler = fn }
+				self.myRouter.count = function ServicesMiddlewareRouterCount() { return self.myRouter.stack.length }
 			}
 		});
 
@@ -262,20 +262,20 @@
 		 *
 		 * @param {string} serviceName - Service Name
 		 */
-		ismod.service = function(name){
+		ismod.service = function ServicesService(name){
 			if(!services[name]) { return; }
 			var service = {};
-			service.cfg = function(){ return services[name].cfg; }
+			service.cfg = function ServicesServiceCfg(){ return services[name].cfg; }
 			service.models = {};
-			service.models.get = function(mod) { return services[name].models[mod]; }
-			service.models.add = function(modName, modObj) { 
+			service.models.get = function ServicesServiceGetModel(mod) { return services[name].models[mod]; }
+			service.models.add = function ServicesServiceAddModel(modName, modObj) { 
 				if(!name || !modName || !modObj) { return false; }
 				if(!services[name].models) { services[name].models = {}; }
 				services[name].models[modName] = modObj;
 				return true;
 			}
 			service.url = {};
-			service.url.get = function(path, options) {
+			service.url.get = function ServicesServiceGetUrl(path, options) {
 				if(options && options.protocol) { var protocol = options.protocol.toLowerCase(); }
 				if(options && options.port) { var port = options.port; }
 				var host = services[name].cfg.host;
@@ -294,10 +294,10 @@
 				}
 			}
 			service.vars = {};
-			service.vars.get = function(key) {
+			service.vars.get = function ServicesServiceGetVar(key) {
 				return services[name].vars[key];
 			}
-			service.vars.set = function(key, val) {
+			service.vars.set = function ServicesServiceSetVar(key, val) {
 				services[name].vars[key] = val;
 				return true;
 			}			
@@ -313,12 +313,12 @@
 	 * (Internal > Stream Methods [4]) Bind Support Methods
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.bindSupportMethods = function(source){
+	streamFns.bindSupportMethods = function ServicesBindSupportMethods(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug","Blackrock Services > [4] Binding Support Methods");
-					ismod.serviceStats = function(name) {
+					ismod.serviceStats = function ServicesServiceStats(name) {
 						var stats = {};
 						stats.servicesRouteCount = 0;
 						if(!name) {
@@ -359,12 +359,12 @@
 	 * (Internal > Stream Methods [5]) Load Services
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.loadServices = function(source){
+	streamFns.loadServices = function ServicesLoadServices(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					log("startup","Blackrock Services > [5] Enumerating and loading services...");
-					var loadService = function(serviceName) {
+					var loadService = function ServicesLoadService(serviceName) {
 			        	if(fs.existsSync(basePath + "services/" + serviceName + "/service.json") === true) {
 			        		var cfg = require(basePath + "services/" + serviceName + "/service.json");
 			        		if(cfg.active) {
@@ -374,13 +374,13 @@
 				            	var middlewareRouter = new evt.MiddlewareRouter();
 				            	services[serviceName].middleware = middlewareRouter.myRouter;
 				            	evt.service = serviceName;
-				            	process.nextTick(function(){ observer.next({ service: serviceName }); });
+				            	process.nextTick(function ServicesLoadServicesNextTickCallback(){ observer.next({ service: serviceName }); });
 				            }
 			        	}
 			        }
 					if(config.services.runtime.services.allowLoad == true){ ismod.loadService = loadService; }
 					var fs = require('fs');
-					fs.readdirSync(basePath + "services").forEach(function(file) { loadService(file); });
+					fs.readdirSync(basePath + "services").forEach(function ServicesLoadServicesReadDirCallback(file) { loadService(file); });
 				},
 				error(error) { observer.error(error); }
 			});
@@ -411,7 +411,7 @@
 	 * (Internal > Stream Methods [6]) Fetch Controller Names
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.fetchControllerNames = function(source){
+	streamFns.fetchControllerNames = function ServicesFetchCtrlNames(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -422,7 +422,7 @@
 					}
 					if(services[evt.service].cfg.routing && (services[evt.service].cfg.routing == "auto") || !services[evt.service].cfg.routing){
 						var filewalker = require("./support/filewalker.js");
-						filewalker(basePath + "services/" + evt.service + "/controllers", function(err, data){
+						filewalker(basePath + "services/" + evt.service + "/controllers", function ServicesFetchCtrlNamesFilewalkerCallback(err, data){
 							evt.fileWalkerErr = err;
 							evt.data = data;
 							observer.next(evt);	
@@ -441,7 +441,7 @@
 	 * (Internal > Stream Methods [7]) Pre-Process Controllers
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.preProcessControllers = function(source){
+	streamFns.preProcessControllers = function ServicesPreProcessCtrl(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -455,7 +455,7 @@
 						if(!evt.dataPreProcess[i].endsWith(".DS_Store")){ evt.data.push(evt.dataPreProcess[i]); }
 						if(evt.dataPreProcess[i].endsWith("controller.js")){ evt.basePath.push(evt.dataPreProcess[i].substring(0, evt.dataPreProcess[i].length - 14)); }
 					}
-					evt.basePath.sort(function(a, b) {
+					evt.basePath.sort(function ServicesPreProcessCtrlSortHandler(a, b) {
 						return a.length - b.length || a.localeCompare(b);
 					});
 					evt.controllerBasePath = evt.basePath[0];
@@ -471,7 +471,7 @@
 	 * (Internal > Stream Methods [8]) Remove Invalid Controllers
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.removeInvalidControllers = function(source){
+	streamFns.removeInvalidControllers = function ServicesRemoveInvalidCtrl(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -493,7 +493,7 @@
 	 * (Internal > Stream Methods [9]) Set Base Path Controller
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setBasePathCtrl = function(source){
+	streamFns.setBasePathCtrl = function ServicesSetBasePathCtrl(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -511,10 +511,10 @@
 								urls_piece += "/" + pathBits[j]; 
 							};
 							var ctrl = {
-								"init": function(isnodeObj) {
+								"init": function ServicesBasePathCtrlInit(isnodeObj) {
 									return ctrl;
 								},
-								"get": function(req, res) {
+								"get": function ServicesBasePathCtrlGet(req, res) {
 									res.redirect(services[evt.service].cfg.basePath);
 								}
 							}
@@ -539,7 +539,7 @@
 	 * (Internal > Stream Methods [10]) Generate Controller Events
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.generateControllerEvents = function(source){
+	streamFns.generateControllerEvents = function ServicesGenerateCtrlEvents(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -582,7 +582,7 @@
 	 * (Internal > Stream Methods [11]) Load Controller Files in to Memory
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.loadControllerFiles = function(source){
+	streamFns.loadControllerFiles = function ServicesLoadCtrlFiles(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -594,7 +594,7 @@
 					}
 					var fs = require("fs");
 					if (fs.existsSync(evt.path)) {
-						var prepareRestrictedCore = function(event) {
+						var prepareRestrictedCore = function ServicesPrepareRestrictedCore(event) {
 							var srv = event.service;
 							if (event.controller.init && typeof event.controller.init === 'function') { 
 								if(event.controller.init.length >= 1) {
@@ -602,7 +602,7 @@
 									var RestrictedCore = new isnode.Base().extend({
 
 										// Permutation of this RestrictedCore Object is Dictated By Config:
-										constructor: function(cfg) {
+										constructor: function ServicesRestrictedCoreConstructor(cfg) {
 											self = this; 
 											if(cfg.globals) { self.globals = isnode.globals; }
 											if(cfg.shutdown) { self.shutdown = isnode.shutdown; }
@@ -614,33 +614,33 @@
 										},
 
 										// Config Governs Which Modules & Methods Within Are Available to The Controller:
-		    							module: function(name) {
+		    							module: function ServicesRestrictedCoreGetModule(name, interface) {
 		    								if(util.prop(config, "services.allow.modules")) { var mods = config.services.allow.modules; }
 		    								else { var mods = {}; }
-		    								if(!mods) { return mods; }
+		    								if(!mods) { return; }
 		    								var methods = mods[name], loadedMethods = {}, fnNames = {};
+		    								if(!methods) { return; }
 		    								for (var i = 0; i < methods.length; i++) {
-	    										if(isnode.module(name) && isnode.module(name)[methods[i]]) {
-	    											loadedMethods[methods[i]] = isnode.module(name)[methods[i]];
-	    										} else if(isnode.module(name) && methods[i].includes(".")) {
+	    										if(isnode.module(name, interface) && isnode.module(name, interface)[methods[i]]) {
+	    											loadedMethods[methods[i]] = isnode.module(name, interface)[methods[i]];
+	    										} else if(isnode.module(name, interface) && methods[i].includes(".")) {
 	    											var methodSplit = methods[i].split("."), nestedObject;
-	    											util.assign(loadedMethods, methodSplit, util.prop(isnode.module(name), methods[i]));
-	    										} else if(isnode.module(name) && methods[i].includes("(")) {
+	    											util.assign(loadedMethods, methodSplit, util.prop(isnode.module(name, interface), methods[i]));
+	    										} else if(isnode.module(name, interface) && methods[i].includes("(")) {
 	    											var splitOne = methods[i].split("("), splitTwo = splitOne[1].split(")");
 	    											var methodName = splitOne[0], fnName = splitTwo[0];
-	    											loadedMethods[methodName] = util.prop(isnode.module(name), methods[i]);
+	    											loadedMethods[methodName] = util.prop(isnode.module(name, interface), methods[i]);
 	    											fnNames[methodName] = fnName;
 	    										}
 		    								}
-		    								if(loadedMethods && !fnNames) {
-		    									return loadedMethods;
-		    								} else {
+		    								if(loadedMethods && !fnNames) { return loadedMethods; }
+		    								else {
 		    									var filteredMethods = loadedMethods;
 		    									for (var methodName in loadedMethods) {
 		    										if(fnNames[methodName] == "serviceName") {
-		    											var newService = {}, myService = isnode.module(name)[methodName](srv);
+		    											var newService = {}, myService = isnode.module(name, interface)[methodName](srv);
 		    											for(var subMethod in myService) { newService[subMethod] = myService[subMethod]; };
-		    											filteredMethods[methodName] = function AutoExecutionHandler(args) { return newService; }
+		    											filteredMethods[methodName] = function ServicesGetModuleAutoExecHandler(args) { return newService; }
 		    										} else {
 		    											filteredMethods[methodName] = loadedMethods[methodName];
 		    										}
@@ -658,7 +658,7 @@
 						}
 						if(type == "sandbox") {
 							var event = evt;
-							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i, "service": evt.service }, function(obj) {
+							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i, "service": evt.service }, function ServicesSandboxExecCallback(obj) {
 								event.controller = obj.ctrl;
 								event.path = obj.file;
 								event.i = obj.i;
@@ -685,7 +685,7 @@
 	 * (Internal > Stream Methods [12]) Set Base Path & Pattern
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.setBasePathAndPattern = function(source){
+	streamFns.setBasePathAndPattern = function ServicesSetBasePathAndPattern(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -710,7 +710,7 @@
 	 * (Internal > Stream Methods [13]) Check If Wildcard Path
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.checkIfWildcardPath = function(source){
+	streamFns.checkIfWildcardPath = function ServicesCheckIfWilcardPath(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -737,7 +737,7 @@
 	 * (Internal > Stream Methods [14]) Build Routes Object
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.buildRoutesObject = function(source){
+	streamFns.buildRoutesObject = function ServicesBuildRoutesObject(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -785,7 +785,7 @@
 	 * (Internal > Stream Methods [1]) Parse Search Object
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.parseSearchObject = function(evt){
+	streamFns.parseSearchObject = function ServicesParseSearchObject(evt){
 		if(!evt.searchObj) { evt.searchComplete = true; 
 		} else if (evt.searchObj.hostname && evt.searchObj.url && !evt.searchObj.services) {
 			evt.hostname = evt.searchObj.hostname, evt.url = evt.searchObj.url;
@@ -804,7 +804,7 @@
 	 * (Internal > Stream Methods [2]) Setup Hosts
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupHosts = function(evt){
+	streamFns.setupHosts = function ServicesSetupHosts(evt){
 		evt.results = [], evt.hosts = [];
 		for (var sv in services) { 
 			if(!services[sv].cfg.host && isnode.cfg().core && isnode.cfg().core.host) {
@@ -820,7 +820,7 @@
 	 * (Internal > Stream Methods [3]) Generate Service Events
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.generateServiceEvents = function(source){
+	streamFns.generateServiceEvents = function ServicesGenerateServiceEvents(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -848,7 +848,7 @@
 	 * (Internal > Stream Methods [4]) Initialise The Search For This Service
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.initSearchForService = function(evt){
+	streamFns.initSearchForService = function ServicesInitSearchForService(evt){
 	    if(!services[evt.srv]) { throw new Error('Service does not exist'); return; }
 	    evt.urlParts = evt.url.split("/");
 	    evt.param = {}, evt.currentRoute = null, evt.override = false, evt.routes = {};
@@ -864,14 +864,14 @@
 	 * (Internal > Stream Methods [5]) Iterate Over Routes
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.iterateOverRoutes = function(source){
+	streamFns.iterateOverRoutes = function ServicesIterateOverRoutes(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					if(!evt) { throw new Error('Event does not exist'); return; }
 					log("debug","Blackrock Services > [5] Iterating Over Service Routes");
 					if(!evt.routes[evt.host]) { observer.next(evt); }
-					var processIteration = function(index) {
+					var processIteration = function ServicesProcessIteration(index) {
 				        evt.match = true;
 				        var patternSplit = evt.routes[evt.host][index].pattern.split("/");
 				        if (evt.urlParts.length === patternSplit.length || (evt.url.startsWith(evt.routes[evt.host][index].pattern) && evt.routes[evt.host][index].wildcard)) {
@@ -943,7 +943,7 @@
 	 * (Internal > Stream Methods [6]) Check Overrides & Match
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.checkAndMatch = function(evt){
+	streamFns.checkAndMatch = function ServicesCheckAndMatch(evt){
 		if(!evt.results) { evt.results = []; }
 		if(evt.override) { evt.currentRoute = evt.override; }
 	    if(evt.match && evt.currentRoute){ evt.results.push({match: evt.currentRoute, param: evt.param}); }

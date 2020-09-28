@@ -5,13 +5,14 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function RouterWrapper(undefined) {
 
 
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, routers = {}, routerCount = 0, pipelines = {}, utils = {}, streamFns = {}, lib, rx, op, Observable;
+	var isnode, ismod, log, routers = {}, routerCount = 0, pipelines = {};
+	var utils = {}, streamFns = {}, lib, rx, op, Observable;
 
 
 
@@ -28,7 +29,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function RouterInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Router"), log = isnode.module("logger").log;
 		log("debug", "Blackrock Router > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -52,11 +53,11 @@
 	/**
 	 * (Internal > Pipelines) Pipeline to Create Routers
 	 */
-	pipelines.createRouters = function(){
+	pipelines.createRouters = function RouterCreatePipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function RouterCreatePipelineConstructor(evt) { this.evt = evt; },
+			callback: function RouterCreatePipelineCallback(cb) { return cb(this.evt); },
+			pipe: function RouterCreatePipelinePipe() {
 				log("debug", "Blackrock Router > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -81,7 +82,7 @@
 					op.map(evt => { if(evt) return streamFns.routeRequestToController(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function RouterCreatePipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -107,9 +108,9 @@
 	 * (Internal > Stream Methods [1]) Create Router Prototype
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.createRouterPrototype = function(evt) {
+	streamFns.createRouterPrototype = function RouterCreateRouterPrototype(evt) {
 		evt.ISRouter = new isnode.ISMod().extend({
-			constructor: function() {
+			constructor: function ISRouterConstructor() {
 				return;
 			}
 		});
@@ -121,9 +122,9 @@
 	 * (Internal > Stream Methods [2]) Attach External Methods to Module
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.attachExternalMethods = function(evt) {
-		ismod.get = function(name){ if(routers[name]){ return routers[name]; } else { return; } }
-		ismod.count = function(){ return routerCount; }
+	streamFns.attachExternalMethods = function RouterAttachExternalMethods(evt) {
+		ismod.get = function RouterGetInstance(name){ if(routers[name]){ return routers[name]; } else { return; } }
+		ismod.count = function RouterCountInstances(){ return routerCount; }
 		evt.ismod = ismod;
 		log("debug", "Blackrock Router > [2] External Methods 'get' and 'count' Attached to This Module");
 	    return evt;
@@ -132,7 +133,7 @@
 	/**
 	 * (Internal > Stream  Methods [3] - Operator) Create Routers
 	 */
-	streamFns.createRouters = function(source) {
+	streamFns.createRouters = function RouterCreateRouters(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -177,7 +178,7 @@
 	 * (Internal > Stream Methods [4]) Initialise Router
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.initRouter = function(evt) {
+	streamFns.initRouter = function RouterInitRouter(evt) {
 		var name = evt.instanceName;
 		var routerCfg = isnode.cfg().router.instances[name];
 		routers[name] = new evt.ISRouter();
@@ -190,8 +191,8 @@
 	 * (Internal > Stream Methods [5]) Setup Return Error Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupReturnErrorMethod = function(evt) {
-		evt.ReturnError = function(msgObject,message,statusCode){
+	streamFns.setupReturnErrorMethod = function RouterSetupReturnErrorMethod(evt) {
+		evt.ReturnError = function RouterReturnError(msgObject,message,statusCode){
 			var msg = {
 				"type": msgObject.type,
 				"interface": msgObject.interface,
@@ -217,8 +218,8 @@
 	 * (Internal > Stream Methods [6]) Setup Route Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupRouteMethod = function(evt) {
-		evt.Route = function(hostname, url, cb){
+	streamFns.setupRouteMethod = function RouterSetupRouteMethod(evt) {
+		evt.Route = function RouterRoute(hostname, url, cb){
 			isnode.module("services").search({
 				hostname: hostname,
 				url: url,
@@ -233,11 +234,11 @@
 	/**
 	 * (Internal > Stream  Methods [7] - Operator) Setup Listener Method
 	 */
-	streamFns.setupListenerMethod = function(source) {
+	streamFns.setupListenerMethod = function RouterSetupListenerMethod(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					evt.Listener = function(msg) { 
+					evt.Listener = function RouterListener(msg) { 
 						var message = {};
 						message.parentEvent = evt; 
 						message.routerMsg = msg;
@@ -271,14 +272,14 @@
 	 * (Internal > Stream Methods [1]) Determine New Request Route
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.determineNewRequestRoute = function(source) {
+	streamFns.determineNewRequestRoute = function RouterDetermineNewRequestRoute(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					evt.startTime = isnode.module("utilities").system.getStartTime();
 					evt.routerInternals = {};
 					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
-					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function(routeResult) {
+					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function RouterDetermineNewRequestRouteCallback(routeResult) {
 						evt.routerInternals.route = routeResult;
 						log("debug","Blackrock Router > Received Incoming Request:", evt.routerMsg);
 						if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
@@ -302,7 +303,7 @@
 	 * (Internal > Stream Methods [2]) Build Request Object
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.buildRequestObject = function(evt) {
+	streamFns.buildRequestObject = function RouterBuildRequestObject(evt) {
 		var Req = require("./support/req");
 		evt.routerInternals.req = new Req;
 		evt.routerInternals.req.init(isnode, {
@@ -334,7 +335,7 @@
 	 * (Internal > Stream Methods [3]) Build Response Object
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.buildResponseObject = function(evt) {
+	streamFns.buildResponseObject = function RouterBuildResponseObject(evt) {
 		var Res = require("./support/res");
 		evt.routerInternals.res = new Res;
 		evt.routerInternals.res.init(isnode, {
@@ -352,7 +353,7 @@
 	 * (Internal > Stream Methods [4]) Log Analytics Notification With Logger
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.logAnalyticsNotificationForRequest = function(evt) {
+	streamFns.logAnalyticsNotificationForRequest = function RouterLogReqAnalyticsNotification(evt) {
 		log("debug", "Blackrock Router > [4] Logging Analytics Notification");
 		var reqSize = JSON.stringify(evt.routerMsg.request.verb) +
 						 JSON.stringify(evt.routerMsg.request.host) +
@@ -369,7 +370,7 @@
 				"avgMemUsed": isnode.module("utilities").system.getMemoryUse()
 			} 
 		}
-		isnode.module("utilities").system.getCpuLoad(function(load) {
+		isnode.module("utilities").system.getCpuLoad(function RouterGetCpuLoadReqCallback(load) {
 			analyticsObject.msgs.avgCpuLoad = load;
 			isnode.module("logger").analytics.log(analyticsObject);
 		});
@@ -380,8 +381,8 @@
 	 * (Internal > Stream Methods [5]) Prepare Response Listener
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.prepareResponseListener = function(evt) {
-		evt.routerInternals.responseListener = function(msg){
+	streamFns.prepareResponseListener = function RouterPrepareResponseListener(evt) {
+		evt.routerInternals.responseListener = function RouterResponseListener(msg){
 			log("debug","Blackrock Router > [7] Received response from controller - Routing back to original interface. Message ID: " + msg.msgId, msg);
 			var resSize = (JSON.stringify(msg.response.body) || "") +
 						  (JSON.stringify(msg.response.headers) || "") +
@@ -399,7 +400,7 @@
 					"avgProcessingTime": endTime
 				} 
 			}
-			isnode.module("utilities").system.getCpuLoad(function(load) {
+			isnode.module("utilities").system.getCpuLoad(function RouterGetCpuLoadResCallback(load) {
 				analyticsObject.msgs.avgCpuLoad = load;
 				isnode.module("logger").analytics.log(analyticsObject);
 			});
@@ -415,7 +416,7 @@
 	 * (Internal > Stream Methods [6]) Route Request To Controller
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.routeRequestToController = function(evt) {
+	streamFns.routeRequestToController = function RouterRouteReqToCtrl(evt) {
 		var verbs = ["get", "post", "put", "delete", "update", "patch", "head", "options", "trace"];
 		if(evt.routerMsg.request.verb && evt.routerInternals.controller && evt.routerInternals.controller[evt.routerInternals.verb] && verbs.includes(evt.routerInternals.verb)) {
 			var service = isnode.module("services").service(evt.routerInternals.route.match.service);

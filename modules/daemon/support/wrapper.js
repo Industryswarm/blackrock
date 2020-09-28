@@ -103,7 +103,7 @@ var init = function(options) {
     // run main module
     var setup = require(options.main);
     /*function() { 
-        setInterval(function(){
+        setInterval(function daemonWrapperTimeout(){
             null;
         }, 1000);
     }*/

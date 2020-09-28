@@ -5,9 +5,9 @@
 * Licensed under the [TBC] license.
 */
 
-;!function(undefined) {
+;!function RouterResObjWrapper(undefined) {
 
-	var res = function(){
+	var res = function RouterResObj(){
 		this.app = {};
 		this.clearCookies = {};
 		this.cookies = {};
@@ -26,7 +26,7 @@
 	/**
 	 * Init
 	 */
-	res.prototype.init = function(isnode,initObj){
+	res.prototype.init = function RouterResObjInit(isnode,initObj){
 		this.isnode = isnode;
 		this.log = isnode.module("logger").log;
 		if(initObj.msgId)
@@ -51,21 +51,21 @@
 	/**
 	 * Append
 	 */
-	res.prototype.append = function(){
+	res.prototype.append = function RouterResObjAppend(){
 		return this;
 	}
 
 	/**
 	 * Attachment
 	 */
-	res.prototype.attachment = function(){
+	res.prototype.attachment = function RouterResObjAttachment(){
 		return this;
 	}
 
 	/**
 	 * Cookie
 	 */
-	res.prototype.cookie = function(name, value, options){
+	res.prototype.cookie = function RouterResObjCookie(name, value, options){
 		this.cookies[name] = {value: value, options: options};
 		return this;
 	}
@@ -73,7 +73,7 @@
 	/**
 	 * Clear Cookie
 	 */
-	res.prototype.clearCookie = function(name, options){
+	res.prototype.clearCookie = function RouterResObjClearCookie(name, options){
 		this.clearCookies[name] = {};
 		if(options)
 			this.clearCookies[name].options = options;
@@ -83,7 +83,7 @@
 	/**
 	 * Download
 	 */
-	res.prototype.download = function(path, var2, var3, var4){
+	res.prototype.download = function RouterResObjDownload(path, var2, var3, var4){
 		this.view = false;
 		if (var2 && (typeof var2 === 'string' || var2 instanceof String)) {
 			var filename = var2;
@@ -155,28 +155,28 @@
 	/**
 	 * End
 	 */
-	res.prototype.end = function(){
+	res.prototype.end = function RouterResObjEnd(){
 		return this;
 	}
 
 	/**
 	 * Format
 	 */
-	res.prototype.format = function(){
+	res.prototype.format = function RouterResObjFormat(){
 		return this;
 	}
 
 	/**
 	 * Get
 	 */
-	res.prototype.get = function(){
+	res.prototype.get = function RouterResObjGet(){
 		return this;
 	}
 
 	/**
 	 * JSON
 	 */
-	res.prototype.json = function(body){
+	res.prototype.json = function RouterResObjJson(body){
 		this.view = false;
 		if(this.headersSent == true){
 			this.log("debug","Router > Attempting to send another response after response has already been sent");
@@ -205,28 +205,28 @@
 	/**
 	 * JSONP
 	 */
-	res.prototype.jsonp = function(){
+	res.prototype.jsonp = function RouterResObjJsonP(){
 		return this;
 	}
 
 	/**
 	 * Links
 	 */
-	res.prototype.links = function(){
+	res.prototype.links = function RouterResObjLinks(){
 		return this;
 	}
 
 	/**
 	 * Location
 	 */
-	res.prototype.location = function(path){
+	res.prototype.location = function RouterResObjLocation(path){
 		return this;
 	}
 
 	/**
 	 * Redirect
 	 */
-	res.prototype.redirect = function(param1, param2){
+	res.prototype.redirect = function RouterResObjRedirect(param1, param2){
 		if (param1 === parseInt(param1, 10) && param2){
 			this.statusCode = param1;
 			var location = param2;
@@ -265,7 +265,7 @@
 	/**
 	 * Render
 	 */
-	res.prototype.render = function(view, locals, cb){
+	res.prototype.render = function RouterResObjRender(view, locals, cb){
 		var body = locals;
 		this.view = view;
 		if(this.headersSent == true){
@@ -295,7 +295,7 @@
 	/**
 	 * Send
 	 */
-	res.prototype.send = function(body){
+	res.prototype.send = function RouterResObjSend(body){
 		this.view = false;
 		if(this.headersSent == true){
 			this.log("debug","Router > Attempting to send another response after response has already been sent");
@@ -324,7 +324,7 @@
 	/**
 	 * Send File
 	 */
-	res.prototype.sendFile = function(path, var2, var3){
+	res.prototype.sendFile = function RouterResObjSendFile(path, var2, var3){
 		this.view = false;
 		if(var2 && typeof var2 === 'object' && var2 !== null) {
 			var options = var2;
@@ -389,7 +389,7 @@
 	/**
 	 * Send Status
 	 */
-	res.prototype.sendStatus = function(status){
+	res.prototype.sendStatus = function RouterResObjSendStatus(status){
 		if(this.headersSent == true){
 			this.log("debug","Router > Attempting to send another response after response has already been sent");
 			return;
@@ -418,7 +418,7 @@
 	/**
 	 * Set Header(s)
 	 */
-	res.prototype.set = function(var1, var2){
+	res.prototype.set = function RouterResObjSet(var1, var2){
 		if(var1 && typeof var1 === 'object' && var1 !== null) {
 			for(var name in var1){
 				this.headers[name] = var1[name];				
@@ -436,7 +436,7 @@
 	/**
 	 * Set Header(s) - Alias
 	 */
-	res.prototype.header = function(name, value){
+	res.prototype.header = function RouterResObjHeader(name, value){
 		if ((typeof name === 'string' || name instanceof String) && (typeof value === 'string' || value instanceof String)) {
 			this.set(name, value);
 		}
@@ -446,7 +446,7 @@
 	/**
 	 * Status
 	 */
-	res.prototype.status = function(code){
+	res.prototype.status = function RouterResObjStatus(code){
 		this.statusCode = code;
 		return this;
 	}
@@ -454,14 +454,14 @@
 	/**
 	 * Type
 	 */
-	res.prototype.type = function(){
+	res.prototype.type = function RouterResObjType(){
 		return this;
 	}
 
 	/**
 	 * Vary
 	 */
-	res.prototype.vary = function(){
+	res.prototype.vary = function RouterResObjVary(){
 		return this;
 	}
 

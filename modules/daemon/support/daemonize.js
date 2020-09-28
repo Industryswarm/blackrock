@@ -158,7 +158,7 @@ Daemon.prototype.start = function(listener) {
     child.once("disconnect", this._childDisconnectHandler = function() {
 
         // check it in 100ms in case this is child's exit
-        this._childDisconnectTimer = setTimeout(function() {
+        this._childDisconnectTimer = setTimeout(function daemonChildDisconnectTimerTimeout() {
 
             child.removeListener("exit", this._childExitHandler);
 

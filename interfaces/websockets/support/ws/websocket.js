@@ -538,9 +538,9 @@ function initAsClient(address, protocols, options) {
   var req = (this._req = httpObj.get(options));
 
   if (options.handshakeTimeout) {
-    req.setTimeout(options.handshakeTimeout, () =>
+    req.setTimeout(options.handshakeTimeout, function websocketsHandshakeTimeout() {
       abortHandshake(this, req, 'Opening handshake has timed out')
-    );
+    });
   }
 
   req.on('error', (err) => {

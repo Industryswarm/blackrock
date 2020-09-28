@@ -5,13 +5,13 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function CLIWrapper(undefined) {
 
 	/* ================================= *
 	 * Initialise Core Module Variables: *
 	 * ================================= */
 
-	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
+	String.prototype.endsWith = function CLIEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var isnode, ismod, log;
 
 
@@ -28,7 +28,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){ 
+	var init = function CLIInit(isnodeObj){ 
 		isnode = isnodeObj, ismod = new isnode.ISMod("CLI");
 		setupExternalModuleMethods();
 		log("debug", "Blackrock CLI > Initialising...");
@@ -48,10 +48,10 @@
 	/**
 	 * (Internal) Setup External Module Methods
 	 */
-	var setupExternalModuleMethods = function(){ 
+	var setupExternalModuleMethods = function CLISetupExternalModuleMethods(){ 
 
 		// LOGGER MODULE (LOG METHOD):
-		log = function(level, logMsg, attrObj) {
+		log = function CLILog(level, logMsg, attrObj) {
 			var logger = isnode.module("logger");
 			if(logger && logger.log) { logger.log(level, logMsg, attrObj); }
 		}
@@ -76,13 +76,13 @@
 	 * (Internal) Initialises the CLI server interface module
 	 * @param {object} params - An object of parameters
 	 */
-	var start = function(){
- 		process.nextTick(function(){
+	var start = function CLIStart(){
+ 		process.nextTick(function CLIStartNextTickCallback(){
 
  			const lib = isnode.lib, rx = lib.rxjs, op = lib.operators, stream = new rx.from(process.argv);
  			var subRec = false;
 
- 			var showHelp = function() {
+ 			var showHelp = function CLIShowHelp() {
  				console.log("Usage: " + isnode.pkg().name + " [options]\n");
 				console.log("Options: ");
 				if(isnode.module("daemon")){
@@ -103,34 +103,34 @@
 
  			stream.pipe(
 
- 				op.filter(function(evt) { 
-					var endsWithAny = function(suffixes, string) { for (let suffix of suffixes) { if(string.endsWith(suffix)) return true; } return false; };
+ 				op.filter(function CLIStreamFn1Filter(evt) { 
+					var endsWithAny = function CLIEndsWithAny(suffixes, string) { for (let suffix of suffixes) { if(string.endsWith(suffix)) return true; } return false; };
  					return !endsWithAny([
  							"sudo", "node", "nodemon", "forever", 
  							"npm", "pm2", "server.js", Object.keys(isnode.pkg().bin)[0]
  						], evt);
  				}),
 
- 				op.map(function(evt) {
+ 				op.map(function CLIStreamFn2Map(evt) {
  					log("debug", "Blackrock CLI > [1] Command-Line Arguments Filtered");
  					return evt; 
  				}),
 
- 				op.reduce(function(acc, one) { return acc + " " + one }),
+ 				op.reduce(function CLIStreamFn3Reduce(acc, one) { return acc + " " + one }),
 
-  				op.map(function(evt) {
+  				op.map(function CLIStreamFn4Map(evt) {
  					log("debug", "Blackrock CLI > [2] Remaining Arguments Reduced");
  					return evt; 
  				})
 
- 			).subscribe(function(val) {
+ 			).subscribe(function CLISubscribeCallback(val) {
  				subRec = true;
  				var daemonOptions = ["start", "start daemon", "stop", "stop daemon", "restart", "restart daemon", "status", "status daemon"];
 				if((val && daemonOptions.includes(val) && isnode.module("daemon")) || (isnode.cfg().cli && isnode.cfg().cli.mode && isnode.cfg().cli.mode == "daemon")) {
 					log("debug", "Blackrock CLI > [3] Events sent to 'Start Daemon' and 'Load Dependencies'");
 					isnode.emit("startDaemon");
 					isnode.emit("loadDependencies");
-				} else if (process.send || val == "start console" || (isnode.cfg().cli && isnode.cfg().cli.mode && isnode.cfg().cli.mode == "console")) {
+				} else if (process.send || val == "start console" || isnode.globals.get("test") || (isnode.cfg().cli && isnode.cfg().cli.mode && isnode.cfg().cli.mode == "console")) {
 					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies' (but not to 'Start Daemon')");
 					isnode.emit("loadDependencies");
 				} else {
@@ -140,7 +140,7 @@
 			  
 			}).unsubscribe();
 
-			setTimeout(function(){ if(!subRec) {
+			setTimeout(function CLIHelpTimeoutCallback(){ if(!subRec) {
 				showHelp(); 
 				log("debug", "Blackrock CLI > [4] Timed Out Whilst Processing Command-Line Arguments - Displaying Command-Line Help");
 			} }, 1);

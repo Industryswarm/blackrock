@@ -300,7 +300,7 @@ IncomingForm.prototype._error = function(err) {
   if (Array.isArray(this.openedFiles)) {
     this.openedFiles.forEach(function(file) {
       file._writeStream.destroy();
-      setTimeout(fs.unlink, 0, file.path, function(error) { });
+      setTimeout(fs.unlink, 0, file.path, function httpFormidableTimeout(error) { });
     });
   }
 };

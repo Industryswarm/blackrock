@@ -7,7 +7,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function AxonWrapper(undefined) {
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	var isnode, ismod, log;
@@ -16,7 +16,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function AxonInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("Axon"), log = isnode.module("logger").log;
 		log("debug", "Blackrock Axon Interface > Initialising...");
 		ismod.startInterface = startInterface;
@@ -28,7 +28,7 @@
 	 * (Internal) Attempts to start an interface
 	 * @param {string} name - The name of the interface
 	 */
-	var startInterface = function(name){
+	var startInterface = function AxonStartInterface(name){
 		var myName = ismod.name.toLowerCase();
 		var cfg = isnode.cfg().interfaces[myName][name];
 		log("startup", ismod.name + " Interface Module > Starting Interface (" + name + ").");

@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function UtilitiesWrapper(undefined) {
 
 
 
@@ -15,7 +15,7 @@
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
+	String.prototype.endsWith = function UtilitiesEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, modules = {}, csv = {}, crypto = {};
 
 
@@ -37,7 +37,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnodeObj - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function UtilitiesInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Utilities"), log = isnode.module("logger").log;
 		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
 		log("debug", "Blackrock Utilities > Initialising...");
@@ -64,11 +64,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Utilities
 	 */
-	pipelines.setupUtilities = function(){
+	pipelines.setupUtilities = function UtilitiesSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function UtilitiesSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function UtilitiesSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function UtilitiesSetupPipelinePipe() {
 				log("debug", "Blackrock Utilities > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -94,7 +94,7 @@
 					op.map(evt => { if(evt) return streamFns.setupGetObjectMemoryUsage(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupSimplify(evt); })
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function UtilitiesSetupPipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -119,7 +119,7 @@
 	 * (Internal > Stream Methods [1]) Setup Base
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupBase = function(evt){
+	streamFns.setupBase = function UtilitiesSetupBase(evt){
 		ismod.crypto = crypto;
 		ismod.modules = modules;
 		ismod.csv = csv;
@@ -137,8 +137,8 @@
 	 * (Internal > Stream Methods [2]) Setup UUID4 Utility Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupUuid4 = function(evt){
-		ismod.uuid4 = evt.methods.uuid4 = function () {
+	streamFns.setupUuid4 = function UtilitiesSetupUUID(evt){
+		ismod.uuid4 = evt.methods.uuid4 = function UtilitiesUUID() {
 			var uuid = '', ii;
 			for (ii = 0; ii < 32; ii += 1) {
 			  switch (ii) {
@@ -169,8 +169,8 @@
 	 * (Internal > Stream Methods [3]) Setup Is JSON Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupIsJSON = function(evt){
-		ismod.isJSON = evt.methods.isJSON = function (input) {
+	streamFns.setupIsJSON = function UtilitiesSetupIsJSON(evt){
+		ismod.isJSON = evt.methods.isJSON = function UtilitiesIsJSON(input) {
 			if(input !== null && typeof input === 'object'){
 				return "json_object";
 			}
@@ -189,8 +189,8 @@
 	 * (Internal > Stream Methods [4]) Setup Random String Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupRandomString = function(evt){
-		ismod.randomString = evt.methods.randomString = function (length) {
+	streamFns.setupRandomString = function UtilitiesSetupRandomString(evt){
+		ismod.randomString = evt.methods.randomString = function UtilitiesRandomString(length) {
 	  		var text = "";
 	  		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	  		for (var i = 0; i < length; i++)
@@ -205,8 +205,8 @@
 	 * (Internal > Stream Methods [5]) Setup Object Length Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupObjectLength = function(evt){
-		ismod.objectLength = evt.methods.objectLength = function (object) {
+	streamFns.setupObjectLength = function UtilitiesSetupObjectLength(evt){
+		ismod.objectLength = evt.methods.objectLength = function UtilitiesObjectLength(object) {
 		    var length = 0;
 		    for( var key in object ) {
 		        if( object.hasOwnProperty(key) ) {
@@ -223,8 +223,8 @@
 	 * (Internal > Stream Methods [6]) Setup Get Current Date in ISO Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetCurrentDateInISO = function(evt){
-		ismod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function () {
+	streamFns.setupGetCurrentDateInISO = function UtilitiesSetupGetCurrentDateInISO(evt){
+		ismod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function UtilitiesGetCurrentDateInISO() {
 			var currentDate = new Date();
 			currentDate = currentDate.toISOString();
 			return currentDate;
@@ -237,8 +237,8 @@
 	 * (Internal > Stream Methods [7]) Setup Get Current Date in ISO Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupValidateString = function(evt){
-		ismod.validateString = evt.methods.validateString = function (text, validator) {
+	streamFns.setupValidateString = function UtilitiesSetupValidateString(evt){
+		ismod.validateString = evt.methods.validateString = function UtilitiesValidateString(text, validator) {
 			if(!validator)
 				return false;
 			if(!text)
@@ -281,8 +281,8 @@
 	 * (Internal > Stream Methods [8]) Setup Clone Object Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupCloneObject = function(evt){
-		ismod.cloneObject = evt.methods.cloneObject = function (src) {
+	streamFns.setupCloneObject = function UtilitiesSetupCloneObject(evt){
+		ismod.cloneObject = evt.methods.cloneObject = function UtilitiesCloneObject(src) {
 			var target = {};
 			for (var prop in src) {
 				if (src.hasOwnProperty(prop)) {
@@ -300,8 +300,8 @@
 	 * (Internal > Stream Methods [9]) Setup Load Module Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupLoadModule = function(evt){
-		ismod.modules.loadModule = evt.methods.modules.loadModule = function (name) {
+	streamFns.setupLoadModule = function UtilitiesSetupLoadModule(evt){
+		ismod.modules.loadModule = evt.methods.modules.loadModule = function UtilitiesLoadModule(name) {
 			return require(name + ".js");
 		};
 		log("debug", "Blackrock Utilities > [9] 'loadModule' Method Attached To This Module");
@@ -312,7 +312,7 @@
 	 * (Internal > Stream Methods [10]) Setup Parse CSV Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupCsvParse = function(evt) {
+	streamFns.setupCsvParse = function UtilitiesSetupCsvParse(evt) {
 
 		/**
 		 * (Method) Parses CSV (in string format - already imported in from a file) in to a Javascript object which is returned
@@ -320,7 +320,7 @@
 		 * @param {object} options - Options object. Can set options.delimiter to something other than a comma
 		 * @param {function} cb - Callback function
 		 */
-		ismod.csv.parse = evt.methods.csv.parse = function (inputString, options, cb) {
+		ismod.csv.parse = evt.methods.csv.parse = function UtilitiesCsvParse(inputString, options, cb) {
 			try {
 				if(!inputString || !(typeof inputString === 'string' || inputString instanceof String)){
 					var error = { message: "Input string not provided or not in string format" };
@@ -397,7 +397,7 @@
 	 * (Internal > Stream Methods [11]) Setup Crypto Encrypt Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupEncrypt = function(evt){
+	streamFns.setupEncrypt = function UtilitiesSetupEncrypt(evt){
 
 		/**
 		 * (Method) Symmetric Encryption of Text String, Given Key
@@ -405,7 +405,7 @@
 		 * @param {string} key - RSA key to use to encrypt the string
 		 * @param {string} encoding - Encoding for output. Supports - 'buffer', 'binary', 'hex' or 'base64'.
 		 */
-		ismod.crypto.encrypt = evt.methods.crypto.encrypt = function (text, key, encoding) {
+		ismod.crypto.encrypt = evt.methods.crypto.encrypt = function UtilitiesEncrypt(text, key, encoding) {
 			var NodeRSA = require('./support/node-rsa');
 			var key = new NodeRSA(key);
 			var encrypted = key.encrypt(text, encoding);
@@ -419,7 +419,7 @@
 	 * (Internal > Stream Methods [12]) Setup Crypto Decrypt Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupDecrypt = function(evt){
+	streamFns.setupDecrypt = function UtilitiesSetupDecrypt(evt){
 
 		/**
 		 * (Method) Symmetric Decryption of Text String, Given Key
@@ -427,7 +427,7 @@
 		 * @param {string} key - RSA key to use to decrypt the string
 		 * @param {string} encoding - Encoding for output. Supports - 'buffer', 'json' or 'utf8'
 		 */
-		ismod.crypto.decrypt = evt.methods.crypto.decrypt = function (text, key, encoding) {
+		ismod.crypto.decrypt = evt.methods.crypto.decrypt = function UtilitiesDecrypt(text, key, encoding) {
 			var NodeRSA = require('./support/node-rsa');
 			var key = new NodeRSA(key);
 			var decrypted = key.decrypt(text, encoding);
@@ -441,7 +441,7 @@
 	 * (Internal > Stream Methods [13]) Setup XML Parsing Library
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupXML = function(evt){
+	streamFns.setupXML = function UtilitiesSetupXML(evt){
 
 		/**
 		 * (External) XML Parsing Library
@@ -456,8 +456,8 @@
 	 * (Internal > Stream Methods [14]) Setup Get Memory Use Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetMemoryUse = function(evt){
-		ismod.system.getMemoryUse = function (type) {
+	streamFns.setupGetMemoryUse = function UtilitiesSetupGetMemoryUse(evt){
+		ismod.system.getMemoryUse = function UtilitiesGetMemoryUse(type) {
 			const used = process.memoryUsage();
 			if(type && used[type]) {
 				return used[type];
@@ -475,10 +475,10 @@
 	 * (Internal > Stream Methods [15]) Setup Get CPU Load Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetCpuLoad = function(evt){
-		ismod.system.getCpuLoad = function (cb) {
+	streamFns.setupGetCpuLoad = function UtilitiesSetupGetCpuLoad(evt){
+		ismod.system.getCpuLoad = function UtilitiesGetCpuLoad(cb) {
 			var os = require("os");
-			function cpuAverage() {
+			var cpuAverage = function UtilitiesGetCpuLoadCpuAvgFn() {
 			  var totalIdle = 0, totalTick = 0;
 			  var cpus = os.cpus();
 			  for(var i = 0, len = cpus.length; i < len; i++) {
@@ -491,7 +491,7 @@
 			  return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
 			}
 			var startMeasure = cpuAverage();
-			setTimeout(function() { 
+			setTimeout(function UtilitiesGetCpuLoadTimeout() { 
 			  var endMeasure = cpuAverage();
 			  var idleDifference = endMeasure.idle - startMeasure.idle;
 			  var totalDifference = endMeasure.total - startMeasure.total;
@@ -508,8 +508,8 @@
 	 * (Internal > Stream Methods [16]) Setup Get Start Time
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetStartTime = function(evt){
-		ismod.system.getStartTime = function () {
+	streamFns.setupGetStartTime = function UtilitiesSetupGetStartTime(evt){
+		ismod.system.getStartTime = function UtilitiesGetStartTime() {
 			return process.hrtime();
 		};
 		log("debug", "Blackrock Utilities > [16] 'getStartTime' Method Attached To 'system' Object On This Module");
@@ -520,8 +520,8 @@
 	 * (Internal > Stream Methods [17]) Setup Get End Time
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetEndTime = function(evt){
-		ismod.system.getEndTime = function (start) {
+	streamFns.setupGetEndTime = function UtilitiesSetupGetEndTime(evt){
+		ismod.system.getEndTime = function UtilitiesGetEndTime(start) {
 		    var precision = 3;
 		    var elapsed = process.hrtime(start)[1] / 1000000;
 		    var end = process.hrtime(start)[0];
@@ -543,8 +543,8 @@
 	 * Created by Kate Morley - http://code.iamkate.com/
 	 * http://creativecommons.org/publicdomain/zero/1.0/legalcode
 	 */
-	streamFns.setupGetObjectMemoryUsage = function(evt){
-		ismod.system.getObjectMemoryUsage = function (object) {
+	streamFns.setupGetObjectMemoryUsage = function UtilitiesSetupGetObjectMemoryUsage(evt){
+		ismod.system.getObjectMemoryUsage = function UtilitiesGetObjectMemoryUsage(object) {
 			var objects = [object];
 			var size = 0;
 			for (var index = 0; index < objects.length; index ++){
@@ -578,20 +578,20 @@
 	 * (Internal > Stream Methods [19]) Setup Simplify Methods
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupSimplify = function(evt){
+	streamFns.setupSimplify = function UtilitiesSetupSimplify(evt){
 
 		// https://www.reddit.com/r/javascript/comments/9zhvuw/is_there_a_better_way_to_check_for_nested_object/
-		ismod.isUndefined = function UtilsSimplifyIsUndefined(value) {  return typeof value === 'undefined'; }
-		ismod.isNull = function UtilsSimplifyIsNull(value) { return value === null; }
-		ismod.isNil = function UtilsSimplifyIsNil(value) { return ismod.isUndefined(value) || ismod.isNull(value); }
-		ismod.path = function UtilsSimplifyPath(object, keys) {
+		ismod.isUndefined = function UtilitiesSimplifyIsUndefined(value) {  return typeof value === 'undefined'; }
+		ismod.isNull = function UtilitiesSimplifyIsNull(value) { return value === null; }
+		ismod.isNil = function UtilitiesSimplifyIsNil(value) { return ismod.isUndefined(value) || ismod.isNull(value); }
+		ismod.path = function UtilitiesSimplifyPath(object, keys) {
 		  return keys.reduce((object, key) => {
 		    let value;
 		    return ismod.isNil(object) || ismod.isNil(value = object[key]) ? null : value;
 		  }, object);
 		}
-		ismod.prop = function UtilsSimplifyProp(object, key) { return ismod.path(object, key.split('.')); }
-		ismod.assign = function UtilsSimplifyAssign(obj, keyPath, value) {
+		ismod.prop = function UtilitiesSimplifyProp(object, key) { return ismod.path(object, key.split('.')); }
+		ismod.assign = function UtilitiesSimplifyAssign(obj, keyPath, value) {
 		   lastKeyIndex = keyPath.length-1;
 		   for (var i = 0; i < lastKeyIndex; ++ i) {
 		     key = keyPath[i];

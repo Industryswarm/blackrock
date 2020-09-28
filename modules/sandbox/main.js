@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function SandboxWrapper(undefined) {
 
 
 
@@ -36,7 +36,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnodeObj - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function SandboxInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Sandbox"), log = isnode.module("logger").log;
 		log("debug", "Blackrock Sandbox > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -62,11 +62,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Sandbox
 	 */
-	pipelines.setupSandbox = function(){
+	pipelines.setupSandbox = function SandboxSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function SandboxSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function SandboxSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function SandboxSetupPipelinePipe() {
 				log("debug_deep", "Blackrock Sandbox > Setup Sandbox Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -81,7 +81,7 @@
 					streamFns.executeCode
 					
 				);
-				stream1.subscribe(function(evt) {
+				stream1.subscribe(function SandboxSetupPipelineSubscribe(evt) {
 					null;
 				});
 			}
@@ -106,7 +106,7 @@
 	 * (Internal > Stream Methods [1]) Import Libraries
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.importLibraries = function(evt){
+	streamFns.importLibraries = function SandboxImportLibraries(evt){
 		const { NodeVM } = require('./support/lib/main.js');
 		evt.NodeVM = NodeVM;
 		log("debug_deep", "Blackrock Sandbox > [1] Libraries Imported.");
@@ -116,11 +116,11 @@
 	/**
 	 * (Internal > Stream  Methods [2] - Operator) Setup Code Execution Endpoint
 	 */
-	streamFns.setupEndpoint = function(source) {
+	streamFns.setupEndpoint = function SandboxSetupEndpoint(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					evt.Execute = function(options, cb) { 
+					evt.Execute = function SandboxExecute(options, cb) { 
 						log("debug_deep", "Blackrock Sandbox > [3] Call Received to Execute Code", {options: options});
 						var message = { 
 							parentEvent: evt,
@@ -142,7 +142,7 @@
 	 * (Internal > Stream Methods [3]) Create VM
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.createVM = function(evt){
+	streamFns.createVM = function SandboxCreateVM(evt){
 		evt.vm = new evt.parentEvent.NodeVM({
 		    console: 'inherit',
 		    sandbox: {},
@@ -163,7 +163,7 @@
 	/**
 	 * (Internal > Stream  Methods [4] - Operator) Get Code
 	 */
-	streamFns.getCode = function(source) {
+	streamFns.getCode = function SandboxGetCode(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -171,7 +171,7 @@
 						var fs = require('fs');
 						try { 
 							var options = evt.options, cb = evt.cb, parentEvent = evt.parentEvent, vm = evt.vm;
-							fs.readFile(evt.options.file, function(err, data) {
+							fs.readFile(evt.options.file, function SandboxGetCodeReadFileCallback(err, data) {
 								var event = {
 									options: options,
 									cb: cb,
@@ -201,7 +201,7 @@
 	/**
 	 * (Internal > Stream  Methods [5] - Operator) Execute Code
 	 */
-	streamFns.executeCode = function(source) {
+	streamFns.executeCode = function SandboxExecuteCode(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {

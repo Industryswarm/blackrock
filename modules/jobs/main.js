@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function JobsWrapper(undefined) {
 
 
 
@@ -33,7 +33,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function JobsInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Jobs"), ismod.log = log = isnode.module("logger").log;
 		log("debug", "Blackrock Jobs > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -57,11 +57,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Error Handler
 	 */
-	pipelines.setupJobs = function(){
+	pipelines.setupJobs = function JobsSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function JobsSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function JobsSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function JobsSetupPipelinePipe() {
 				log("debug", "Blackrock Jobs > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -77,7 +77,7 @@
 					op.map(evt => { if(evt) return streamFns.executeJob(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function JobsSetupPipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -95,7 +95,7 @@
 
 	/**
 	 * =========================================
-	 * Error Handler Stream Processing Functions
+	 * Jobs Stream Processing Functions
 	 * (Fires Once on Server Initialisation)
 	 * =========================================
 	 */
@@ -104,7 +104,7 @@
 	 * (Internal > Stream Methods [1]) Setup Intervals
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupIntervals = function(evt){
+	streamFns.setupIntervals = function JobsSetupIntervals(evt){
 		if(isnode.cfg().jobs && isnode.cfg().jobs.queue && isnode.cfg().jobs.queue.interval) { evt.interval = isnode.cfg().jobs.queue.interval; }
 		else { evt.interval = 500; }
 		if(isnode.cfg().jobs && isnode.cfg().jobs.queue && isnode.cfg().jobs.queue.jobsPerInterval) { evt.jobsPerInterval = isnode.cfg().jobs.queue.jobsPerInterval; }
@@ -117,10 +117,10 @@
 	 * (Internal > Stream Methods [2]) Process Queue
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.processQueue = function(evt){
+	streamFns.processQueue = function JobsProcessQueue(evt){
 		log("debug", "Blackrock Jobs > [2] Created 'Process Queue' Method w/ Indefinite Interval. Processing Queue Now...");
-		var iterateThroughQueue = function() {
-			setInterval(function(){
+		var iterateThroughQueue = function JobsIterateThroughQueue() {
+			setInterval(function JobsIterateThroughQueueInterval(){
 				if(queue.length > 0) {
 					for (var i = 0; i < evt.jobsPerInterval; i++) {
 						var queueItem = queue.shift();
@@ -137,11 +137,11 @@
 	 * (Internal > Stream Methods [3]) Setup Add & Remove Job Endpoints
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.setupJobEndpoints = function(source){
+	streamFns.setupJobEndpoints = function JobsSetupJobEndpoints(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					var add = function(definition, fn, input){
+					var add = function JobsAddJob(definition, fn, input){
 						var msg = { 
 							action: "add",
 							input: {
@@ -152,7 +152,7 @@
 						}
 						observer.next(msg);
 					}
-					var remove = function(id){
+					var remove = function JobsRemoveJob(id){
 						var msg = { 
 							action: "remove",
 							input: {
@@ -161,7 +161,7 @@
 						}
 						observer.next(msg);
 					}
-					var execute = function(id){
+					var execute = function JobsExecuteJob(id){
 						var msg = {
 							action: "execute",
 							input: {
@@ -186,7 +186,7 @@
 	 * (Internal > Stream Methods [4]) Add Job to Queue
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.addJobToQueue = function(evt){
+	streamFns.addJobToQueue = function JobsAddJobToQueue(evt){
 		if(evt.action == "add") {
 			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
 				log("error", "Blackrock Jobs > Attempted to Add Job But Module Not Enabled", evt.input.definition);
@@ -217,7 +217,7 @@
 					fn: evt.input.fn,
 					input: evt.input.input
 				}
-				recurring[evt.input.definition.id] = setInterval(function(){
+				recurring[evt.input.definition.id] = setInterval(function JobsRecurringJobInterval(){
 					if(evt.input.definition.local == true || (evt.input.definition.local == false && isnode.module("farm").isJobServer() == true))
 						evt.input.fn(evt.input.input);
 				}, evt.input.definition.delay)
@@ -238,7 +238,7 @@
 	 * (Internal > Stream Methods [5]) Remove Job From Queue
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.removeJobFromQueue = function(evt){
+	streamFns.removeJobFromQueue = function JobsRemoveJobFromQueue(evt){
 		if(evt.action == "remove") {
 			var found = false;
 			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
@@ -269,7 +269,7 @@
 	/**
 	 * (Internal > Stream Methods [6]) Execute Job
 	 */
-	streamFns.executeJob = function(evt){
+	streamFns.executeJob = function JobsExecuteJob(evt){
 		if(evt.action == "execute") {
 			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
 				log("error", "Blackrock Jobs > Attempted to Execute Job But Jobs Module Not Enabled");

@@ -5,9 +5,9 @@
 * Licensed under the [TBC] license.
 */
 
-;!function(undefined) {
+;!function RouterReqObjWrapper(undefined) {
 
-	var req = function(){
+	var req = function RouterReqObj(){
 		this.app = {};
 		this.baseUrl = "";
 		this.body = "";
@@ -19,7 +19,7 @@
 		this.ipv6 = "";
 		this.ips = [];
 		this.isnode = {};
-		this.log = function(level, msg){};
+		this.log = function RouterReqObjLogFn(level, msg){};
 		this.method = "";
 		this.originalUrl = "";
 		this.params = [];
@@ -44,7 +44,7 @@
 	/**
 	 * Init
 	 */
-	req.prototype.init = function(isnode,initObj){
+	req.prototype.init = function RouterReqObjInit(isnode,initObj){
 		this.isnode = isnode;
 		if(initObj.msgId)
 			this.msgId = initObj.msgId;
@@ -99,35 +99,35 @@
 	/**
 	 * Accepts
 	 */
-	req.prototype.accepts = function(){
+	req.prototype.accepts = function RouterReqObjAccepts(){
 		return this;
 	}
 
 	/**
 	 * Accepts Charsets
 	 */
-	req.prototype.acceptsCharsets = function(){
+	req.prototype.acceptsCharsets = function RouterReqObjAcceptsCharsets(){
 		return this;
 	}
 
 	/**
 	 * Accepts Encodings
 	 */
-	req.prototype.acceptsEncodings = function(){
+	req.prototype.acceptsEncodings = function RouterReqObjAcceptsEncoding(){
 		return this;
 	}
 
 	/**
 	 * Accepts Languages
 	 */
-	req.prototype.acceptsLanguages = function(){
+	req.prototype.acceptsLanguages = function RouterReqObjAcceptsLanguages(){
 		return this;
 	}
 
 	/**
 	 * Get
 	 */
-	req.prototype.get = function(name){
+	req.prototype.get = function RouterReqObjGet(name){
 		for (var i = 0; i < this.headers.length; i++) {
 			if(this.headers[i].name == name)
 				return headers[i].value;
@@ -138,21 +138,21 @@
 	/**
 	 * Is
 	 */
-	req.prototype.is = function(){
+	req.prototype.is = function RouterReqObjIs(){
 		return this;
 	}
 
 	/**
 	 * Param
 	 */
-	req.prototype.param = function(){
+	req.prototype.param = function RouterReqObjParam(){
 		return this;
 	}
 
 	/**
 	 * Range
 	 */
-	req.prototype.range = function(){
+	req.prototype.range = function RouterReqObjRange(){
 		return this;
 	}
 

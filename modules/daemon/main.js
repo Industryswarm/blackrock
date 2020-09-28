@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function DaemonWrapper(undefined) {
 
 
 
@@ -15,7 +15,7 @@
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
+	String.prototype.endsWith = function DaemonEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var isnode, ismod, log, config, daemonize, daemon = false, restartingDaemon = false, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
 
 
@@ -36,7 +36,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function DaemonInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Daemon"), log = isnode.module("logger").log, config = isnode.cfg();
 		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
 		log("debug", "Blackrock Daemon > Initialising...");
@@ -62,11 +62,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Daemon
 	 */
-	pipelines.setupDaemon = function(){
+	pipelines.setupDaemon = function DaemonSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function DaemonSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function DaemonSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function DaemonSetupPipelinePipe() {
 				log("debug", "Blackrock Daemon > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -83,7 +83,7 @@
 					op.map(evt => { if(evt) return streamFns.statusDaemon(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function DaemonSetupPipelineSubscribeCallback(res) {
 					//console.log(res);
 				});
 			}
@@ -110,12 +110,12 @@
 	 * (Internal > Stream Methods [1]) Listen to Start Endpoint
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.listenToStart = function(source){
+	streamFns.listenToStart = function DaemonPipelineFnsListenToStart(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event");
-					isnode.on("startDaemon", function(){
+					isnode.on("startDaemon", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
 						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received");
 						evt.name = isnode.pkg().name;
 						evt.isChildProcess = process.send;
@@ -133,7 +133,7 @@
 	 * (Internal > Stream Methods [2]) Check Daemon Name And Init Daemon
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.checkNameAndInit = function(evt){
+	streamFns.checkNameAndInit = function DaemonPipelineFnsCheckNameAndInit(evt){
 		if(!evt.name){
 			log("error", "Blackrock Daemon > Name not passed correctly to daemon module");
 			process.exit();
@@ -155,7 +155,7 @@
 	 * (Internal > Stream Methods [3]) Check Status
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.checkStatus = function(evt){
+	streamFns.checkStatus = function DaemonPipelineFnsCheckStatus(evt){
 		evt.status = "";
 		if(process.argv[0].endsWith("sudo") && process.argv[1].endsWith("node")) { var i = 3 }
 		else if (process.argv[0].endsWith("sudo") && !process.argv[1].endsWith("node")) { var i = 2 }
@@ -184,37 +184,37 @@
 	 * (Internal > Stream Methods [4]) Setup Daemon Callbacks
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupCallbacks = function(evt){
+	streamFns.setupCallbacks = function DaemonPipelineFnsSetupCallbacks(evt){
 		evt.daemon
-		    .on("starting", function() {
+		    .on("starting", function DaemonPipelineFnsSetupCallbacksOnStarting() {
 		        console.log("Blackrock Daemon > Starting...\n");
 		    })
-		    .on("started", function(pid) {
+		    .on("started", function DaemonPipelineFnsSetupCallbacksOnStarted(pid) {
 		        console.log("Blackrock Daemon > Started. PID: " + pid + "\n");
 		        process.exit();
 		    })
-		    .on("stopping", function() {
+		    .on("stopping", function DaemonPipelineFnsSetupCallbacksOnStopping() {
 		        console.log("Blackrock Daemon > Stopping...\n");
 		    })
-		    .on("running", function(pid) {
+		    .on("running", function DaemonPipelineFnsSetupCallbacksOnRunning(pid) {
 		        console.log("Blackrock Daemon > Already running. PID: " + pid + "\n");
 		        process.exit();
 		    })
-		    .on("notrunning", function() {
+		    .on("notrunning", function DaemonPipelineFnsSetupCallbacksOnNotRunning() {
 		        console.log("Blackrock Daemon > Not running\n");
 		        process.exit();
 		    })
-		    .on("error", function(err) {
+		    .on("error", function DaemonPipelineFnsSetupCallbacksOnError(err) {
 		        console.log("Blackrock Daemon > Failed to start:  " + err.message + "\n");
 		        process.exit();
 		    });
 	    if(evt.status == "restart") {
-		   	evt.daemon.on("stopped", function(pid) {
+		   	evt.daemon.on("stopped", function DaemonPipelineFnsSetupCallbacksOnStoppedForRestart(pid) {
 		        console.log("Blackrock Daemon > Stopped\n");
 		        evt.daemon.start();
 		    });
 	    } else {
-    		evt.daemon.on("stopped", function(pid) {
+    		evt.daemon.on("stopped", function DaemonPipelineFnsSetupCallbacksOnStopped(pid) {
 		        console.log("Blackrock Daemon > Stopped\n");
 		        process.exit();
 		    });
@@ -227,7 +227,7 @@
 	 * (Internal > Stream Methods [5]) Check Root
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.checkRoot = function(evt){
+	streamFns.checkRoot = function DaemonPipelineFnsCheckRoot(evt){
 		if((evt.status == "start" || evt.status == "stop" || evt.status == "restart") && process.getuid() != 0) {
 			console.log("Blackrock Daemon > Expected to run as root\n");
 			process.exit();
@@ -241,7 +241,7 @@
 	 * (Internal > Stream Methods [6]) Start Daemon
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.startDaemon = function(evt){
+	streamFns.startDaemon = function DaemonPipelineFnsStartDaemon(evt){
 		if(evt.status == "start") {
 			evt.daemon.start();
 		}
@@ -252,7 +252,7 @@
 	 * (Internal > Stream Methods [7]) Stop Daemon
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.stopDaemon = function(evt){
+	streamFns.stopDaemon = function DaemonPipelineFnsStopDaemon(evt){
 		if(evt.status == "stop") {
 			evt.daemon.stop();
 		}
@@ -263,7 +263,7 @@
 	 * (Internal > Stream Methods [8]) Restart Daemon
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.restartDaemon = function(evt){
+	streamFns.restartDaemon = function DaemonPipelineFnsRestartDaemon(evt){
 		if(evt.status == "restart") {
 			var status = evt.daemon.status();
 			if(status){ evt.daemon.stop(); } 
@@ -276,7 +276,7 @@
 	 * (Internal > Stream Methods [9]) Status of Daemon
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.statusDaemon = function(evt){
+	streamFns.statusDaemon = function DaemonPipelineFnsStatusDaemon(evt){
 		if(evt.status == "status") {
 			if(evt.daemon.status()){
 				console.log("Blackrock Daemon > Daemon is running\n");

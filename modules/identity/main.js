@@ -8,7 +8,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function IdentityWrapper(undefined) {
 
 
 
@@ -33,7 +33,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function IdentityInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Identity"), ismod.log = log = isnode.module("logger").log;
 		log("debug", "Blackrock Identity > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -57,11 +57,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Identity
 	 */
-	pipelines.setupIdentity = function(){
+	pipelines.setupIdentity = function IdentitySetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function IdentitySetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function IdentitySetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function IdentitySetupPipelinePipe() {
 				log("debug", "Blackrock Identity > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -72,7 +72,7 @@
 					op.map(evt => { if(evt) return streamFns.setupBuildAuthorizeUri(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function IdentitySetupPipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -99,7 +99,7 @@
 	 * (Internal > Stream Methods [1]) Fetch Settings
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.fetchSettings = function(evt){
+	streamFns.fetchSettings = function IdentityFetchSettings(evt){
 		evt.settings = isnode.globals.get("settings");
 		log("debug", "Blackrock Identity > [1] Settings Fetched");
 		return evt;
@@ -109,8 +109,8 @@
 	 * (Internal > Stream Methods [2]) Setup Status Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupStatus = function(evt){
-		ismod.status = function(inputObject, cb){
+	streamFns.setupStatus = function IdentitySetupStatus(evt){
+		ismod.status = function IdentityStatus(inputObject, cb){
 			var httpClient = isnode.module("http", "interface").client;
 			if(!evt.settings["IDENTITY_BASE_URI"]) {
 				cb({
@@ -120,7 +120,7 @@
 				}, null);
 				return;
 			}
-			httpClient.get(settings["IDENTITY_BASE_URI"] + "/api/v1/status", function(httpErr, httpRes) {
+			httpClient.get(settings["IDENTITY_BASE_URI"] + "/api/v1/status", function IdentityStatusCallback(httpErr, httpRes) {
 				if(!httpRes || !httpRes.data.success) {
 					cb({
 						success: false,
@@ -146,8 +146,8 @@
 	 * (Internal > Stream Methods [3]) Setup Build Authorize Uri Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupBuildAuthorizeUri = function(evt){
-		ismod.buildAuthorizeUri = function(inputObject, cb){
+	streamFns.setupBuildAuthorizeUri = function IdentitySetupBuildAuthorizeUri(evt){
+		ismod.buildAuthorizeUri = function IdentityBuildAuthorizeUri(inputObject, cb){
 			var scope = inputObject.scope;
 			scope = encodeURIComponent(scope);
 			var responseType = "code";
@@ -191,56 +191,57 @@
 	 * (Internal > Stream Methods [x]) x
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupX = function(evt){
-		ismod.X = function(inputObject, cb){
+	/*streamFns.setupX = function IdentitySetupX(evt){
+		ismod.X = function IdentityX(inputObject, cb){
+			return;
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
-	}
+	}*/
 
 	/**
 	 * (Internal > Stream Methods [x]) x
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupX = function(evt){
+	/*streamFns.setupX = function(evt){
 		ismod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
-	}
+	}*/
 
 	/**
 	 * (Internal > Stream Methods [x]) x
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupX = function(evt){
+	/*streamFns.setupX = function(evt){
 		ismod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
-	}
+	}*/
 
 	/**
 	 * (Internal > Stream Methods [x]) x
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupX = function(evt){
+	/*streamFns.setupX = function(evt){
 		ismod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
-	}
+	}*/
 
 	/**
 	 * (Internal > Stream Methods [x]) x
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupX = function(evt){
+	/*streamFns.setupX = function(evt){
 		ismod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
-	}
+	}*/
 
 
 

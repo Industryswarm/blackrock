@@ -1,11 +1,11 @@
-/*!
-* ISNode Blackrock HTTP Interface Module
-*
-* Copyright (c) 2020 Darren Smith
-* Licensed under the LGPL license.
-*/
+/*
+ * ISNode Blackrock HTTP Interface Module
+ *
+ * Copyright (c) 2020 Darren Smith
+ * Licensed under the LGPL license.
+ */
 
-;!function(undefined) {
+;!function HTTPWrapper(undefined) {
 
 
 
@@ -31,7 +31,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function HTTPInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("HTTP"), log = isnode.module("logger").log, config = isnode.cfg();
 		log("debug", "Blackrock HTTP Interface > Initialising...");
 		ismod.client = client;
@@ -45,7 +45,7 @@
 	 * (Internal > Init) Attempts to start a defined HTTP interface
 	 * @param {string} name - The name of the interface
 	 */
-	var startInterface = function(name){
+	var startInterface = function HTTPStartInterface(name){
 		const cfg = config.interfaces.http[name];
 		if(cfg.ssl == true) { var protocol = "HTTPS" }
 		else { var protocol = "HTTP" }
@@ -58,7 +58,7 @@
 		}
 		if(routers.length <= 0){ log("error","Blackrock HTTP Interface > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers."); return; }
 		var ISPipeline = pipelines.processRequestStream();
-		utils.isPortTaken(cfg.port, function(err, result){
+		utils.isPortTaken(cfg.port, function HTTPIsPortTakenHandler(err, result){
 			var inst;
 			if(result != false){ log("error","Blackrock HTTP Interface > Cannot load HTTP interface (" + name + ") as the defined port (" + cfg.port + ") is already in use."); return; }
 			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ")."); return; }
@@ -74,7 +74,7 @@
 				if(inst) { delete inst; }
 				return;
 			}
-			inst.server.on('request', (request, response) => {
+			inst.server.on('request', function HTTPPrimaryRequestHandler(request, response) {
 				var myMsg = {
 					httpVersion: request.httpVersion,
 					host: request.headers.host,
@@ -91,7 +91,7 @@
 					new ISPipeline({ "req": request, "res": response }).pipe();
 				}
 			});
-			inst.server.listen(cfg.port, function(){
+			inst.server.listen(cfg.port, function HTTPListenHandler(){
 				log("startup","Blackrock HTTP Interface > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port); inst.listening = true;
 			});
 			ismod.instances = instances;
@@ -106,7 +106,7 @@
 	 * (Internal > Init) Exports the HTTP/S Server Interface
 	 * @param {string} name - The name of the interface
 	 */
-	var get = function(name){
+	var get = function HTTPGetInstance(name){
 		return instances[name];
 	}
 
@@ -122,12 +122,12 @@
 	/**
 	 * (Internal > Pipelines) Processes the Incoming Request Stream [HTTP/S]
 	 */
-	pipelines.processRequestStream = function(){
+	pipelines.processRequestStream = function HTTPProcessRequestStreamPipeline(){
 		const lib = isnode.lib, rx = lib.rxjs, op = lib.operators;
 		const ISPipeline = new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function HTTPProcessRequestStreamConstructor(evt) { this.evt = evt; },
+			callback: function HTTPProcessRequestStreamCallback(cb) { return cb(this.evt); },
+			pipe: function HTTPProcessRequestStreamPipe() {
 				log("debug", "Blackrock HTTP Interface > Request Event Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -153,7 +153,7 @@
 					op.map(evt => { if(evt) return streamFns.pipeFilesystemFiles(evt); }),
 					op.map(evt => { if(evt) return streamFns.routeRequest(evt); })
 				);
-				stream2.subscribe(function(res) {
+				stream2.subscribe(function HTTPProcessRequestStreamSubscribeHandler(res) {
 					//console.log(res);
 				});
 			}
@@ -164,12 +164,12 @@
 	/**
 	 * (Internal > Pipelines) Processes the Outgoing Response Stream [HTTP/S]
 	 */
-	pipelines.processResponseStream = function(){
+	pipelines.processResponseStream = function HTTPProcessResponseStreamPipeline(){
 		const lib = isnode.lib, rx = lib.rxjs, op = lib.operators;
 		const ISPipeline = new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function HTTPProcessResponseStreamConstructor(evt) { this.evt = evt; },
+			callback: function HTTPProcessResponseStreamCallback(cb) { return cb(this.evt); },
+			pipe: function HTTPProcessResponseStreamPipe() {
 				log("debug", "Blackrock HTTP Interface > Response Event Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -191,7 +191,7 @@
 				const stream2 = rx.from(stream1).pipe(
 					op.map(evt => { if(evt) return streamFns.afterResPromise(evt); })
 				);
-				stream2.subscribe(function(res) {
+				stream2.subscribe(function HTTPProcessResponseStreamSubscribeHandler(res) {
 					//console.log(res);
 				});
 			}
@@ -213,7 +213,7 @@
 	 * (Internal > Stream Methods [1]) Check HTTP Request For Errors
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.checkErrors = function(evt) {
+	streamFns.checkErrors = function HTTPCheckErrors(evt) {
 		evt.res.resReturned = false;
 	    evt.req.on('error', (err) => { log("error","HTTP Interface > Error processing incoming request", err); evt.res.statusCode = 400; evt.res.end(); evt.res.resReturned = true; });
 	    evt.res.on('error', (err) => { log("error","HTTP Interface > Error processing outgoing response", err); });
@@ -225,7 +225,7 @@
 	 * (Internal > Stream Methods [2]) Determine Content-Type of Request Message
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.determineContentType = function(evt) {
+	streamFns.determineContentType = function HTTPDetermineContentType(evt) {
 	    const {method, url, headers} = evt.req;
 	    for(var header in headers){ header = header.toLowerCase(); if(header == "content-type") { var contentType = headers[header]; } }
 	    var contentTypes = {};
@@ -247,14 +247,14 @@
 	 * (Internal > Stream Methods [3a]) Parses a multi-part http message
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.parseMultiPart = function(evt) {
+	streamFns.parseMultiPart = function HTTPParseMultiPart(evt) {
   		return new Promise((resolve, reject) => {
 			var form = new formidable.IncomingForm();
 			if(config.interfaces.http[req.interface].fileUploadPath) { form.uploadDir = config.interfaces.http[req.interface].fileUploadPath; }
 			else { form.uploadDir = "./tmp/"; }
 			if(config.interfaces.http[req.interface].maxUploadFileSizeMb) { form.maxFileSize = config.interfaces.http[req.interface].maxUploadFileSizeMb * 1024 * 1024; }
 			else { form.maxFileSize = 50 * 1024 * 1024; }
-			try { form.parse(req, function(err, fields, files) { var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
+			try { form.parse(req, function HTTPParseMultiPartFormParser(err, fields, files) { var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
 			catch (err) { evt.data = {error: "File Upload Size Was Too Large"}; resolve(evt); }
 			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message");
 		});
@@ -264,7 +264,7 @@
 	 * (Internal > Stream Methods [3b]) Parses a non-multi-part http message
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.parseNonMultiPart = function(evt) {
+	streamFns.parseNonMultiPart = function HTTPParseNonMultiPart(evt) {
 		return new Promise((resolve, reject) => {
 		    let data = []; 
 		    evt.req.on('data', (chunk) => { 
@@ -281,7 +281,7 @@
 	 * (Internal > Stream Methods [4]) Process Request Data
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.processRequestData = function(evt) {
+	streamFns.processRequestData = function HTTPProcessRequestData(evt) {
 	 	var data = evt.data;
 		try { if(Buffer.from(data)) { data = Buffer.concat(data).toString(); } } catch(err){ null; }
         if(data && isnode.module("utilities").isJSON(data) == "json_string"){ data = JSON.parse(data); }
@@ -296,7 +296,7 @@
 	 * (Internal > Stream Methods [5]) Parses Cookies From Headers
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.parseCookies = function(evt) {
+	streamFns.parseCookies = function HTTPProcessCookies(evt) {
 	    var list = {}, rc = evt.req.headers.cookie;
 	    rc && rc.split(';').forEach(function( cookie ) {
 	        var parts = cookie.split('=');
@@ -311,7 +311,7 @@
 	 * (Internal > Stream Methods [6]) Parse Host, Path & Query From URL
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.processHostPathAndQuery = function(evt) {
+	streamFns.processHostPathAndQuery = function HTTPProcessHostPathAndQuery(evt) {
 		var url = evt.req.url, headers = evt.req.headers, path = url, splitPath = path.split("?");
 		evt.req.queryStringObject = {};
 		if(splitPath[1]){
@@ -339,7 +339,7 @@
 	 * (Internal > Stream Methods [7]) Parse IP Addresses
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.fetchIPAddresses = function(evt) {
+	streamFns.fetchIPAddresses = function HTTPFetchIPAddresses(evt) {
 	 	const {method, url, headers, connection} = evt.req; var reqIpAddressV6 = "";
 		if(headers["X-Forwarded-For"]) { var reqIpAddress = headers["X-Forwarded-For"]; }
 		else if (connection.remoteAddress) { var reqIpAddress = connection.remoteAddress; }
@@ -357,7 +357,7 @@
 	 * (Internal > Stream Methods [8]) Parse Whether Request is Secure
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.isRequestSecure = function(evt) {
+	streamFns.isRequestSecure = function HTTPIsRequestSecure(evt) {
 	 	const {headers} = evt.req, request = evt.req;
 		if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "http") { evt.req.reqSecure = false; }
 		else if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "https") { evt.req.reqSecure = true; }
@@ -370,7 +370,7 @@
 	 * (Internal > Stream Methods [9]) Prepare Request Message
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.prepareRequestMessage = function(evt) {
+	streamFns.prepareRequestMessage = function HTTPPrepareRequestMessage(evt) {
 		var request = evt.req, msgId = isnode.module("utilities").uuid4(), {method, url, headers} = request;
 		evt.req.theMessage = {
 			"type": "http", "interface": request.interface, "msgId": msgId, "state": "incoming", "directional": "request/response",
@@ -388,7 +388,7 @@
 	 * (Internal > Stream Methods [10]) Fix Trailing Slash
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.fixTrailingSlash = function(evt) {
+	streamFns.fixTrailingSlash = function HTTPFixTrailingSlash(evt) {
 	 	const {method, url, headers, connection, theMessage} = evt.req, response = evt.res;
 		if(theMessage.request.path.endsWith("/") && theMessage.request.path != "/"){
 			evt.res.resReturned = true;
@@ -410,13 +410,13 @@
 	 * (Internal > Stream Methods [11]) Lookup Request Route
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.lookupRequestRoute = function(source) {
+	streamFns.lookupRequestRoute = function HTTPLookupRequestRoute(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					const request = evt.req, {theMessage} = request;
 					log("debug", "Blackrock HTTP Interface > [11] Searching For Request Route");
-					request.router.route(theMessage.request.host, theMessage.request.path, function(route) {
+					request.router.route(theMessage.request.host, theMessage.request.path, function HTTPRouterRouteCallback(route) {
 						if(route && route.match && route.match.service){
 							var basePath = isnode.module("services").service(route.match.service).cfg().basePath;
 							if(theMessage.request.path == basePath) { theMessage.request.path += "/"; }
@@ -445,7 +445,7 @@
 	 * (Internal > Stream Methods [12]) Pipe (HTML) Filesystem Files
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.pipeFilesystemFiles = function(evt) {
+	streamFns.pipeFilesystemFiles = function HTTPPipeFilesystemFiles(evt) {
 		var fs = require('fs'), os = require("os"), request = evt.req, response = evt.res, resReturned = false, {method, url, headers, route, htmlPath, theMessage} = request, rootBasePath = __dirname + "/../../../../";
 		var msg = request.theMessage;
 		try { var stats = fs.lstatSync(rootBasePath + "services/" + route.match.service + "/html" + htmlPath); var directPath = true; } 
@@ -474,17 +474,17 @@
 	 * (Internal > Stream Methods [13]) Route Request via Router
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.routeRequest = function(evt) {
+	streamFns.routeRequest = function HTTPRouteRequest(evt) {
 		const request = evt.req, ISResPipeline = pipelines.processResponseStream();
 		var resReturned = false;
-		var responseListener = function(msg){ 
+		var responseListener = function HTTPRouteRequestResponseListener(msg){ 
 			instances[request.interface].removeListener('outgoing.' + msg.msgId, responseListener);
 			resReturned = true;
 			new ISResPipeline({"req": evt.req, "res": evt.res, "msg": msg}).pipe(); 
 		}
 		instances[request.interface].on('outgoing.' + request.theMessage.msgId, responseListener);
 		var timeout = config.interfaces.http[request.interface].requestTimeout, timer = 0;
-		var interval = setInterval(function(){
+		var interval = setInterval(function HTTPRouteRequestTimeoutHandler(){
 			if(!resReturned && timer < timeout){
 				timer += 500;
 			} else if (!resReturned && timer >= timeout) {
@@ -523,7 +523,7 @@
 	 * (Internal > Response Stream Methods [1]) Prevent Duplicate Responses
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.preventDuplicateResponses = function(evt) {
+	streamFns.preventDuplicateResponses = function HTTPPreventDuplicateResponses(evt) {
 		log("debug", "Blackrock HTTP Interface > [1] Received response from router, Mitigating Against Duplicate Responses", { msgId: evt.msg.msgId });
  		if(!evt.msg.interface) { return; }; if(evt.res.resReturned) { return; }
 		evt.res.resReturned = true;
@@ -534,7 +534,7 @@
 	 * (Internal > Response Stream Methods [2]) Set Status Code, Cookies & Headers
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.setStatusCookiesAndHeaders = function(evt) {
+	streamFns.setStatusCookiesAndHeaders = function HTTPSetStatusCookiesAndHeaders(evt) {
 		evt.res.statusCode = evt.msg.response.statusCode;
 		if(evt.msg.response.cookies){
 			for (var name in evt.msg.response.cookies) {
@@ -559,7 +559,7 @@
 	 * (Internal > Response Stream Methods [3]) Check & Finalise Location Request
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.checkAndFinaliseLocationRequest = function(evt) {
+	streamFns.checkAndFinaliseLocationRequest = function HTTPCheckAndFinaliseLocationRequest(evt) {
 		if(evt.msg.response.location){
 			evt.res.setHeader('Location', evt.msg.response.location);
 			evt.res.end();
@@ -575,7 +575,7 @@
 	 * (Internal > Response Stream Methods [4]) Check & Finalise JSON Response Without View
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.checkAndFinaliseResponseWithoutView = function(evt) {
+	streamFns.checkAndFinaliseResponseWithoutView = function HTTPCheckAndFinaliseResponseWithoutView(evt) {
 		if(!evt.msg.response.view && evt.msg.response.body){
 			evt.res.setHeader('Content-Type', 'application/json');
 			evt.res.end(JSON.stringify(evt.msg.response.body));
@@ -591,7 +591,7 @@
 	 * (Internal > Response Stream Methods [5]) Check & Finalise File Response
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.checkAndFinaliseFileResponse = function(evt) {
+	streamFns.checkAndFinaliseFileResponse = function HTTPCheckAndFinaliseFileResponse(evt) {
 		if (evt.msg.response.file) {
 			var fs = require('fs');
 			try { var stats = fs.lstatSync(evt.msg.response.file); }
@@ -605,8 +605,8 @@
 				evt.res.writeHead(200, { "Content-Type": mimeType });
 				var stream = fs.createReadStream(pathToRead), had_error = false;
 				stream.pipe(evt.res);
-				stream.on('error', function(err){ had_error = true; if(evt.msg.response.cb) { evt.msg.response.cb(err, null); } });
-				stream.on('close', function(){
+				stream.on('error', function HTTPCheckAndFinaliseFileResponseErrHandler(err){ had_error = true; if(evt.msg.response.cb) { evt.msg.response.cb(err, null); } });
+				stream.on('close', function HTTPCheckAndFinaliseFileResponseCloseHandler(){
 					if (!had_error && evt.msg.response.cb) {
 						evt.msg.response.cb(null, { success: true, code: "FILE_DOWNLOADED", message: "File Successfully Downloaded"});
 					}
@@ -628,7 +628,7 @@
 	 * (Internal > Response Stream Methods [6]) Check & Set MIME Type
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.checkAndSetMIMEType = function(evt) {
+	streamFns.checkAndSetMIMEType = function HTTPCheckAndSetMIMEType(evt) {
 		var urlSplit = evt.req.url.split("/");
 		var filename = urlSplit[urlSplit.length - 1];
 		var fileType = filename.split(".")[1];
@@ -643,11 +643,9 @@
 	 * (Internal > Response Stream Methods [7]) Detect View Type
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.detectViewType = function(evt) {
-		if(typeof evt.msg.response.view === 'object' && evt.msg.response.view !== null)
-			evt.msg.viewType = "object";
-		else
-			evt.msg.viewType = "file";
+	streamFns.detectViewType = function HTTPDetectViewType(evt) {
+		if(typeof evt.msg.response.view === 'object' && evt.msg.response.view !== null) { evt.msg.viewType = "object"; }
+		else { evt.msg.viewType = "file"; }
 		log("debug", "Blackrock HTTP Interface > [7] View Type Detected", {viewType: evt.msg.viewType});
 		return evt;
 	}
@@ -656,13 +654,13 @@
 	 * (Internal > Response Stream Methods [8]) Process Object View Response
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.processObjectViewResponse = function(evt) {
+	streamFns.processObjectViewResponse = function HTTPProcessObjectViewResponse(evt) {
 		return new Promise((resolve, reject) => {
 			var basePath = __dirname + "/../../../../", fs = require('fs');
 			if(typeof evt.msg.response.view === 'object' && evt.msg.response.view !== null) {
 				if(evt.msg.response.view.file) {
 					try {
-						fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function (err, htmlData) {
+						fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function HTTPProcessObjectViewResponseReadFileCallback(err, htmlData) {
 						    if (err) {
 								log("error","Blackrock HTTP Interface > [8] " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg);
 								evt.res.setHeader('Content-Type', 'application/json');
@@ -701,11 +699,11 @@
 	 * (Internal > Response Stream Methods [9]) Process File View Response
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.processFileViewResponse = function(evt) {
+	streamFns.processFileViewResponse = function HTTPProcessFileViewResponse(evt) {
 		return new Promise((resolve, reject) => {
 			var basePath = __dirname + "/../../../../", fs = require('fs');
 			try {
-				fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view, "utf8", function (err, htmlData) {
+				fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view, "utf8", function HTTPProcessFileViewResReadFileCallback(err, htmlData) {
 				    if (err) {
 						log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view });
 						evt.res.setHeader('Content-Type', 'application/json');
@@ -729,7 +727,7 @@
 	 * (Internal > Response Stream Methods [10]) After Response Promise Method
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
-	streamFns.afterResPromise = function(evt) {
+	streamFns.afterResPromise = function HTTPAfterResPromise(evt) {
 		return evt;
 	}
 
@@ -756,7 +754,7 @@
 	 * @param {object} mustache - Mustache Library
 	 * @param {string} htmlData - HTML Data Context
 	 */
-	utils.renderView = function(msg, response, mustache, htmlData) {
+	utils.renderView = function HTTPRenderView(msg, response, mustache, htmlData) {
 		var rootBasePath = __dirname + "/../../../../", fs = require("fs"), partials = {}, regex = /{{>(.+)}}+/g, found = htmlData.match(regex);
 		if(found){
 			for (var i = 0; i < found.length; i++) {
@@ -774,10 +772,10 @@
 	 * @param {integer} port - The port number to check
 	 * @param {function} cb - Callback function
 	 */
-	utils.isPortTaken = function(port, cb) {
+	utils.isPortTaken = function HTTPIsPortTaken(port, cb) {
 	  var tester = require('net').createServer()
-	  	.once('error', function (err) { if (err.code != 'EADDRINUSE') { return cb(err); }; cb(null, true); })
-	  	.once('listening', function() { tester.once('close', function() { cb(null, false) }).close(); })
+	  	.once('error', function HTTPIsPortTakenErrHandler(err) { if (err.code != 'EADDRINUSE') { return cb(err); }; cb(null, true); })
+	  	.once('listening', function HTTPIsPortTakenListeningHandler() { tester.once('close', function() { cb(null, false) }).close(); })
 	  	.listen(port)
 	}
 
@@ -785,7 +783,7 @@
 	 * (Internal > Utilities) Check MIME Type Based On File Type
 	 * @param {string} fileType - File Type
 	 */
-	utils.checkMIMEType = function(fileType) {
+	utils.checkMIMEType = function HTTPCheckMIMEType(fileType) {
 		var mimeTypes = {
 			"jpeg": "image/jpeg", "jpg": "image/jpeg", "png": "image/png", "gif": "image/gif",
 			"html": "text/html", "js": "text/javascript", "css": "text/css", "csv": "text/csv",
@@ -826,7 +824,7 @@
 	 * }
 	 * @param {function} cb - Callback Function
 	 */
-	client.request = function(req, cb) {
+	client.request = function HTTPClientRequest(req, cb) {
 
 		if(!req.url) { cb({ success: false, code: 1, message: "URL Not Defined"}, null); return; }
 		if(!req.method) { cb({ success: false, code: 2, message: "Method Not Defined"}, null); return; }
@@ -856,7 +854,7 @@
 
 		if(req.data && !options.headers["Content-Length"]) { options.headers["Content-Length"] = Buffer.byteLength(req.data); }
 
-		var reqObj = httpLib.request(options, function (res) {
+		var reqObj = httpLib.request(options, function HTTPClientRequestCallback(res) {
 		  let responseData = "";
 		  if(req.encoding) { res.setEncoding(req.encoding) }
 		  else { res.setEncoding("utf8"); }
@@ -885,7 +883,7 @@
 	 * @param {string} url - Request URL
 	 * @param {function} cb - Callback Function
 	 */
-	client.get = function(url, cb) { 
+	client.get = function HTTPClientGetRequest(url, cb) { 
 		ismod.client.request({ "url": url, "headers": {}, "method": "GET", "encoding": "utf8" }, cb); 
 	}
 
@@ -894,7 +892,7 @@
 	 * @param {string} url - Request URL
 	 * @param {function} cb - Callback Function
 	 */
-	client.post = function(url, data, options, cb) {
+	client.post = function HTTPClientPostRequest(url, data, options, cb) {
 		var reqObj = { "url": url, "headers": {}, "method": "POST", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }
@@ -906,7 +904,7 @@
 	 * @param {string} url - Request URL
 	 * @param {function} cb - Callback Function
 	 */
-	client.put = function(url, data, options, cb) {
+	client.put = function HTTPClientPutRequest(url, data, options, cb) {
 		var reqObj = { "url": url, "headers": {}, "method": "PUT", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }
@@ -918,7 +916,7 @@
 	 * @param {string} url - Request URL
 	 * @param {function} cb - Callback Function
 	 */
-	client.delete = function(url, data, options, cb) {
+	client.delete = function HTTPClientDeleteRequest(url, data, options, cb) {
 		var reqObj = { "url": url, "headers": {}, "method": "DELETE", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }

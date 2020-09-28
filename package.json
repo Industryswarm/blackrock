@@ -18,7 +18,5 @@
     "url": "https://github.com/Industryswarm/isnode-blackrock.git"
   },
   "main": "index.js",
-  "engines": [
-    "node"
-  ]
+  "engines": [ "node" ]
 }

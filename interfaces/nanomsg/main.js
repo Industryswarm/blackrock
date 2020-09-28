@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function NanoMsgWrapper(undefined) {
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	var isnode, ismod, log;
@@ -14,7 +14,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function NanoMsgInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("NanoMSG"), log = isnode.module("logger").log;
 		log("debug", "Blackrock NanoMSG Interface > Initialising...");
 		ismod.startInterface = startInterface;
@@ -26,7 +26,7 @@
 	 * (Internal) Attempts to start an interface
 	 * @param {string} name - The name of the interface
 	 */
-	var startInterface = function(name){
+	var startInterface = function NanoMsgStartInterface(name){
 		var myName = ismod.name.toLowerCase();
 		var cfg = isnode.cfg().interfaces[myName][name];
 		log("startup", ismod.name + " Interface Module > Starting Interface (" + name + ").");

@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function UniverseWrapper(undefined) {
 
 
 
@@ -30,7 +30,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function UniverseInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISMod("Universe"), ismod.log = log = isnode.module("logger").log;
 		log("debug", "Blackrock Universe > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -54,11 +54,11 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Universe
 	 */
-	pipelines.setupUniverse = function(){
+	pipelines.setupUniverse = function UniverseSetupPipeline(){
 		return new isnode.ISNode().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function UniverseSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function UniverseSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function UniverseSetupPipelinePipe() {
 				log("debug", "Blackrock Universe > Server Initialisation Pipeline Created - Executing Now:");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -67,7 +67,7 @@
 					op.map(evt => { if(evt) return streamFns.setupModule(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function UniverseSetupPipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -94,7 +94,7 @@
 	 * (Internal > Stream Methods [1]) Setup Module
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupModule = function(evt){
+	streamFns.setupModule = function UniverseSetup(evt){
 		log("debug", "Blackrock Universe > [1] Setup Universe Module Initial State");
 		return evt;
 	}

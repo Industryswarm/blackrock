@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function LoggerWrapper(undefined) {
 
 
 
@@ -13,7 +13,7 @@
 
 
 	/** Create parent event emitter object from which to inherit ismod object */
-	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
+	String.prototype.endsWith = function LoggerEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var isnode, ismod, fileStream, sinks = {}, log, pipelines = {}, utils = {}, streamFns = {}, consoleEnabled = false;
 	var lib, rx, op, Observable, analyticsStore = { sessionEventCount: 0 }, latestHeartbeat = {}, logBuffer = [];
 	var daemonInControl = false, modIsLoaded = false;
@@ -34,10 +34,10 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function LoggerInit(isnodeObj){
 		if(modIsLoaded) { return ismod; }
 		isnode = isnodeObj, ismod = new isnode.ISMod("Logger");
-		ismod.log = log = function(level, logMsg, attrObj) {
+		ismod.log = log = function LoggerQuickLog(level, logMsg, attrObj) {
 			var currentDate = new Date();
 			currentDate = currentDate.toISOString();
 			var sEvt = streamFns.detectAvailableSinks({ "noLog": true });
@@ -45,12 +45,12 @@
 			logBuffer.push(evt);
 		}
 		var loadDependencies = false;
-		isnode.on("startDaemon", function(){ daemonInControl = true; });
-		isnode.on("loadDependencies", function(){ loadDependencies = true; });
+		isnode.on("startDaemon", function LoggerOnStartDaemon(){ daemonInControl = true; });
+		isnode.on("loadDependencies", function LoggerOnLoadDependencies(){ loadDependencies = true; });
 		log("debug", "Blackrock Logger > Initialising...");
 		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var intervalCounter = 0;
-		var interval = setInterval(function(){
+		var interval = setInterval(function LoggerInitInterval(){
 			if(loadDependencies) {
 				clearInterval(interval);	
 				ISSinkPipeline = pipelines.sendToSinks();
@@ -61,7 +61,7 @@
 			if(intervalCounter >= 500) { clearInterval(interval); }
 			intervalCounter += 10;
 		}, 10);
-		ismod.unload = function(){
+		ismod.unload = function LoggerUnload(){
 			log("debug","Logger Module > Closing any open logging connections and shutting down.");
 			if(fileStream){ delete fileStream; isnode.emit("module-shut-down", "Logger"); } 
 			else { isnode.emit("module-shut-down", "Logger"); }
@@ -85,13 +85,13 @@
 	/**
 	 * (Internal > Pipeline [1]) Setup Logger
 	 */
-	pipelines.setupLogger = function(){
+	pipelines.setupLogger = function LoggerSetupPipeline(){
 		return new isnode.Base().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function LoggerSetupPipelineConstructor(evt) { this.evt = evt; },
+			callback: function LoggerSetupPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function LoggerSetupPipelinePipe() {
 				const self = this; 
-				process.nextTick(function(){
+				process.nextTick(function LoggerSetupPipelineNextTick(){
 					log("debug", "Blackrock Logger > Server Initialisation Pipeline Created - Executing Now:");
 					const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 					const stream1 = stream.pipe(
@@ -108,7 +108,7 @@
 						streamFns.bindLogEndpoints
 						
 					);
-					stream1.subscribe(function(evt) {
+					stream1.subscribe(function LoggerSetupPipelineSubscribe(evt) {
 						//console.log(evt);
 					});
 				});
@@ -119,11 +119,11 @@
 	/**
 	 * (Internal > Pipeline [2]) Send To Sinks
 	 */
-	pipelines.sendToSinks = function(){
+	pipelines.sendToSinks = function LoggerSendToSinksPipeline(){
 		return new isnode.Base().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function LoggerSendToSinksPipelineConstructor(evt) { this.evt = evt; },
+			callback: function LoggerSendToSinksPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function LoggerSendToSinksPipelinePipe() {
 				const self = this; const stream = rx.fromEvent(ismod, "logEvent");
 				const stream1 = stream.pipe(
 
@@ -132,7 +132,7 @@
 					streamFns.fanoutToSinks
 					
 				);
-				stream1.subscribe(function(evt) {
+				stream1.subscribe(function LoggerSendToSinksPipelineSubscribe(evt) {
 					switch(evt.activeSink){
 						case "console":
 							streamFns.sendToConsole(evt);
@@ -152,11 +152,11 @@
 	/**
 	 * (Internal > Pipeline [5]) Process Analytics Event
 	 */
-	pipelines.processAnalyticsEvent = function(){
+	pipelines.processAnalyticsEvent = function LoggerProcessAnalyticsEventPipeline(){
 		return new isnode.Base().extend({
-			constructor: function(evt) { this.evt = evt; },
-			callback: function(cb) { return cb(this.evt); },
-			pipe: function() {
+			constructor: function LoggerProcessAnalyticsEventPipelineConstructor(evt) { this.evt = evt; },
+			callback: function LoggerProcessAnalyticsEventPipelineCallback(cb) { return cb(this.evt); },
+			pipe: function LoggerProcessAnalyticsEventPipelinePipe() {
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -164,7 +164,7 @@
 					op.map(evt => { if(evt) return streamFns.processAnalyticsEvent(evt); })
 					
 				);
-				stream1.subscribe(function(res) {
+				stream1.subscribe(function LoggerProcessAnalyticsEventPipelineSubscribe(res) {
 					//console.log(res);
 				});
 			}
@@ -192,7 +192,7 @@
 	 * (Internal > Stream Methods [1]) Setup File Stream
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupFileStream = function(evt){
+	streamFns.setupFileStream = function LoggerSetupFileStream(evt){
 		if(isnode.cfg().logger.sinks.file && isnode.cfg().logger.sinks.file.enabled == true){
 			var fs = require("fs");
 			if(isnode.cfg().logger.sinks.file.location)
@@ -214,7 +214,7 @@
 	 * (Internal > Stream Methods [2]) Detect Available Sinks
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.detectAvailableSinks = function(evt){
+	streamFns.detectAvailableSinks = function LoggerDetectAvailableSinks(evt){
 		evt.sinks = {};
 		if(isnode.cfg().logger.enabled == true){
 			if(isnode.cfg().logger.sinks.console && isnode.cfg().logger.sinks.console.enabled == true){ evt.sinks.console = true; }
@@ -252,12 +252,12 @@
 	 *		}
 	 *	}
 	 */
-	streamFns.setupViewAnalytics = function(evt){
+	streamFns.setupViewAnalytics = function LoggerSetupViewAnalytics(evt){
 
 		var ViewClass = new isnode.Base().extend({
-			constructor: function() { return this; },
-			callback: function(cb) { return cb(this.evt); },
-			process: function() {
+			constructor: function LoggerViewAnalyticsClassConstructor() { return this; },
+			callback: function LoggerViewAnalyticsClassCallback(cb) { return cb(this.evt); },
+			process: function LoggerViewAnalyticsClassPipe() {
 				var self = this;
 				var viewObject = {
 					server: { dateLastBoot: "", dateCacheLastSaved: "" },
@@ -281,14 +281,14 @@
 				viewObject.msgs.avgCpuLoad = self.fetchAvgValue("avgCpuLoad");
 				return viewObject;
 			},
-			stub: function() {
+			stub: function LoggerViewAnalyticsClassStub() {
 				return {
 					serverParams: ["dateLastBoot", "dateCacheLastSaved"],
 					msgsParams: ["reqSize", "avgProcessingTime", "avgMemUsed", "avgCpuLoad", "resSize"],
 					dp: this.getDatePartsAndPrepareStore()
 				}
 			},
-			getDatePartsAndPrepareStore: function() {
+			getDatePartsAndPrepareStore: function LoggerViewAnalyticsClassGetDateParts() {
 				var dayjs = lib.dayjs, dateObject = dayjs().format("YYYY-MM-DD").split("-");
 				var year = dateObject[0], month = dateObject[1], day = dateObject[2];
 				if(!analyticsStore[year]) { analyticsStore[year] = {}; }
@@ -296,16 +296,16 @@
 				if(!analyticsStore[year][month][day]) { analyticsStore[year][month][day] = []; }
 				return {year: year, month: month, day: day};
 			},
-			sortBy: function(array, intField, param, direction) {
+			sortBy: function LoggerViewAnalyticsClassSortBy(array, intField, param, direction) {
 				if(direction == "min") {
-					array.sort(function(a, b) { 
+					array.sort(function LoggerViewAnalyticsClassSortBySortFnOne(a, b) { 
 						if(!a[intField] && b[intField]) { return 0 - b[intField][param]; }
 						else if (!a[intField] && !b[intField]) { return 0; }
 						else if (a[intField] && !b[intField]) { return a[intField][param] - 0; }
 						else { return a[intField][param] - b[intField][param]; }
 					});				
 				} else {
-					array.sort(function(b, a) { 
+					array.sort(function LoggerViewAnalyticsClassSortBySortFnTwo(b, a) { 
 						if(((a && !a[intField]) || !a) && b && b[intField]) { return 0 - b[intField][param]; }
 						else if (((a && !a[intField]) || !a) && ((b && !b[intField]) || !b)) { return 0; }
 						else if (a && a[intField] && ((b && !b[intField]) || !b)) { return a[intField][param] - 0; }
@@ -314,7 +314,7 @@
 				}
 				return array;
 			},
-			fetchMaxValue: function(param) {
+			fetchMaxValue: function LoggerViewAnalyticsClassFetchMaxValue(param) {
 				var s = this.stub(), dp = s.dp, serverParams = s.serverParams, msgsParams = s.msgsParams, sortBy = this.sortBy;
 				if(serverParams.includes(param)) { var intField = "server"; } 
 				else if(msgsParams.includes(param)) { var intField = "msgs"; }
@@ -323,7 +323,7 @@
 				if(!daysEvts || !daysEvts[0] || !daysEvts[0][intField] || !daysEvts[0][intField][param]) { return 0; }
 				return daysEvts[0][intField][param];
 			},
-			fetchMinValue: function(param) {
+			fetchMinValue: function LoggerViewAnalyticsClassFetchMinValue(param) {
 				var s = this.stub(), dp = s.dp, serverParams = s.serverParams, msgsParams = s.msgsParams, sortBy = this.sortBy;
 				if(serverParams.includes(param)) { var intField = "server"; } 
 				else if(msgsParams.includes(param)) { var intField = "msgs"; }
@@ -332,7 +332,7 @@
 				if(!daysEvts || !daysEvts[0] || !daysEvts[0][intField] || !daysEvts[0][intField][param]) { return 0; }
 				return daysEvts[0][intField][param];
 			},
-			fetchTotalValue: function(param) {
+			fetchTotalValue: function LoggerViewAnalyticsClassFetchTotalValue(param) {
 				var s = this.stub(), dp = s.dp, serverParams = s.serverParams, msgsParams = s.msgsParams, sortBy = this.sortBy;
 				if(serverParams.includes(param)) { var intField = "server"; } 
 				else if(msgsParams.includes(param)) { var intField = "msgs"; }
@@ -343,7 +343,7 @@
 				}
 				return sumTotal;
 			},
-			fetchAvgValue: function(param) {
+			fetchAvgValue: function LoggerViewAnalyticsClassFetchAvgValue(param) {
 				var s = this.stub(), dp = s.dp, serverParams = s.serverParams, msgsParams = s.msgsParams, sortBy = this.sortBy;
 				if(serverParams.includes(param)) { var intField = "server"; } 
 				else if(msgsParams.includes(param)) { var intField = "msgs"; }
@@ -355,7 +355,7 @@
 				avgValue = sumTotal / recordCount;
 				return avgValue;
 			},
-			fetchCount: function(param) {
+			fetchCount: function LoggerViewAnalyticsClassFetchCount(param) {
 				var s = this.stub(), dp = s.dp, serverParams = s.serverParams, msgsParams = s.msgsParams, sortBy = this.sortBy;
 				if(serverParams.includes(param)) { var intField = "server"; } 
 				else if(msgsParams.includes(param)) { var intField = "msgs"; }
@@ -369,9 +369,9 @@
 		});
 
 		if(!ismod.analytics) { ismod.analytics = {}; }
-
 		var viewObject = new ViewClass();
-		ismod.analytics.view = function(){ return viewObject.process(); }
+
+		ismod.analytics.view = function LoggerExternalViewAnalyticsMethod(){ return viewObject.process(); }
 
 		log("debug", "Blackrock Logger > [3] View Analytics Setup & Ready For Use");
 
@@ -382,12 +382,12 @@
 	 * (Internal > Stream Methods [4]) Setup Jobs
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupJobs = function(evt){
+	streamFns.setupJobs = function LoggerSetupJobs(evt){
 		log("debug", "Blackrock Logger > [4] Setting Up Heartbeat + Cache Jobs");
 		if(isnode.cfg().logger.heartbeat) {
-			var heartbeatJob = function HeartbeatJob() {
+			var heartbeatJob = function LoggerHeartbeatJob() {
 				var beat = isnode.module("logger").analytics.view();
-				var roundAndLabel = function(param) {
+				var roundAndLabel = function LoggerRoundAndLabel(param) {
 					if(param >= 1024 && param < 1048576) {
 						param = Math.round(param / 1024);
 						param = Number(param).toLocaleString();
@@ -424,7 +424,7 @@
 				if(isnode.module("sandbox") && isnode.cfg().services.sandbox.default == true)
 					runningInSandbox = "Yes";
 
-				if(isnode.cfg().logger.heartbeat.console && consoleEnabled) {
+				if(isnode.cfg().logger.heartbeat.console && consoleEnabled && !isnode.globals.get("silent")) {
 					console.log(`
 
 	========================================================================================================
@@ -468,12 +468,12 @@
 				}
 			}
 
-			var cacheJob = function CacheJob() {
+			var cacheJob = function LoggerCacheJob() {
 				log("debug", "Blackrock Logger > Running Heartbeat Cache Job");
 				var content = JSON.stringify(analyticsStore);
 				var fs = require("fs");
 				var path = isnode.getBasePath() + "/cache/heartbeat/heartbeats.json";
-				fs.writeFile(path, content, {encoding:'utf8', flag:'w'}, function(err){});
+				fs.writeFile(path, content, {encoding:'utf8', flag:'w'}, function LoggerCacheJobWriteFileCallback(err){});
 			}
 
 			isnode.module("jobs").jobs.add({ id: "CH01", name: "Console Server Heartbeat Job", type: "recurring", delay: isnode.cfg().logger.heartbeat.heartbeatFreq, local: true }, heartbeatJob, {});
@@ -487,12 +487,12 @@
 	 * (Internal > Stream Methods [5]) Setup Get & Update Latest Heartbeat Method
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.setupGetAndUpdateLatestHeartbeat = function(evt){
+	streamFns.setupGetAndUpdateLatestHeartbeat = function LoggerSetupGetAndUpdateLatestHeartbeat(evt){
 		log("debug", "Blackrock Logger > [5] Setting up the 'getLatestHeartbeat' and 'updateLatestHeartbeat' Methods on Logger");
-		ismod.getLatestHeartbeat = function GetLatestHeartbeat() {
+		ismod.getLatestHeartbeat = function LoggerGetLatestHeartbeat() {
 			return latestHeartbeat;
 		}
-		ismod.updateLatestHeartbeat = function GetLatestHeartbeat(key, value) {
+		ismod.updateLatestHeartbeat = function LoggerUpdateLatestHeartbeat(key, value) {
 			latestHeartbeat[key] = value;
 			return true;
 		}
@@ -503,12 +503,12 @@
 	 * (Internal > Stream Methods [6]) Load Cached Heartbeats
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.loadCachedHeartbeats = function(evt){
+	streamFns.loadCachedHeartbeats = function LoggerLoadCachedHeartbeats(evt){
 		log("debug", "Blackrock Logger > [6] Loading cached heartbeats if they exist");
-		setTimeout(function() {
+		setTimeout(function LoggerLoadCachedHeartbeatsTimeout() {
 			var fs = require("fs");
 			var path = isnode.getBasePath() + "/cache/heartbeat/heartbeats.json";
-			fs.readFile(path, 'utf8', function(err, content){
+			fs.readFile(path, 'utf8', function loggerLoadCachedHeartbeatsReadFileCallback(err, content){
 				if(content) { analyticsStore = JSON.parse(content); }
 			});
 		}, 70);
@@ -519,9 +519,9 @@
 	 * (Internal > Stream Methods [7]) Fire the "Server Boot" Analytics Event
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.fireServerBootAnalyticsEvent = function(evt){
+	streamFns.fireServerBootAnalyticsEvent = function LoggerFireServerBootAnalyticsEvent(evt){
 		log("debug", "Blackrock Logger > [7] Firing the \"Server Boot\" Analytics Event");
-		setTimeout(function() {
+		setTimeout(function LoggerFireBootAnalyticsEventTimeout() {
 			var dayjs = lib.dayjs;
 			ismod.analytics.log({ "server": { "dateLastBoot": dayjs().format() } });
 		}, 70);
@@ -532,9 +532,9 @@
 	 * (Internal > Stream Methods [8]) Binds the 'enableConsole' method to this module
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.bindEnableConsole = function(evt){
+	streamFns.bindEnableConsole = function LoggerBindEnableConsole(evt){
 		log("debug", "Blackrock Logger > [8a] Binding 'enableConsole' method to this module");
-		ismod.enableConsole = function() { 
+		ismod.enableConsole = function LoggerEnableConsole() { 
 			log("debug", "Blackrock Logger > [8b] 'enableConsole' has been called");
 			consoleEnabled = true; 
 		}
@@ -545,12 +545,12 @@
 	 * (Internal > Stream Methods [9]) Bind Log Endpoints
 	 * @param {observable} source - The Source Observable
 	 */
-	streamFns.bindLogEndpoints = function(source){
+	streamFns.bindLogEndpoints = function LoggerBindLogEndpoints(source){
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Logger > [9] Setting Up Analytics & Log Endpoint On The Logger Module");
-					ismod.log = log = function(level, logMsg, attrObj){
+					ismod.log = log = function LoggerLog(level, logMsg, attrObj){
 						var currentDate = new Date();
 						currentDate = currentDate.toISOString();
 						var evt2 = {};
@@ -566,7 +566,7 @@
 					};
 					if(!daemonInControl) { isnode.emit("updateLogFn"); }
 					if(!ismod.analytics) { ismod.analytics = {}; }
-					ismod.analytics.log = function(query){
+					ismod.analytics.log = function LoggerAnalyticsLog(query){
 						var evt2 = {};
 						evt2.analyticsEvent = { "query": query };
 						var ISPipeline = pipelines.processAnalyticsEvent();
@@ -605,7 +605,7 @@
 	/**
 	 * (Internal > Stream  Methods [1]) Buffer Log Events Until Console Enabled
 	 */
-	streamFns.unbufferEvents = function(source) {
+	streamFns.unbufferEvents = function LoggerUnbufferEvents(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -624,7 +624,7 @@
 	/**
 	 * (Internal > Stream  Methods [2]) Fanout To Sinks
 	 */
-	streamFns.fanoutToSinks = function(source) {
+	streamFns.fanoutToSinks = function LoggerFanoutToSinks(source) {
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
@@ -662,9 +662,9 @@
 	 * (Internal > Stream Methods [3]) Send Log Event to Console
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.sendToConsole = function(evt){
+	streamFns.sendToConsole = function LoggerSendToConsole(evt){
 		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
-		if(evt.activeSink == "console") {
+		if(evt.activeSink == "console" && !isnode.globals.get("silent")) {
 			if(isnode.cfg().logger.levels.includes(level)){
 				console.log(currentDate + " (" + level + ") " + logMsg);
 				if(attrObj && isnode.cfg().logger.logMetadataObjects)
@@ -678,7 +678,7 @@
 	 * (Internal > Stream Methods [4]) Send Log Event to Console
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.sendToFile = function(evt){
+	streamFns.sendToFile = function LoggerSendToFile(evt){
 		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
 		if(evt.activeSink == "file") {
 			if(isnode.cfg().logger.levels.includes(level)){
@@ -694,7 +694,7 @@
 	 * (Internal > Stream Methods [5]) Send Log Event to Console
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.sendToElasticSearch = function(evt){
+	streamFns.sendToElasticSearch = function LoggerSendToElasticSearch(evt){
 		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
 		if(evt.activeSink == "elasticsearch") {
 			var httpModule = isnode.module("http", "interface");
@@ -720,7 +720,7 @@
 					"headers": {"Content-Type": "application/json" },
 					"encoding": "utf8",
 					"data": body
-				}, function(httpErr, httpRes) { 
+				}, function LoggerSendToElasticSearchCallback(httpErr, httpRes) { 
 					return;
 				});
 			}
@@ -744,7 +744,7 @@
 	 *		"resSize": 0
 	 *	}
 	 */
-	streamFns.processAnalyticsEvent = function(evt){
+	streamFns.processAnalyticsEvent = function LoggerProcessAnalyticsEvent(evt){
 		if(evt.analyticsEvent) {
 			var query = evt.analyticsEvent.query, dayjs = lib.dayjs;
 			var dateObject = dayjs().format("YYYY-MM-DD").split("-");

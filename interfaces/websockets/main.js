@@ -5,7 +5,7 @@
 * Licensed under the LGPL license.
 */
 
-;!function(undefined) {
+;!function WebSocketsWrapper(undefined) {
 
 	/** Create parent event emitter object from which to inherit ismod object */
 	var isnode, ismod, log, instances = {};
@@ -14,7 +14,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} isnode - The parent isnode object
 	 */
-	var init = function(isnodeObj){
+	var init = function WebSocketsInit(isnodeObj){
 		isnode = isnodeObj, ismod = new isnode.ISInterface("WebSockets"), log = isnode.module("logger").log;
 		log("debug", "Blackrock WebSockets Interface > Initialising...");
 		ismod.startInterface = startInterface;
@@ -26,7 +26,7 @@
 	 * (Internal) Attempts to start a defined WebSockets interface
 	 * @param {string} name - The name of the interface
 	 */
-	var startInterface = function(name){
+	var startInterface = function WebSocketsStartInterface(name){
 		var cfg = isnode.cfg().interfaces.websockets[name];
 		log("startup","WebSockets Server Interface > Starting and binding WebSockets Interface (" + name + ") to the HTTP Server Interface (" + cfg.httpInterface + ").");
 		var routers = [];
@@ -42,7 +42,7 @@
 		var	WebSocket = require('./support/ws/ws');
 		var timeoutCounter = 0;
 		var timeout = 10000;
-		var intervalObject = setInterval(function(){
+		var intervalObject = setInterval(function WebSocketsStartInterfaceTimeoutHandler(){
 			timeoutCounter = timeoutCounter + 100;
 			var httpInterface = isnode.module("http", "interface").get(cfg.httpInterface);
 			if(httpInterface && httpInterface.server && httpInterface.listening == true){
@@ -66,14 +66,14 @@
 	 * (Internal) Listen for Incoming Connections
 	 * @param {object} server - WebSockets Server Object
 	 */
-	var listen = function(server) {
+	var listen = function WebSocketsListen(server) {
 		var os = require("os");
-		server.on('connection', function connection(ws, req) {
+		server.on('connection', function WebSocketsConnectionHandler(ws, req) {
 			log("debug","WebSockets Interface > New remote client session initiated");
 			var cxnFormat = "string";
 			var cxnMode = "gateway";
 			var sessionId = isnode.module("utilities").uuid4();
-			var responseListener = function(resMsg){
+			var responseListener = function WebSocketsConnectionResponseListener(resMsg){
 				log("debug","WebSockets Interface > Received message " + resMsg.msgId + " from router", resMsg);
 				if(cxnFormat == "string")
 					ws.send(resMsg.response.message);
@@ -85,7 +85,7 @@
 				ismod.isnode.interfaces.server.websockets.removeListener('outgoing.' + sessionId, responseListener);
 				log("debug","WebSockets Server Interface > Remote client session closed.",{sessionId: sessionId});
 			});
-			ws.on('message', function incoming(msg) {
+			ws.on('message', function WebSocketsIncomingMessageHandler(msg) {
 				if(cxnMode == "gateway"){
 					var msgType = isnode.module("utilities").isJSON(msg);
 					if(msgType == "json_string"){
@@ -116,7 +116,7 @@
 	    return;
 	}
 
-	var Help = function(ws,req,msgObject,cxnFormat){
+	var Help = function WebSocketsHelp(ws, req, msgObject, cxnFormat){
 		log("debug","WebSockets Server Interface > Returning help section on client request");
 		if(cxnFormat == "string"){
 			ws.send('Help not implemented.');
@@ -126,12 +126,12 @@
 		return;
 	}
 
-	var Exit = function(ws,req,msgObject,cxnFormat,responseListener,sessionId){
+	var Exit = function WebSocketsExit(ws, req, msgObject, cxnFormat, responseListener, sessionId){
 		ws.close(1000,'Exiting ISNode WebSocket Shell on Client Request.');
 		return;
 	}
 
-	var SetFormat = function(ws,req,msgObject,cxnFormat){
+	var SetFormat = function WebSocketsSetFormat(ws,req,msgObject,cxnFormat){
 		var formatString = msgObject.command.split(" ");
 		var format = formatString[2];
 		if(format == cxnFormat && format == "string"){
@@ -159,7 +159,7 @@
 		return cxnFormat;
 	}
 
-	var RouteMessage = function(ws,req,msgObject,cxnFormat,sessionId){
+	var RouteMessage = function WebSocketsRouteMessage(ws, req, msgObject, cxnFormat, sessionId){
 		var resReturned = false;
 		var msgId = isnode.module("utilities").uuid4();
 		var host = req.headers.host;
@@ -187,7 +187,7 @@
 			}
 		}
 		log("debug","WebSockets Server Interface > Sending message " + message.msgId + " to router", message);
-		var responseListener = function(msg){
+		var responseListener = function WebSocketsRouteMessageResponseListener(msg){
 			log("debug","WebSockets Server Interface > Received response " + msg.msgId + " from router", msg);
 			resReturned = true;
 			ws.send(JSON.stringify(msg.response.body));
@@ -197,7 +197,7 @@
 		ismod.isnode.router.incoming(message);
 		var timeout = 5000;
 		var timer = 0;
-		var interval = setInterval(function(){
+		var interval = setInterval(function WebsocketsRouteMessageTimeoutHandler(){
 			if(!resReturned && timer < timeout){
 				timer += 500;
 			} else if (!resReturned && timer >= timeout) {
