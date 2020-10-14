@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Sandbox Module
+* Blackrock Sandbox Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -15,7 +15,7 @@
 
 
 	/** Setup Global Variables for this Module */
-	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, basePath = __dirname + "/../..";
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, basePath = __dirname + "/../..";
 
 
 
@@ -34,15 +34,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnodeObj - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function SandboxInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Sandbox"), log = isnode.module("logger").log;
+	var init = function SandboxInit(coreObj){
+		core = coreObj, mod = new core.Mod("Sandbox"), log = core.module("logger").log;
 		log("debug", "Blackrock Sandbox > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupSandbox();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupSandbox();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -63,7 +63,7 @@
 	 * (Internal > Pipeline [1]) Setup Sandbox
 	 */
 	pipelines.setupSandbox = function SandboxSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function SandboxSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function SandboxSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function SandboxSetupPipelinePipe() {
@@ -130,7 +130,7 @@
 						observer.next(message); 
 					}
 					log("debug_deep", "Blackrock Sandbox > [2] Code Execution Endpoint Attached To This Module");
-					ismod.execute = evt.Execute;
+					mod.execute = evt.Execute;
 				},
 				error(error) { observer.error(error); }
 			});

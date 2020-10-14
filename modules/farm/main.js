@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Farm Module
+* Blackrock Farm Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -11,8 +11,8 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, scuttleBucketInstance;
+	/** Create parent event emitter object from which to inherit mod object */
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, scuttleBucketInstance;
 	var jobServer = false, serverModel, serverEmitter, farmServers = {}, utils = {};
 
 
@@ -28,15 +28,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function FarmInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Farm"), ismod.log = log = isnode.module("logger").log;
+	var init = function FarmInit(coreObj){
+		core = coreObj, mod = new core.Mod("Farm"), mod.log = log = core.module("logger").log;
 		log("debug", "Blackrock Farm > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupFarm();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupFarm();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -55,7 +55,7 @@
 	 * (Internal > Pipeline [1]) Setup Farm
 	 */
 	pipelines.setupFarm = function FarmSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function FarmSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function FarmSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function FarmSetupPipelinePipe() {
@@ -129,7 +129,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Farm > [2] Attempting to create model and start server");
-					if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
+					if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 					if(farm.server && farm.server.port) { var port = farm.server.port; } else { var port = 8000; }
 					utils.isPortTaken(port, function FarmCreateModelAndServerPortTakenCallback(err, result){
 						if(result != false){ 
@@ -171,10 +171,10 @@
 	 */
 	streamFns.persistToDisk = function FarmPersistToDisk(evt){
 		log("debug", "Blackrock Farm > [3] Setting Up Disk Persistance...");
-		if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
+		if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 		if(farm.server && farm.server.cache) { var cache = farm.server.cache; } else { var cache = null; }
 		if(cache) {
-			var file = isnode.getBasePath() + "/cache/" + cache;
+			var file = core.getBasePath() + "/cache/" + cache;
 			var fs = require('fs');
 			fs.createReadStream(file).pipe(scuttleBucketInstance.createWriteStream());
 			scuttleBucketInstance.on('sync', function FarmPersistToDiskSyncCallback() {
@@ -190,7 +190,7 @@
 	 */
 	streamFns.setupUpdateListener = function FarmSetupUpdateListener(evt){
 		log("debug", "Blackrock Farm > [4] Setting Up Update Listener...");
-		ismod.updateListener = function FarmUpdateListener(fn) { return serverModel.on('update', fn); }
+		mod.updateListener = function FarmUpdateListener(fn) { return serverModel.on('update', fn); }
 		return evt;
 	}	
 
@@ -206,7 +206,7 @@
 			stream.pipe(ms).pipe(stream);			
 		}
 		if(evt.serverNotStarted) { return evt; }
-		if(isnode.cfg().farm) { var farm = isnode.cfg().farm; } else { var farm = {}; }
+		if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 		if(farm.seeds) {
 			for (var i = 0; i < farm.seeds.length; i++) {
 				var host = farm.seeds[i].split(":")[0];
@@ -223,8 +223,8 @@
 	 */
 	streamFns.setupGetAndSetMethods = function FarmSetupGetAndSetMethods(evt){
 		log("debug", "Blackrock Farm > [6] Setting Up Model Get & Set Methods...");
-		ismod.get = function FarmGetDataValue(key) { return serverModel.get(key); }
-		ismod.set = function FarmSetDataValue(key, value) { return serverModel.set(key, value); }
+		mod.get = function FarmGetDataValue(key) { return serverModel.get(key); }
+		mod.set = function FarmSetDataValue(key, value) { return serverModel.set(key, value); }
 		return evt;
 	}
 
@@ -234,7 +234,7 @@
 	 */
 	streamFns.setupIsJobServer = function FarmSetupIsJobServer(evt){
 		log("debug", "Blackrock Farm > [7] Setting Up 'isJobServer' Method...");
-		ismod.isJobServer = function FarmIsJobServer() { return jobServer; }
+		mod.isJobServer = function FarmIsJobServer() { return jobServer; }
 		return evt;
 	}
 
@@ -244,7 +244,7 @@
 	 */
 	streamFns.setupEventEmitter = function FarmSetupEventEmitter(evt){
 		log("debug", "Blackrock Farm > [8] Setting Up Event Emitter...");
-		ismod.events = {
+		mod.events = {
 			emit: function FarmEventEmitterEmit(event, data) {
 				return serverEmitter.emit(event, data);
 			},
@@ -271,7 +271,7 @@
 			if(key.startsWith("servers")) {
 				key = key.split("[");
 				var serverUri = key[1].slice(0, -1);
-				if(isnode.module("utilities").isJSON(val)) {
+				if(core.module("utilities").isJSON(val)) {
 					val = JSON.parse(val);
 					farmServers[serverUri] = val;
 				}
@@ -292,17 +292,17 @@
 		log("debug", "Blackrock Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...");
 		var dayjs = lib.dayjs
 		var interval = setInterval(function FarmUpdateServerStatusInterval(){
-			var latestHeartbeat = isnode.module("logger").getLatestHeartbeat();
+			var latestHeartbeat = core.module("logger").getLatestHeartbeat();
 			var serverCount = 0;
 			for(var key in farmServers) { if(farmServers[key].status == "active") { serverCount++; } }
 			latestHeartbeat.peerCount = serverCount;
-			isnode.module("logger").updateLatestHeartbeat("peerCount", latestHeartbeat.peerCount);
+			core.module("logger").updateLatestHeartbeat("peerCount", latestHeartbeat.peerCount);
 			var val = JSON.stringify({
 				status: "active",
 				lastUpdated: dayjs().format(),
 				heartbeat: latestHeartbeat
 			});
-			ismod.set("servers[127.0.0.1:" + isnode.cfg().farm.server.port + "]", val);
+			mod.set("servers[127.0.0.1:" + core.cfg().farm.server.port + "]", val);
 		}, 2000);
 		return evt;
 	}
@@ -328,7 +328,7 @@
 						status: "inactive",
 						lastUpdated: dayjs().format()
 					});
-					ismod.set("servers[" + server + "]", val);
+					mod.set("servers[" + server + "]", val);
 				}
 			}
 		}, 2000);

@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Daemon Module
+* Blackrock Daemon Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -14,9 +14,9 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
+	/** Create parent event emitter object from which to inherit mod object */
 	String.prototype.endsWith = function DaemonEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, log, config, daemonize, daemon = false, restartingDaemon = false, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
+	var core, mod, log, config, daemonize, daemon = false, restartingDaemon = false, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
 
 
 
@@ -34,16 +34,16 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function DaemonInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Daemon"), log = isnode.module("logger").log, config = isnode.cfg();
-		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
+	var init = function DaemonInit(coreObj){
+		core = coreObj, mod = new core.Mod("Daemon"), log = core.module("logger").log, config = core.cfg();
+		core.on("updateLogFn", function(){ log = core.module("logger").log });
 		log("debug", "Blackrock Daemon > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupDaemon();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupDaemon();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -63,7 +63,7 @@
 	 * (Internal > Pipeline [1]) Setup Daemon
 	 */
 	pipelines.setupDaemon = function DaemonSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function DaemonSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function DaemonSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function DaemonSetupPipelinePipe() {
@@ -115,9 +115,9 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event");
-					isnode.on("startDaemon", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
+					core.on("startDaemon", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
 						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received");
-						evt.name = isnode.pkg().name;
+						evt.name = core.pkg().name;
 						evt.isChildProcess = process.send;
 						if(!process.send) {  observer.next(evt); }
 						else { log("fatal", "Blackrock Daemon > Initiated, but running in daemon mode. Terminating..."); }

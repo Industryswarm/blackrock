@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Jobs Module
+* Blackrock Jobs Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -13,8 +13,8 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, queue = [], recurring = {}, pipelines = {}, streamFns = {}, recurringFns = {};
+	/** Create parent event emitter object from which to inherit mod object */
+	var core, mod, log, queue = [], recurring = {}, pipelines = {}, streamFns = {}, recurringFns = {};
 
 
 
@@ -31,15 +31,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function JobsInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Jobs"), ismod.log = log = isnode.module("logger").log;
+	var init = function JobsInit(coreObj){
+		core = coreObj, mod = new core.Mod("Jobs"), mod.log = log = core.module("logger").log;
 		log("debug", "Blackrock Jobs > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupJobs();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupJobs();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -58,7 +58,7 @@
 	 * (Internal > Pipeline [1]) Setup Error Handler
 	 */
 	pipelines.setupJobs = function JobsSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function JobsSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function JobsSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function JobsSetupPipelinePipe() {
@@ -105,9 +105,9 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupIntervals = function JobsSetupIntervals(evt){
-		if(isnode.cfg().jobs && isnode.cfg().jobs.queue && isnode.cfg().jobs.queue.interval) { evt.interval = isnode.cfg().jobs.queue.interval; }
+		if(core.cfg().jobs && core.cfg().jobs.queue && core.cfg().jobs.queue.interval) { evt.interval = core.cfg().jobs.queue.interval; }
 		else { evt.interval = 500; }
-		if(isnode.cfg().jobs && isnode.cfg().jobs.queue && isnode.cfg().jobs.queue.jobsPerInterval) { evt.jobsPerInterval = isnode.cfg().jobs.queue.jobsPerInterval; }
+		if(core.cfg().jobs && core.cfg().jobs.queue && core.cfg().jobs.queue.jobsPerInterval) { evt.jobsPerInterval = core.cfg().jobs.queue.jobsPerInterval; }
 		else { evt.jobsPerInterval = 5; }
 		log("debug", "Blackrock Jobs > [1] Set Up The Intervals");
 		return evt;
@@ -170,10 +170,10 @@
 						}
 						observer.next(msg);
 					}
-					evt.methods = {}, ismod.jobs = {};
-					evt.methods.add = ismod.jobs.add = ismod.add = add;
-					evt.methods.remove = ismod.jobs.remove = ismod.remove = remove;
-					evt.methods.execute = ismod.jobs.execute = ismod.execute = execute;
+					evt.methods = {}, mod.jobs = {};
+					evt.methods.add = mod.jobs.add = mod.add = add;
+					evt.methods.remove = mod.jobs.remove = mod.remove = remove;
+					evt.methods.execute = mod.jobs.execute = mod.execute = execute;
 					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'");
 				},
 				error(error) { observer.error(error); }
@@ -188,7 +188,7 @@
 	 */
 	streamFns.addJobToQueue = function JobsAddJobToQueue(evt){
 		if(evt.action == "add") {
-			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
+			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
 				log("error", "Blackrock Jobs > Attempted to Add Job But Module Not Enabled", evt.input.definition);
 				return false;
 			}
@@ -218,7 +218,7 @@
 					input: evt.input.input
 				}
 				recurring[evt.input.definition.id] = setInterval(function JobsRecurringJobInterval(){
-					if(evt.input.definition.local == true || (evt.input.definition.local == false && isnode.module("farm").isJobServer() == true))
+					if(evt.input.definition.local == true || (evt.input.definition.local == false && core.module("farm").isJobServer() == true))
 						evt.input.fn(evt.input.input);
 				}, evt.input.definition.delay)
 				log("debug", "Blackrock Jobs > Recurring Job #" + evt.input.definition.id+" (" + evt.input.definition.name + ") Queued Successfully", evt.input.definition);
@@ -241,7 +241,7 @@
 	streamFns.removeJobFromQueue = function JobsRemoveJobFromQueue(evt){
 		if(evt.action == "remove") {
 			var found = false;
-			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
+			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
 				log("error", "Blackrock Jobs > Attempted to Remove Job But Jobs Module Not Enabled");
 				return;
 			}
@@ -271,7 +271,7 @@
 	 */
 	streamFns.executeJob = function JobsExecuteJob(evt){
 		if(evt.action == "execute") {
-			if(isnode.cfg().jobs && (isnode.cfg().jobs.enabled != true || !isnode.cfg().jobs.enabled)){
+			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
 				log("error", "Blackrock Jobs > Attempted to Execute Job But Jobs Module Not Enabled");
 				return;
 			}

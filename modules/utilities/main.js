@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Utilities Module
+* Blackrock Utilities Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -14,9 +14,9 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
+	/** Create parent event emitter object from which to inherit mod object */
 	String.prototype.endsWith = function UtilitiesEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, modules = {}, csv = {}, crypto = {};
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, modules = {}, csv = {}, crypto = {};
 
 
 
@@ -35,16 +35,16 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnodeObj - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function UtilitiesInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Utilities"), log = isnode.module("logger").log;
-		isnode.on("updateLogFn", function(){ log = isnode.module("logger").log });
+	var init = function UtilitiesInit(coreObj){
+		core = coreObj, mod = new core.Mod("Utilities"), log = core.module("logger").log;
+		core.on("updateLogFn", function(){ log = core.module("logger").log });
 		log("debug", "Blackrock Utilities > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, ismod.crypto = {}, ismod.system = {};
-		var ISPipeline = pipelines.setupUtilities();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, mod.crypto = {}, mod.system = {};
+		var Pipeline = pipelines.setupUtilities();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -65,7 +65,7 @@
 	 * (Internal > Pipeline [1]) Setup Utilities
 	 */
 	pipelines.setupUtilities = function UtilitiesSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function UtilitiesSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function UtilitiesSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function UtilitiesSetupPipelinePipe() {
@@ -120,9 +120,9 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupBase = function UtilitiesSetupBase(evt){
-		ismod.crypto = crypto;
-		ismod.modules = modules;
-		ismod.csv = csv;
+		mod.crypto = crypto;
+		mod.modules = modules;
+		mod.csv = csv;
 		log("debug", "Blackrock Utilities > [1] Base Object Schema Initialised");
 		return { 
 			methods: {
@@ -138,7 +138,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupUuid4 = function UtilitiesSetupUUID(evt){
-		ismod.uuid4 = evt.methods.uuid4 = function UtilitiesUUID() {
+		mod.uuid4 = evt.methods.uuid4 = function UtilitiesUUID() {
 			var uuid = '', ii;
 			for (ii = 0; ii < 32; ii += 1) {
 			  switch (ii) {
@@ -170,7 +170,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupIsJSON = function UtilitiesSetupIsJSON(evt){
-		ismod.isJSON = evt.methods.isJSON = function UtilitiesIsJSON(input) {
+		mod.isJSON = evt.methods.isJSON = function UtilitiesIsJSON(input) {
 			if(input !== null && typeof input === 'object'){
 				return "json_object";
 			}
@@ -190,7 +190,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupRandomString = function UtilitiesSetupRandomString(evt){
-		ismod.randomString = evt.methods.randomString = function UtilitiesRandomString(length) {
+		mod.randomString = evt.methods.randomString = function UtilitiesRandomString(length) {
 	  		var text = "";
 	  		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	  		for (var i = 0; i < length; i++)
@@ -206,7 +206,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupObjectLength = function UtilitiesSetupObjectLength(evt){
-		ismod.objectLength = evt.methods.objectLength = function UtilitiesObjectLength(object) {
+		mod.objectLength = evt.methods.objectLength = function UtilitiesObjectLength(object) {
 		    var length = 0;
 		    for( var key in object ) {
 		        if( object.hasOwnProperty(key) ) {
@@ -224,7 +224,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetCurrentDateInISO = function UtilitiesSetupGetCurrentDateInISO(evt){
-		ismod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function UtilitiesGetCurrentDateInISO() {
+		mod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function UtilitiesGetCurrentDateInISO() {
 			var currentDate = new Date();
 			currentDate = currentDate.toISOString();
 			return currentDate;
@@ -238,7 +238,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupValidateString = function UtilitiesSetupValidateString(evt){
-		ismod.validateString = evt.methods.validateString = function UtilitiesValidateString(text, validator) {
+		mod.validateString = evt.methods.validateString = function UtilitiesValidateString(text, validator) {
 			if(!validator)
 				return false;
 			if(!text)
@@ -282,7 +282,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupCloneObject = function UtilitiesSetupCloneObject(evt){
-		ismod.cloneObject = evt.methods.cloneObject = function UtilitiesCloneObject(src) {
+		mod.cloneObject = evt.methods.cloneObject = function UtilitiesCloneObject(src) {
 			var target = {};
 			for (var prop in src) {
 				if (src.hasOwnProperty(prop)) {
@@ -301,7 +301,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupLoadModule = function UtilitiesSetupLoadModule(evt){
-		ismod.modules.loadModule = evt.methods.modules.loadModule = function UtilitiesLoadModule(name) {
+		mod.modules.loadModule = evt.methods.modules.loadModule = function UtilitiesLoadModule(name) {
 			return require(name + ".js");
 		};
 		log("debug", "Blackrock Utilities > [9] 'loadModule' Method Attached To This Module");
@@ -320,7 +320,7 @@
 		 * @param {object} options - Options object. Can set options.delimiter to something other than a comma
 		 * @param {function} cb - Callback function
 		 */
-		ismod.csv.parse = evt.methods.csv.parse = function UtilitiesCsvParse(inputString, options, cb) {
+		mod.csv.parse = evt.methods.csv.parse = function UtilitiesCsvParse(inputString, options, cb) {
 			try {
 				if(!inputString || !(typeof inputString === 'string' || inputString instanceof String)){
 					var error = { message: "Input string not provided or not in string format" };
@@ -405,7 +405,7 @@
 		 * @param {string} key - RSA key to use to encrypt the string
 		 * @param {string} encoding - Encoding for output. Supports - 'buffer', 'binary', 'hex' or 'base64'.
 		 */
-		ismod.crypto.encrypt = evt.methods.crypto.encrypt = function UtilitiesEncrypt(text, key, encoding) {
+		mod.crypto.encrypt = evt.methods.crypto.encrypt = function UtilitiesEncrypt(text, key, encoding) {
 			var NodeRSA = require('./support/node-rsa');
 			var key = new NodeRSA(key);
 			var encrypted = key.encrypt(text, encoding);
@@ -427,7 +427,7 @@
 		 * @param {string} key - RSA key to use to decrypt the string
 		 * @param {string} encoding - Encoding for output. Supports - 'buffer', 'json' or 'utf8'
 		 */
-		ismod.crypto.decrypt = evt.methods.crypto.decrypt = function UtilitiesDecrypt(text, key, encoding) {
+		mod.crypto.decrypt = evt.methods.crypto.decrypt = function UtilitiesDecrypt(text, key, encoding) {
 			var NodeRSA = require('./support/node-rsa');
 			var key = new NodeRSA(key);
 			var decrypted = key.decrypt(text, encoding);
@@ -447,7 +447,7 @@
 		 * (External) XML Parsing Library
 		 * https://github.com/NaturalIntelligence/fast-xml-parser
 		 */
-		ismod.xml = evt.methods.xml = require("./support/xml/parser.js");
+		mod.xml = evt.methods.xml = require("./support/xml/parser.js");
 		log("debug", "Blackrock Utilities > [13] XML Parser Library Attached To This Module");
 		return evt;
 	}
@@ -457,7 +457,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetMemoryUse = function UtilitiesSetupGetMemoryUse(evt){
-		ismod.system.getMemoryUse = function UtilitiesGetMemoryUse(type) {
+		mod.system.getMemoryUse = function UtilitiesGetMemoryUse(type) {
 			const used = process.memoryUsage();
 			if(type && used[type]) {
 				return used[type];
@@ -476,7 +476,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetCpuLoad = function UtilitiesSetupGetCpuLoad(evt){
-		ismod.system.getCpuLoad = function UtilitiesGetCpuLoad(cb) {
+		mod.system.getCpuLoad = function UtilitiesGetCpuLoad(cb) {
 			var os = require("os");
 			var cpuAverage = function UtilitiesGetCpuLoadCpuAvgFn() {
 			  var totalIdle = 0, totalTick = 0;
@@ -509,7 +509,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetStartTime = function UtilitiesSetupGetStartTime(evt){
-		ismod.system.getStartTime = function UtilitiesGetStartTime() {
+		mod.system.getStartTime = function UtilitiesGetStartTime() {
 			return process.hrtime();
 		};
 		log("debug", "Blackrock Utilities > [16] 'getStartTime' Method Attached To 'system' Object On This Module");
@@ -521,7 +521,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetEndTime = function UtilitiesSetupGetEndTime(evt){
-		ismod.system.getEndTime = function UtilitiesGetEndTime(start) {
+		mod.system.getEndTime = function UtilitiesGetEndTime(start) {
 		    var precision = 3;
 		    var elapsed = process.hrtime(start)[1] / 1000000;
 		    var end = process.hrtime(start)[0];
@@ -544,7 +544,7 @@
 	 * http://creativecommons.org/publicdomain/zero/1.0/legalcode
 	 */
 	streamFns.setupGetObjectMemoryUsage = function UtilitiesSetupGetObjectMemoryUsage(evt){
-		ismod.system.getObjectMemoryUsage = function UtilitiesGetObjectMemoryUsage(object) {
+		mod.system.getObjectMemoryUsage = function UtilitiesGetObjectMemoryUsage(object) {
 			var objects = [object];
 			var size = 0;
 			for (var index = 0; index < objects.length; index ++){
@@ -581,17 +581,17 @@
 	streamFns.setupSimplify = function UtilitiesSetupSimplify(evt){
 
 		// https://www.reddit.com/r/javascript/comments/9zhvuw/is_there_a_better_way_to_check_for_nested_object/
-		ismod.isUndefined = function UtilitiesSimplifyIsUndefined(value) {  return typeof value === 'undefined'; }
-		ismod.isNull = function UtilitiesSimplifyIsNull(value) { return value === null; }
-		ismod.isNil = function UtilitiesSimplifyIsNil(value) { return ismod.isUndefined(value) || ismod.isNull(value); }
-		ismod.path = function UtilitiesSimplifyPath(object, keys) {
+		mod.isUndefined = function UtilitiesSimplifyIsUndefined(value) {  return typeof value === 'undefined'; }
+		mod.isNull = function UtilitiesSimplifyIsNull(value) { return value === null; }
+		mod.isNil = function UtilitiesSimplifyIsNil(value) { return mod.isUndefined(value) || mod.isNull(value); }
+		mod.path = function UtilitiesSimplifyPath(object, keys) {
 		  return keys.reduce((object, key) => {
 		    let value;
-		    return ismod.isNil(object) || ismod.isNil(value = object[key]) ? null : value;
+		    return mod.isNil(object) || mod.isNil(value = object[key]) ? null : value;
 		  }, object);
 		}
-		ismod.prop = function UtilitiesSimplifyProp(object, key) { return ismod.path(object, key.split('.')); }
-		ismod.assign = function UtilitiesSimplifyAssign(obj, keyPath, value) {
+		mod.prop = function UtilitiesSimplifyProp(object, key) { return mod.path(object, key.split('.')); }
+		mod.assign = function UtilitiesSimplifyAssign(obj, keyPath, value) {
 		   lastKeyIndex = keyPath.length-1;
 		   for (var i = 0; i < lastKeyIndex; ++ i) {
 		     key = keyPath[i];

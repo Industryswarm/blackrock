@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Identity Module
+* Blackrock Identity Module
 *
 * Supports interfacing your Blackrock applications with the
 * IndustrySwarm Identity Server (Self-Hosted or Cloud)
@@ -14,8 +14,8 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
+	/** Create parent event emitter object from which to inherit mod object */
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
 
 
 
@@ -31,15 +31,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function IdentityInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Identity"), ismod.log = log = isnode.module("logger").log;
+	var init = function IdentityInit(coreObj){
+		core = coreObj, mod = new core.Mod("Identity"), mod.log = log = core.module("logger").log;
 		log("debug", "Blackrock Identity > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupIdentity();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupIdentity();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -58,7 +58,7 @@
 	 * (Internal > Pipeline [1]) Setup Identity
 	 */
 	pipelines.setupIdentity = function IdentitySetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function IdentitySetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function IdentitySetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function IdentitySetupPipelinePipe() {
@@ -100,7 +100,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.fetchSettings = function IdentityFetchSettings(evt){
-		evt.settings = isnode.globals.get("settings");
+		evt.settings = core.globals.get("settings");
 		log("debug", "Blackrock Identity > [1] Settings Fetched");
 		return evt;
 	}
@@ -110,8 +110,8 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupStatus = function IdentitySetupStatus(evt){
-		ismod.status = function IdentityStatus(inputObject, cb){
-			var httpClient = isnode.module("http", "interface").client;
+		mod.status = function IdentityStatus(inputObject, cb){
+			var httpClient = core.module("http", "interface").client;
 			if(!evt.settings["IDENTITY_BASE_URI"]) {
 				cb({
 					success: false,
@@ -147,11 +147,11 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupBuildAuthorizeUri = function IdentitySetupBuildAuthorizeUri(evt){
-		ismod.buildAuthorizeUri = function IdentityBuildAuthorizeUri(inputObject, cb){
+		mod.buildAuthorizeUri = function IdentityBuildAuthorizeUri(inputObject, cb){
 			var scope = inputObject.scope;
 			scope = encodeURIComponent(scope);
 			var responseType = "code";
-			var state = isnode.module("utilities").randomString(18);
+			var state = core.module("utilities").randomString(18);
 			if(!evt.settings["IDENTITY_BASE_URI"] || !evt.settings["IDENTITY_CLIENT_ID"] || !evt.settings["IDENTITY_REDIRECT_URI"]) {
 				cb({
 					success: false,
@@ -192,7 +192,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	/*streamFns.setupX = function IdentitySetupX(evt){
-		ismod.X = function IdentityX(inputObject, cb){
+		mod.X = function IdentityX(inputObject, cb){
 			return;
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
@@ -204,7 +204,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	/*streamFns.setupX = function(evt){
-		ismod.X = function(inputObject, cb){
+		mod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
@@ -215,7 +215,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	/*streamFns.setupX = function(evt){
-		ismod.X = function(inputObject, cb){
+		mod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
@@ -226,7 +226,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	/*streamFns.setupX = function(evt){
-		ismod.X = function(inputObject, cb){
+		mod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;
@@ -237,7 +237,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	/*streamFns.setupX = function(evt){
-		ismod.X = function(inputObject, cb){
+		mod.X = function(inputObject, cb){
 		}
 		log("debug", "Blackrock Identity > [x] 'X' Method Is Now Setup");
 		return evt;

@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Router Module
+* Blackrock Router Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -10,8 +10,8 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, routers = {}, routerCount = 0, pipelines = {};
+	/** Create parent event emitter object from which to inherit mod object */
+	var core, mod, log, routers = {}, routerCount = 0, pipelines = {};
 	var utils = {}, streamFns = {}, lib, rx, op, Observable;
 
 
@@ -27,15 +27,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function RouterInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Router"), log = isnode.module("logger").log;
+	var init = function RouterInit(coreObj){
+		core = coreObj, mod = new core.Mod("Router"), log = core.module("logger").log;
 		log("debug", "Blackrock Router > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.createRouters();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.createRouters();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -54,7 +54,7 @@
 	 * (Internal > Pipelines) Pipeline to Create Routers
 	 */
 	pipelines.createRouters = function RouterCreatePipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function RouterCreatePipelineConstructor(evt) { this.evt = evt; },
 			callback: function RouterCreatePipelineCallback(cb) { return cb(this.evt); },
 			pipe: function RouterCreatePipelinePipe() {
@@ -109,8 +109,8 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.createRouterPrototype = function RouterCreateRouterPrototype(evt) {
-		evt.ISRouter = new isnode.ISMod().extend({
-			constructor: function ISRouterConstructor() {
+		evt.Router = new core.Mod().extend({
+			constructor: function RouterConstructor() {
 				return;
 			}
 		});
@@ -123,9 +123,9 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.attachExternalMethods = function RouterAttachExternalMethods(evt) {
-		ismod.get = function RouterGetInstance(name){ if(routers[name]){ return routers[name]; } else { return; } }
-		ismod.count = function RouterCountInstances(){ return routerCount; }
-		evt.ismod = ismod;
+		mod.get = function RouterGetInstance(name){ if(routers[name]){ return routers[name]; } else { return; } }
+		mod.count = function RouterCountInstances(){ return routerCount; }
+		evt.mod = mod;
 		log("debug", "Blackrock Router > [2] External Methods 'get' and 'count' Attached to This Module");
 	    return evt;
 	}
@@ -138,17 +138,17 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Router > [3] Creating Routers...");
-					if(isnode.cfg().router.instances) {
+					if(core.cfg().router.instances) {
 						var count = 0;
-						for(var instance in isnode.cfg().router.instances){
-							if(isnode.cfg().router.instances[instance].services && isnode.cfg().router.instances[instance].interfaces) {
+						for(var instance in core.cfg().router.instances){
+							if(core.cfg().router.instances[instance].services && core.cfg().router.instances[instance].interfaces) {
 								evt.instanceName = instance; observer.next(evt); routerCount ++;
 							} else {
-								log("fatal", "Blackrock Router > [3a] One or more routers are misconfigured. Terminating application server..."); isnode.shutdown();			
+								log("fatal", "Blackrock Router > [3a] One or more routers are misconfigured. Terminating application server..."); core.shutdown();			
 							}
 						}
 					} else {
-						log("fatal", "Blackrock Router > [3a] No routers configured. Terminating application server..."); isnode.shutdown();
+						log("fatal", "Blackrock Router > [3a] No routers configured. Terminating application server..."); core.shutdown();
 					}
 				},
 				error(error) { observer.error(error); },
@@ -180,8 +180,8 @@
 	 */
 	streamFns.initRouter = function RouterInitRouter(evt) {
 		var name = evt.instanceName;
-		var routerCfg = isnode.cfg().router.instances[name];
-		routers[name] = new evt.ISRouter();
+		var routerCfg = core.cfg().router.instances[name];
+		routers[name] = new evt.Router();
 		evt.routers = routers;
 		log("debug", "Blackrock Router > [3a] New Router (" + name + ") Instantiated");		
 	    return evt;
@@ -207,8 +207,8 @@
 				}
 			}	
 			log("debug","Blackrock Router > Sending message " + msgObject.msgId + " back to originating interface", msgObject);
-			if(msgObject.sessionId) { isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.sessionId,msg); }
-			else { isnode.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.msgId, msg); }
+			if(msgObject.sessionId) { core.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.sessionId,msg); }
+			else { core.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.msgId, msg); }
 		}
 		log("debug", "Blackrock Router > [3b] 'ReturnError' Method Attached To This Router");
 	    return evt;
@@ -220,10 +220,10 @@
 	 */
 	streamFns.setupRouteMethod = function RouterSetupRouteMethod(evt) {
 		evt.Route = function RouterRoute(hostname, url, cb){
-			isnode.module("services").search({
+			core.module("services").search({
 				hostname: hostname,
 				url: url,
-				services: isnode.cfg().router.instances[evt.instanceName].services
+				services: core.cfg().router.instances[evt.instanceName].services
 			}, cb);
 		}
 		routers[evt.instanceName].route = evt.Route;
@@ -276,7 +276,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					evt.startTime = isnode.module("utilities").system.getStartTime();
+					evt.startTime = core.module("utilities").system.getStartTime();
 					evt.routerInternals = {};
 					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
 					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function RouterDetermineNewRequestRouteCallback(routeResult) {
@@ -306,7 +306,7 @@
 	streamFns.buildRequestObject = function RouterBuildRequestObject(evt) {
 		var Req = require("./support/req");
 		evt.routerInternals.req = new Req;
-		evt.routerInternals.req.init(isnode, {
+		evt.routerInternals.req.init(core, {
 			msgId: evt.routerMsg.msgId,
 			type: evt.routerMsg.type,
 			interface: evt.routerMsg.interface,
@@ -322,7 +322,7 @@
 			ipv6: evt.routerMsg.request.ipv6,
 			verb: evt.routerMsg.request.verb,
 			secure: evt.routerMsg.request.secure,
-			service: isnode.module("services").service(evt.routerInternals.route.match.service),
+			service: core.module("services").service(evt.routerInternals.route.match.service),
 			serviceName: evt.routerInternals.route.match.service,
 			body: evt.routerMsg.request.body,
 			log: log
@@ -338,7 +338,7 @@
 	streamFns.buildResponseObject = function RouterBuildResponseObject(evt) {
 		var Res = require("./support/res");
 		evt.routerInternals.res = new Res;
-		evt.routerInternals.res.init(isnode, {
+		evt.routerInternals.res.init(core, {
 			msgId: evt.routerMsg.msgId,
 			service: evt.routerInternals.route.match.service,
 			type: evt.routerMsg.type,
@@ -367,12 +367,12 @@
 		var analyticsObject = { 
 			"msgs": { 
 				"reqSize": reqSize, 
-				"avgMemUsed": isnode.module("utilities").system.getMemoryUse()
+				"avgMemUsed": core.module("utilities").system.getMemoryUse()
 			} 
 		}
-		isnode.module("utilities").system.getCpuLoad(function RouterGetCpuLoadReqCallback(load) {
+		core.module("utilities").system.getCpuLoad(function RouterGetCpuLoadReqCallback(load) {
 			analyticsObject.msgs.avgCpuLoad = load;
-			isnode.module("logger").analytics.log(analyticsObject);
+			core.module("logger").analytics.log(analyticsObject);
 		});
 	    return evt;
 	}
@@ -389,22 +389,22 @@
 						  (JSON.stringify(msg.response.cookies) || "");
 			resSize = resSize.length;
 			if(msg.view) {
-				var fs = require("fs"), stats = fs.statSync(isnode.getBasePath() + "services/" + msg.service + "/views/" + msg.view);
+				var fs = require("fs"), stats = fs.statSync(core.getBasePath() + "services/" + msg.service + "/views/" + msg.view);
 				resSize += stats["size"];
 			}
-			var endTime = isnode.module("utilities").system.getEndTime(evt.startTime);
+			var endTime = core.module("utilities").system.getEndTime(evt.startTime);
 			var analyticsObject = { 
 				"msgs": { 
 					"resSize": resSize, 
-					"avgMemUsed": isnode.module("utilities").system.getMemoryUse(),
+					"avgMemUsed": core.module("utilities").system.getMemoryUse(),
 					"avgProcessingTime": endTime
 				} 
 			}
-			isnode.module("utilities").system.getCpuLoad(function RouterGetCpuLoadResCallback(load) {
+			core.module("utilities").system.getCpuLoad(function RouterGetCpuLoadResCallback(load) {
 				analyticsObject.msgs.avgCpuLoad = load;
-				isnode.module("logger").analytics.log(analyticsObject);
+				core.module("logger").analytics.log(analyticsObject);
 			});
-			isnode.module(msg.type, "interface").get(msg.interface).emit("outgoing." + msg.msgId, msg);
+			core.module(msg.type, "interface").get(msg.interface).emit("outgoing." + msg.msgId, msg);
 			routers[evt.parentEvent.instanceName].removeListener('router.' + msg.msgId, evt.routerInternals.responseListener);
 		}
 		routers[evt.parentEvent.instanceName].on('router.' + evt.routerMsg.msgId, evt.routerInternals.responseListener);
@@ -419,7 +419,7 @@
 	streamFns.routeRequestToController = function RouterRouteReqToCtrl(evt) {
 		var verbs = ["get", "post", "put", "delete", "update", "patch", "head", "options", "trace"];
 		if(evt.routerMsg.request.verb && evt.routerInternals.controller && evt.routerInternals.controller[evt.routerInternals.verb] && verbs.includes(evt.routerInternals.verb)) {
-			var service = isnode.module("services").service(evt.routerInternals.route.match.service);
+			var service = core.module("services").service(evt.routerInternals.route.match.service);
 			if(service.middleware.count() == 0) {
 				evt.routerInternals.controller[evt.routerInternals.verb](evt.routerInternals.req, evt.routerInternals.res);
 				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller Without Middleware");

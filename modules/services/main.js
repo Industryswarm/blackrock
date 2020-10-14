@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Services Module
+* Blackrock Services Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -13,9 +13,9 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
+	/** Create parent event emitter object from which to inherit mod object */
 	String.prototype.endsWith = function ServicesEndWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var isnode, ismod, ISService, log, map, orphans, services = {}, config, util;
+	var core, mod, Service, log, map, orphans, services = {}, config, util;
 	var loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
 
 
@@ -34,17 +34,17 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function ServicesInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Services"), util = isnode.module("utilities");
-		log = isnode.module("logger").log, config = isnode.cfg(), map = {}, orphans = {};
+	var init = function ServicesInit(coreObj){
+		core = coreObj, mod = new core.Mod("Services"), util = core.module("utilities");
+		log = core.module("logger").log, config = core.cfg(), map = {}, orphans = {};
 		log("debug", "Blackrock Services > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		ISService = new isnode.ISMod().extend({ constructor: function ServicesISServiceConstructor() { return; } });
-		var ISPipeline = pipelines.setupServicesPipeline();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		Service = new core.Mod().extend({ constructor: function ServicesServiceConstructor() { return; } });
+		var Pipeline = pipelines.setupServicesPipeline();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -66,7 +66,7 @@
 	 * (Internal > Pipeline [1]) Setup Services Pipeline
 	 */
 	pipelines.setupServicesPipeline = function ServicesSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function ServicesSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ServicesSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ServicesSetupPipelinePipe() {
@@ -106,7 +106,7 @@
 	 * (Internal > Pipeline [2]) Run Search Pipeline
 	 */
 	pipelines.runSearchPipeline = function ServicesRunSearchPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function ServicesRunSearchPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ServicesRunSearchPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ServicesRunSearchPipelinePipe(cb) {
@@ -151,7 +151,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.bindUnloadMethod = function ServicesBindUnloadMethod(evt){
-		ismod.unload = function ServicesUnload(){
+		mod.unload = function ServicesUnload(){
 			var closeControllers = function ServicesCloseControllers(cb) {
 				var ctrlCount = 0, counter = 0;
 				if(services) {
@@ -184,7 +184,7 @@
 			    }, 500);
 				return;
 			}
-			closeControllers(function ServicesCloseControllersCallback(){ isnode.emit("module-shut-down", "Services"); });
+			closeControllers(function ServicesCloseControllersCallback(){ core.emit("module-shut-down", "Services"); });
 		}
 		log("debug", "Blackrock Services > [1] Attached 'unload' Method To This Module");
 		return evt;
@@ -207,7 +207,7 @@
 		 *	  url: "/web/users/1"
 		 * }
 		 */
-		ismod.search = function ServicesSearch(searchObj, cb){
+		mod.search = function ServicesSearch(searchObj, cb){
 			var ISPipeline = pipelines.runSearchPipeline();
 			new ISPipeline({ "searchObj": searchObj }).pipe(function(result) { cb(result); });
 		}
@@ -227,7 +227,7 @@
 		 * @param {object} req - Request Object
 		 * @param {object} res - Response Object
 		 */
-		evt.MiddlewareRouter = new isnode.Base().extend({
+		evt.MiddlewareRouter = new core.Base().extend({
 			constructor: function ServicesMiddlewareRouterConstructor() {
 				var self = this;
 				self.myRouter = (function(req, res){
@@ -262,7 +262,7 @@
 		 *
 		 * @param {string} serviceName - Service Name
 		 */
-		ismod.service = function ServicesService(name){
+		mod.service = function ServicesService(name){
 			if(!services[name]) { return; }
 			var service = {};
 			service.cfg = function ServicesServiceCfg(){ return services[name].cfg; }
@@ -280,7 +280,7 @@
 				if(options && options.port) { var port = options.port; }
 				var host = services[name].cfg.host;
 				if(services[name].cfg.basePath) { var basePath = services[name].cfg.basePath; }
-				else if (isnode.cfg().core && isnode.cfg().core.basePath) { var basePath = isnode.cfg().core.basePath; }
+				else if (core.cfg().core && core.cfg().core.basePath) { var basePath = core.cfg().core.basePath; }
 				else { var basePath = ""; }
 				if(options && options.full == true){
 					if(!protocol) { var protocol = "http"; }
@@ -318,16 +318,16 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug","Blackrock Services > [4] Binding Support Methods");
-					ismod.serviceStats = function ServicesServiceStats(name) {
+					mod.serviceStats = function ServicesServiceStats(name) {
 						var stats = {};
 						stats.servicesRouteCount = 0;
 						if(!name) {
 							stats.servicesCount = Object.keys(services).length;
-							if(isnode.module("utilities")) { stats.servicesMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services); }
+							if(core.module("utilities")) { stats.servicesMemoryUse = core.module("utilities").system.getObjectMemoryUsage(services); }
 						} else {
 							if(services[name]) { 
 								stats.servicesCount = 1; 
-								if(isnode.module("utilities")) { stats.servicesMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services[name]); }
+								if(core.module("utilities")) { stats.servicesMemoryUse = core.module("utilities").system.getObjectMemoryUsage(services[name]); }
 							} else { 
 								stats.servicesCount = 0; 
 								stats.servicesMemoryUse = 0;
@@ -338,7 +338,7 @@
 						for (var service in services) {
 							if((name && service == name) || !name) {
 								stats.services[service] = {};
-								if(isnode.module("utilities")) { stats.services[service].serviceMemoryUse = isnode.module("utilities").system.getObjectMemoryUsage(services[service]); }
+								if(core.module("utilities")) { stats.services[service].serviceMemoryUse = core.module("utilities").system.getObjectMemoryUsage(services[service]); }
 								if(services[service].routes) {
 									stats.services[service].serviceRouteCount = services[service].routes.length;
 									stats.servicesRouteCount += services[service].routes.length;
@@ -369,7 +369,7 @@
 			        		var cfg = require(basePath + "services/" + serviceName + "/service.json");
 			        		if(cfg.active) {
 				        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...");
-				            	services[serviceName] = new ISService();
+				            	services[serviceName] = new Service();
 				            	services[serviceName].cfg = require(basePath + "services/" + serviceName + "/service.json");
 				            	var middlewareRouter = new evt.MiddlewareRouter();
 				            	services[serviceName].middleware = middlewareRouter.myRouter;
@@ -378,7 +378,7 @@
 				            }
 			        	}
 			        }
-					if(config.services.runtime.services.allowLoad == true){ ismod.loadService = loadService; }
+					if(config.services.runtime.services.allowLoad == true){ mod.loadService = loadService; }
 					var fs = require('fs');
 					fs.readdirSync(basePath + "services").forEach(function ServicesLoadServicesReadDirCallback(file) { loadService(file); });
 				},
@@ -511,7 +511,7 @@
 								urls_piece += "/" + pathBits[j]; 
 							};
 							var ctrl = {
-								"init": function ServicesBasePathCtrlInit(isnodeObj) {
+								"init": function ServicesBasePathCtrlInit(coreObj) {
 									return ctrl;
 								},
 								"get": function ServicesBasePathCtrlGet(req, res) {
@@ -599,16 +599,16 @@
 							if (event.controller.init && typeof event.controller.init === 'function') { 
 								if(event.controller.init.length >= 1) {
 
-									var RestrictedCore = new isnode.Base().extend({
+									var RestrictedCore = new core.Base().extend({
 
 										// Permutation of this RestrictedCore Object is Dictated By Config:
 										constructor: function ServicesRestrictedCoreConstructor(cfg) {
 											self = this; 
-											if(cfg.globals) { self.globals = isnode.globals; }
-											if(cfg.shutdown) { self.shutdown = isnode.shutdown; }
-											if(cfg.cfg) { self.cfg = isnode.cfg; }
-											if(cfg.pkg) { self.pkg = isnode.pkg; }
-											if(cfg.getBasePath) { self.getBasePath = isnode.getBasePath; }
+											if(cfg.globals) { self.globals = core.globals; }
+											if(cfg.shutdown) { self.shutdown = core.shutdown; }
+											if(cfg.cfg) { self.cfg = core.cfg; }
+											if(cfg.pkg) { self.pkg = core.pkg; }
+											if(cfg.getBasePath) { self.getBasePath = core.getBasePath; }
 											if(cfg.getCurrentService) { self.pkg = function() { return srv; } }
 											return self;
 										},
@@ -621,15 +621,15 @@
 		    								var methods = mods[name], loadedMethods = {}, fnNames = {};
 		    								if(!methods) { return; }
 		    								for (var i = 0; i < methods.length; i++) {
-	    										if(isnode.module(name, interface) && isnode.module(name, interface)[methods[i]]) {
-	    											loadedMethods[methods[i]] = isnode.module(name, interface)[methods[i]];
-	    										} else if(isnode.module(name, interface) && methods[i].includes(".")) {
+	    										if(core.module(name, interface) && core.module(name, interface)[methods[i]]) {
+	    											loadedMethods[methods[i]] = core.module(name, interface)[methods[i]];
+	    										} else if(core.module(name, interface) && methods[i].includes(".")) {
 	    											var methodSplit = methods[i].split("."), nestedObject;
-	    											util.assign(loadedMethods, methodSplit, util.prop(isnode.module(name, interface), methods[i]));
-	    										} else if(isnode.module(name, interface) && methods[i].includes("(")) {
+	    											util.assign(loadedMethods, methodSplit, util.prop(core.module(name, interface), methods[i]));
+	    										} else if(core.module(name, interface) && methods[i].includes("(")) {
 	    											var splitOne = methods[i].split("("), splitTwo = splitOne[1].split(")");
 	    											var methodName = splitOne[0], fnName = splitTwo[0];
-	    											loadedMethods[methodName] = util.prop(isnode.module(name, interface), methods[i]);
+	    											loadedMethods[methodName] = util.prop(core.module(name, interface), methods[i]);
 	    											fnNames[methodName] = fnName;
 	    										}
 		    								}
@@ -638,7 +638,7 @@
 		    									var filteredMethods = loadedMethods;
 		    									for (var methodName in loadedMethods) {
 		    										if(fnNames[methodName] == "serviceName") {
-		    											var newService = {}, myService = isnode.module(name, interface)[methodName](srv);
+		    											var newService = {}, myService = core.module(name, interface)[methodName](srv);
 		    											for(var subMethod in myService) { newService[subMethod] = myService[subMethod]; };
 		    											filteredMethods[methodName] = function ServicesGetModuleAutoExecHandler(args) { return newService; }
 		    										} else {
@@ -658,7 +658,7 @@
 						}
 						if(type == "sandbox") {
 							var event = evt;
-							isnode.module("sandbox").execute({ "file": evt.path, "i": evt.i, "service": evt.service }, function ServicesSandboxExecCallback(obj) {
+							core.module("sandbox").execute({ "file": evt.path, "i": evt.i, "service": evt.service }, function ServicesSandboxExecCallback(obj) {
 								event.controller = obj.ctrl;
 								event.path = obj.file;
 								event.i = obj.i;
@@ -693,8 +693,8 @@
 						loadMessages["1-11"] = true;
 						log("debug","Blackrock Services > [12] Base Path & Pattern Being Set Now");
 					}
-					if(!services[evt.service].cfg.basePath && isnode.cfg().core && isnode.cfg().core.basePath){
-						services[evt.service].cfg.basePath = isnode.cfg().core.basePath;
+					if(!services[evt.service].cfg.basePath && core.cfg().core && core.cfg().core.basePath){
+						services[evt.service].cfg.basePath = core.cfg().core.basePath;
 					}
 					if(services[evt.service].cfg.basePath){ evt.pattern = "" + services[evt.service].cfg.basePath + evt.data[evt.i]; }
 					else { evt.pattern = "" + evt.data[evt.i]; }
@@ -807,8 +807,8 @@
 	streamFns.setupHosts = function ServicesSetupHosts(evt){
 		evt.results = [], evt.hosts = [];
 		for (var sv in services) { 
-			if(!services[sv].cfg.host && isnode.cfg().core && isnode.cfg().core.host) {
-				services[sv].cfg.host = isnode.cfg().core.host;
+			if(!services[sv].cfg.host && core.cfg().core && core.cfg().core.host) {
+				services[sv].cfg.host = core.cfg().core.host;
 			}
 			evt.hosts.push(services[sv].cfg.host); 
 		}

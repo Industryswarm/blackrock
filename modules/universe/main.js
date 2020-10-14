@@ -1,5 +1,5 @@
 /*!
-* ISNode Blackrock Universe Module
+* Blackrock Universe Module
 *
 * Copyright (c) 2020 Darren Smith
 * Licensed under the LGPL license.
@@ -11,8 +11,8 @@
 
 
 
-	/** Create parent event emitter object from which to inherit ismod object */
-	var isnode, ismod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
+	/** Create parent event emitter object from which to inherit mod object */
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
 
 
 
@@ -28,15 +28,15 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function UniverseInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISMod("Universe"), ismod.log = log = isnode.module("logger").log;
+	var init = function UniverseInit(coreObj){
+		core = coreObj, mod = new core.Mod("Universe"), mod.log = log = core.module("logger").log;
 		log("debug", "Blackrock Universe > Initialising...");
-		lib = isnode.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
-		var ISPipeline = pipelines.setupUniverse();
-		new ISPipeline({}).pipe();
-		return ismod;
+		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
+		var Pipeline = pipelines.setupUniverse();
+		new Pipeline({}).pipe();
+		return mod;
 	}
 
 
@@ -55,7 +55,7 @@
 	 * (Internal > Pipeline [1]) Setup Universe
 	 */
 	pipelines.setupUniverse = function UniverseSetupPipeline(){
-		return new isnode.ISNode().extend({
+		return new core.Base().extend({
 			constructor: function UniverseSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function UniverseSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function UniverseSetupPipelinePipe() {

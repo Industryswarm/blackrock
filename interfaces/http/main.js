@@ -13,7 +13,7 @@
 	/** Initialise Variables & Create String Prototype Method */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable');
-	var isnode, ismod, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {};
+	var isnode, ismod, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {}, viewCache = {};
 
 
 
@@ -486,7 +486,7 @@
 		var timeout = config.interfaces.http[request.interface].requestTimeout, timer = 0;
 		var interval = setInterval(function HTTPRouteRequestTimeoutHandler(){
 			if(!resReturned && timer < timeout){
-				timer += 500;
+				timer += 10;
 			} else if (!resReturned && timer >= timeout) {
 				evt.res.statusCode = 504;
 				evt.res.setHeader('Content-Type', 'application/json');
@@ -497,7 +497,7 @@
 			} else if (resReturned) {
 				clearInterval(interval);
 			}
-		}, 500);
+		}, 10);
 		log("debug","HTTP Interface > [13] Sending incoming message " + request.theMessage.msgId + " to router", request.theMessage);
 		request.router.incoming(request.theMessage);
 		return evt;
@@ -702,24 +702,35 @@
 	streamFns.processFileViewResponse = function HTTPProcessFileViewResponse(evt) {
 		return new Promise((resolve, reject) => {
 			var basePath = __dirname + "/../../../../", fs = require('fs');
-			try {
-				fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view, "utf8", function HTTPProcessFileViewResReadFileCallback(err, htmlData) {
-				    if (err) {
-						log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view });
-						evt.res.setHeader('Content-Type', 'application/json');
-						evt.res.end(JSON.stringify(evt.msg.response.body));	
-						return;							    	
-				    }       
-				    utils.renderView(evt.msg, evt.res, mustache, htmlData);
-				    log("debug","Blackrock HTTP Interface > [9] File-Type View Rendered Successfully");
-				    return;
-				});
-			} catch(err){
-				log("error","Blackrock HTTP Interface > [9] View does not exist...", {view: evt.msg.response.view });
-				evt.res.setHeader('Content-Type', 'application/json');
-				evt.res.end(JSON.stringify(evt.msg.response.body));
+			var viewPath = basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view;
+			if(viewCache[viewPath] && viewCache[viewPath].content) {
+				utils.renderView(evt.msg, evt.res, mustache, viewCache[viewPath].content);
+				resolve(evt);
+				return;
+			} else {
+				try {
+					fs.readFile(viewPath, "utf8", function HTTPProcessFileViewResReadFileCallback(err, htmlData) {
+					    if (err) {
+							log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view });
+							evt.res.setHeader('Content-Type', 'application/json');
+							evt.res.end(JSON.stringify(evt.msg.response.body));	
+							return;							    	
+					    }
+					    viewCache[viewPath] = {
+					    	content: htmlData,
+					    	expiry: "TBC"
+					    }
+					    utils.renderView(evt.msg, evt.res, mustache, htmlData);
+					    log("debug","Blackrock HTTP Interface > [9] File-Type View Rendered Successfully");
+					    return;
+					});
+				} catch(err){
+					log("error","Blackrock HTTP Interface > [9] View does not exist...", {view: evt.msg.response.view });
+					evt.res.setHeader('Content-Type', 'application/json');
+					evt.res.end(JSON.stringify(evt.msg.response.body));
+				}
+				resolve(evt);
 			}
-			resolve(evt);
 		});
 	}
 
