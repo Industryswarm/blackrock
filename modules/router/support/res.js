@@ -26,9 +26,9 @@
 	/**
 	 * Init
 	 */
-	res.prototype.init = function RouterResObjInit(isnode,initObj){
-		this.isnode = isnode;
-		this.log = isnode.module("logger").log;
+	res.prototype.init = function RouterResObjInit(core,initObj){
+		this.core = core;
+		this.log = core.module("logger").log;
 		if(initObj.msgId)
 			this.msgId = initObj.msgId;
 		if(initObj.type)
@@ -148,7 +148,7 @@
 		if(cb) {
 			msg.response.cb = cb;
 		}
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -198,7 +198,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -258,7 +258,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -288,7 +288,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -317,7 +317,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -382,7 +382,7 @@
 		if(cb) {
 			msg.response.cb = cb;
 		}
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 
@@ -411,7 +411,7 @@
 				statusCode: this.statusCode
 			}
 		};
-		this.isnode.module("router").get(this.router).emit("router." + this.msgId, msg);
+		this.core.module("router").get(this.router).emit("router." + this.msgId, msg);
 		return this;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * ISNode Blackrock HTTP Interface Module
+ * Blackrock HTTP Interface Module
  *
  * Copyright (c) 2020 Darren Smith
  * Licensed under the LGPL license.
@@ -13,7 +13,7 @@
 	/** Initialise Variables & Create String Prototype Method */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable');
-	var isnode, ismod, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {}, viewCache = {};
+	var core, interface, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {}, viewCache = {};
 
 
 
@@ -29,16 +29,16 @@
 
 	/**
 	 * (Constructor) Initialises the module
-	 * @param {object} isnode - The parent isnode object
+	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function HTTPInit(isnodeObj){
-		isnode = isnodeObj, ismod = new isnode.ISInterface("HTTP"), log = isnode.module("logger").log, config = isnode.cfg();
+	var init = function HTTPInit(coreObj){
+		core = coreObj, interface = new core.Interface("HTTP"), log = core.module("logger").log, config = core.cfg();
 		log("debug", "Blackrock HTTP Interface > Initialising...");
-		ismod.client = client;
-		ismod.startInterface = startInterface;
-		ismod.get = get;
-		ismod.startInterfaces();
-		return ismod;
+		interface.client = client;
+		interface.startInterface = startInterface;
+		interface.get = get;
+		interface.startInterfaces();
+		return interface;
 	}
 
 	/**
@@ -53,7 +53,7 @@
 		var routers = [];
 		for(var routerName in config.router.instances){
 			if(config.router.instances[routerName].interfaces && (config.router.instances[routerName].interfaces.includes("*") || config.router.instances[routerName].interfaces.includes(name))) {
-				routers.push(isnode.module("router").get(routerName));
+				routers.push(core.module("router").get(routerName));
 			}
 		}
 		if(routers.length <= 0){ log("error","Blackrock HTTP Interface > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers."); return; }
@@ -64,7 +64,7 @@
 			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ")."); return; }
 			try {
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
-				instances[name] = inst = new isnode.ISNode().extend({});
+				instances[name] = inst = new core.Base().extend({});
 				inst.listening = false;
 				var serverLib = require('./support/' + httpLib);
 				if(cfg.ssl) { inst.server = serverLib(cfg.key, cfg.cert) } else { inst.server = serverLib() };
@@ -94,7 +94,7 @@
 			inst.server.listen(cfg.port, function HTTPListenHandler(){
 				log("startup","Blackrock HTTP Interface > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port); inst.listening = true;
 			});
-			ismod.instances = instances;
+			interface.instances = instances;
 		});
 
 	}
@@ -123,8 +123,8 @@
 	 * (Internal > Pipelines) Processes the Incoming Request Stream [HTTP/S]
 	 */
 	pipelines.processRequestStream = function HTTPProcessRequestStreamPipeline(){
-		const lib = isnode.lib, rx = lib.rxjs, op = lib.operators;
-		const ISPipeline = new isnode.ISNode().extend({
+		const lib = core.lib, rx = lib.rxjs, op = lib.operators;
+		const ISPipeline = new core.Base().extend({
 			constructor: function HTTPProcessRequestStreamConstructor(evt) { this.evt = evt; },
 			callback: function HTTPProcessRequestStreamCallback(cb) { return cb(this.evt); },
 			pipe: function HTTPProcessRequestStreamPipe() {
@@ -165,8 +165,8 @@
 	 * (Internal > Pipelines) Processes the Outgoing Response Stream [HTTP/S]
 	 */
 	pipelines.processResponseStream = function HTTPProcessResponseStreamPipeline(){
-		const lib = isnode.lib, rx = lib.rxjs, op = lib.operators;
-		const ISPipeline = new isnode.ISNode().extend({
+		const lib = core.lib, rx = lib.rxjs, op = lib.operators;
+		const ISPipeline = new core.Base().extend({
 			constructor: function HTTPProcessResponseStreamConstructor(evt) { this.evt = evt; },
 			callback: function HTTPProcessResponseStreamCallback(cb) { return cb(this.evt); },
 			pipe: function HTTPProcessResponseStreamPipe() {
@@ -284,8 +284,8 @@
 	streamFns.processRequestData = function HTTPProcessRequestData(evt) {
 	 	var data = evt.data;
 		try { if(Buffer.from(data)) { data = Buffer.concat(data).toString(); } } catch(err){ null; }
-        if(data && isnode.module("utilities").isJSON(data) == "json_string"){ data = JSON.parse(data); }
-        else if (data && isnode.module("utilities").isJSON(data) == "json_object") { data = data; }
+        if(data && core.module("utilities").isJSON(data) == "json_string"){ data = JSON.parse(data); }
+        else if (data && core.module("utilities").isJSON(data) == "json_object") { data = data; }
         else if (data) { data = require('querystring').parse(data); }
         evt.data = data;
         log("debug", "Blackrock HTTP Interface > [4] Request Body Data Processed");
@@ -371,7 +371,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.prepareRequestMessage = function HTTPPrepareRequestMessage(evt) {
-		var request = evt.req, msgId = isnode.module("utilities").uuid4(), {method, url, headers} = request;
+		var request = evt.req, msgId = core.module("utilities").uuid4(), {method, url, headers} = request;
 		evt.req.theMessage = {
 			"type": "http", "interface": request.interface, "msgId": msgId, "state": "incoming", "directional": "request/response",
 			"request": {
@@ -418,12 +418,12 @@
 					log("debug", "Blackrock HTTP Interface > [11] Searching For Request Route");
 					request.router.route(theMessage.request.host, theMessage.request.path, function HTTPRouterRouteCallback(route) {
 						if(route && route.match && route.match.service){
-							var basePath = isnode.module("services").service(route.match.service).cfg().basePath;
+							var basePath = core.module("services").service(route.match.service).cfg().basePath;
 							if(theMessage.request.path == basePath) { theMessage.request.path += "/"; }
 						}
 						theMessage.request.params = route.param;
 						if(route && route.match && route.match.service){
-							var srv = isnode.module("services").service(route.match.service);
+							var srv = core.module("services").service(route.match.service);
 							if(srv.cfg().basePath) { var base = srv.cfg().basePath; }
 							else { var base = ""; }
 							if(theMessage.request.path.startsWith(base)){ var htmlPath = theMessage.request.path.slice(base.length); }
@@ -851,9 +851,9 @@
 		if(req.headers) { options.headers = req.headers; } else { options.headers = {}; }
 		if(path) { options.path = path; }
 
-		if (req.data && isnode.module("utilities").isJSON(req.data) == "json_object") {
+		if (req.data && core.module("utilities").isJSON(req.data) == "json_object") {
 			if(!options.headers["Content-Type"]) { options.headers["Content-Type"] = "application/json"; }; req.data = JSON.stringify(req.data);
-		} else if (req.data && (typeof req.data === 'string' || req.data instanceof String) && isnode.module("utilities").isJSON(req.data) == "json_string") {
+		} else if (req.data && (typeof req.data === 'string' || req.data instanceof String) && core.module("utilities").isJSON(req.data) == "json_string") {
 			if(!options.headers["Content-Type"]) { options.headers["Content-Type"] = "application/json"; }
 		} else if (req.data && (typeof req.data === 'string' || req.data instanceof String) && req.data.indexOf('<') !== -1 && req.data.indexOf('>') !== -1) {
 			if(!options.headers["Content-Type"]) { options.headers["Content-Type"] = "application/xml"; }
@@ -871,7 +871,7 @@
 		  else { res.setEncoding("utf8"); }
 		  res.on('data', (chunk) => { responseData += chunk; });
 		  res.on('end', () => {
-		  	if (responseData && isnode.module("utilities").isJSON(responseData) == "json_string") { responseData = JSON.parse(responseData); }
+		  	if (responseData && core.module("utilities").isJSON(responseData) == "json_string") { responseData = JSON.parse(responseData); }
 		    else if (responseData && responseData.indexOf('<') == -1 && responseData.indexOf('>') == -1 && responseData.indexOf('=') !== -1) {
 		    	var responseDataSplit = responseData.split("&"), responseDataNew = {};
 		    	for (var i = 0; i < responseDataSplit.length; i++) {
@@ -895,7 +895,7 @@
 	 * @param {function} cb - Callback Function
 	 */
 	client.get = function HTTPClientGetRequest(url, cb) { 
-		ismod.client.request({ "url": url, "headers": {}, "method": "GET", "encoding": "utf8" }, cb); 
+		interface.client.request({ "url": url, "headers": {}, "method": "GET", "encoding": "utf8" }, cb); 
 	}
 
 	/**
@@ -907,7 +907,7 @@
 		var reqObj = { "url": url, "headers": {}, "method": "POST", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }
-		ismod.client.request(reqObj, cb);
+		interface.client.request(reqObj, cb);
 	}
 
 	/**
@@ -919,7 +919,7 @@
 		var reqObj = { "url": url, "headers": {}, "method": "PUT", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }
-		ismod.client.request(reqObj, cb);
+		interface.client.request(reqObj, cb);
 	}
 
 	/**
@@ -931,7 +931,7 @@
 		var reqObj = { "url": url, "headers": {}, "method": "DELETE", "encoding": "utf8" };
 		if(data) { reqObj.data = data; }
 		if(options && options.headers) { reqObj.headers = options.headers; }
-		ismod.client.request(reqObj, cb);
+		interface.client.request(reqObj, cb);
 	}
 
 	/**

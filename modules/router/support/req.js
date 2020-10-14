@@ -18,7 +18,7 @@
 		this.ip = "";
 		this.ipv6 = "";
 		this.ips = [];
-		this.isnode = {};
+		this.core = {};
 		this.log = function RouterReqObjLogFn(level, msg){};
 		this.method = "";
 		this.originalUrl = "";
@@ -44,8 +44,8 @@
 	/**
 	 * Init
 	 */
-	req.prototype.init = function RouterReqObjInit(isnode,initObj){
-		this.isnode = isnode;
+	req.prototype.init = function RouterReqObjInit(core, initObj){
+		this.core = core;
 		if(initObj.msgId)
 			this.msgId = initObj.msgId;
 		if(initObj.type)
