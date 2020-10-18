@@ -250,11 +250,11 @@
 	streamFns.parseMultiPart = function HTTPParseMultiPart(evt) {
   		return new Promise((resolve, reject) => {
 			var form = new formidable.IncomingForm();
-			if(config.interfaces.http[req.interface].fileUploadPath) { form.uploadDir = config.interfaces.http[req.interface].fileUploadPath; }
+			if(config.interfaces.http[evt.req.interface].fileUploadPath) { form.uploadDir = config.interfaces.http[evt.req.interface].fileUploadPath; }
 			else { form.uploadDir = "./tmp/"; }
-			if(config.interfaces.http[req.interface].maxUploadFileSizeMb) { form.maxFileSize = config.interfaces.http[req.interface].maxUploadFileSizeMb * 1024 * 1024; }
+			if(config.interfaces.http[evt.req.interface].maxUploadFileSizeMb) { form.maxFileSize = config.interfaces.http[evt.req.interface].maxUploadFileSizeMb * 1024 * 1024; }
 			else { form.maxFileSize = 50 * 1024 * 1024; }
-			try { form.parse(req, function HTTPParseMultiPartFormParser(err, fields, files) { var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
+			try { form.parse(evt.req, function HTTPParseMultiPartFormParser(err, fields, files) { console.log("err", err); console.log("fields", fields); console.log("files", files); var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
 			catch (err) { evt.data = {error: "File Upload Size Was Too Large"}; resolve(evt); }
 			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message");
 		});
