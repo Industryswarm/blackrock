@@ -12,7 +12,7 @@
 
 	/** Initialise Variables & Create String Prototype Method */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable');
+	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable'), cheerio = require('./support/cheerio/cheerio');
 	var core, interface, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {}, viewCache = {};
 
 
@@ -37,6 +37,8 @@
 		interface.client = client;
 		interface.startInterface = startInterface;
 		interface.get = get;
+		interface.addHook = addHook;
+		interface.removeHook = removeHook;
 		interface.startInterfaces();
 		return interface;
 	}
@@ -66,6 +68,7 @@
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
 				instances[name] = inst = new core.Base().extend({});
 				inst.listening = false;
+				inst.hooks = { onIncomingRequest: {}, onOutgoingResponse: {}, onOutgoingRequest: {}, onIncomingResponse: {} }, inst.hookIdDirectory = {};
 				var serverLib = require('./support/' + httpLib);
 				if(cfg.ssl) { inst.server = serverLib(cfg.key, cfg.cert) } else { inst.server = serverLib() };
 				
@@ -81,14 +84,17 @@
 					verb: request.method,
 					url: request.url,
 					headers: request.headers,
-
 				}
 				log("debug","Blackrock HTTP Interface > Received Incoming Request", myMsg);
 				request.interface = name;
 				for (var i = 0; i < routers.length; i++) {
 					request.router = routers[i];
 					if(protocol == "HTTPS") { request.secure = true; } else { request.secure = false; }
-					new ISPipeline({ "req": request, "res": response }).pipe();
+					executeHookFns(name, "onIncomingRequest", request).then(function(output) {
+						new ISPipeline({ "req": output, "res": response }).pipe();
+					}).catch(function(err) {
+						new ISPipeline({ "req": request, "res": response }).pipe();
+					});
 				}
 			});
 			inst.server.listen(cfg.port, function HTTPListenHandler(){
@@ -103,11 +109,105 @@
 
 
 	/**
-	 * (Internal > Init) Exports the HTTP/S Server Interface
+	 * (Internal > Get Instances) Exports the HTTP/S Server Interface
 	 * @param {string} name - The name of the interface
 	 */
-	var get = function HTTPGetInstance(name){
-		return instances[name];
+	var get = function HTTPGetInstances(name){
+		if(name) { return instances[name]; }
+		else { return instances; }
+	}
+
+	/**
+	 * (Internal > Add Hook) Adds a Hook Function to the Defined HTTP Interface Instances
+	 * @param {string} names - Array or String Containing Interface Name(s)
+	 * @param {string} hookType - Type of Hook
+	 * @param {string} hookFn - Hook Function
+	 * @param {string} cb - Callback Function
+	 */
+	var addHook = function HTTPAddHook(names, hookType, hookFn){
+		return new Promise((resolve, reject) => {
+			var hookCount = 0, hooksSet = [];
+			var addNow = function(inst, hook, fn) {
+				var uniqueId = core.module("utilities").uuid4();
+				inst.hooks[hook][uniqueId] = fn;
+				inst.hookIdDirectory[uniqueId] = hook;
+				hooksSet.push(uniqueId);
+			}
+			if(Array.isArray(names)) {
+				hookCount = names.length;
+				for (var name in names) {
+					if(instances && instances[name])
+						addNow(instances[name], hookType, hookFn);
+				}
+			} else if (names == "*") {
+				hookCount = instances.length;
+				for (var name in instances) {
+					addNow(instances[name], hookType, hookFn);
+				}
+			} else if (instances && instances[names]) {
+				hookCount = 1;
+				addNow(instances[names], hookType, hookFn);
+			} else {
+				reject({"message": "No Valid Hook Targets Defined", "code": "NO_TARGETS"});
+				return;
+			}
+			var interval = setInterval(function(){
+				if(hooksSet.length >= hookCount) {
+					clearInterval(interval);
+					resolve({"message": "Hooks Set", "code": "HOOKS_SET", "hooks": hooksSet});
+					return;
+				}
+			}, 10);
+		});
+	}
+
+	/**
+	 * (Internal > Remove Hook) Removes Defined Hook Functions
+	 * @param {string} hookId - The Hook UUID to Remove
+	 */
+	var removeHook = function HTTPAddHook(hookId){
+		for (var name in instances) {
+			if(instances[name].hookIdDirectory[hookId]) {
+				if(instances[name].hooks[hookIdDirectory[hookId]] && instances[name].hooks[hookIdDirectory[hookId]][hookId]) {
+					delete instances[name].hookIdDirectory[hookId];
+					delete instances[name].hooks[hookIdDirectory[hookId]][hookId];
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * (Internal > Execute Hook) Executes Hooks for a Defined Type
+	 * @param {string} name - The name of the interface
+	 */
+	var executeHookFns = function HTTPExecuteHook(name, type, input){
+		return new Promise((resolve, reject) => {
+			console.log('executing hook fns - outer');
+			var hookCount = Object.keys(instances[name].hooks[type]).length;
+			var hooksExecuted = [], hookStack = [];
+			for(var hookId in instances[name].hooks[type]) {
+				hookStack.push(instances[name].hooks[type][hookId]);
+			}
+			var executeNow = function HTTPExecuteHookInner(newInput, cb) {
+				console.log('executing hook fns - inner', hookStack, hookStack.length);
+				if(!instances[name]) { cb({"message": "Invalid Instance", "code": "INVALID_INSTANCE"}, null); }
+				const types = ["onIncomingRequest", "onOutgoingResponse", "onOutgoingRequest", "onIncomingResponse"];
+				if(!types.includes(type)) { cb({"message": "Invalid Type", "code": "INVALID_TYPE"}, null); }
+				if(hookCount <= 0) { resolve(newInput); }
+				else if (hookStack.length > 0) {
+					var hookFn = hookStack.pop();
+					hookFn(newInput, function(output) {
+						console.log("hook fn completed ", output);
+						executeNow(output, cb);
+					});
+				} else {
+					resolve(newInput);
+				}		
+			}
+			executeNow(input);
+		});
+		
 	}
 
 
@@ -667,8 +767,8 @@
 								evt.res.end(JSON.stringify(evt.msg.response.body));	
 								return;							    	
 						    }       
-						    renderView(evt.msg, evt.res, mustache, htmlData);
-						    log("debug","Blackrock HTTP Interface > [8] Object-Type View Rendered Successfully");
+						    log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...");
+						    utils.renderView(evt.msg, evt.res, htmlData);
 						    return;
 						});
 					} catch(err){
@@ -679,8 +779,8 @@
 					}
 				} else if (evt.msg.response.view.html) {
 					var htmlData = evt.msg.response.view.html;
-					utils.renderView(evt.msg, evt.res, mustache, htmlData);
-					log("debug","Blackrock HTTP Interface > [8] Successfully Rendered HTML View");
+					log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...");
+					utils.renderView(evt.msg, evt.res, htmlData);
 					return;
 				} else {
 					log("error","Blackrock HTTP Interface > [8] Error Loading View - Unknown Type.");
@@ -704,7 +804,8 @@
 			var basePath = __dirname + "/../../../../", fs = require('fs');
 			var viewPath = basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view;
 			if(viewCache[viewPath] && viewCache[viewPath].content) {
-				utils.renderView(evt.msg, evt.res, mustache, viewCache[viewPath].content);
+				log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...");
+				utils.renderView(evt.msg, evt.res, viewCache[viewPath].content);
 				resolve(evt);
 				return;
 			} else {
@@ -720,8 +821,8 @@
 					    	content: htmlData,
 					    	expiry: "TBC"
 					    }
-					    utils.renderView(evt.msg, evt.res, mustache, htmlData);
-					    log("debug","Blackrock HTTP Interface > [9] File-Type View Rendered Successfully");
+					    log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...");
+					    utils.renderView(evt.msg, evt.res, htmlData);
 					    return;
 					});
 				} catch(err){
@@ -762,10 +863,11 @@
 	 * (Internal > Utilities) Render View
 	 * @param {object} msg - Message Object
 	 * @param {object} response - Response Object
-	 * @param {object} mustache - Mustache Library
 	 * @param {string} htmlData - HTML Data Context
 	 */
-	utils.renderView = function HTTPRenderView(msg, response, mustache, htmlData) {
+	utils.renderView = function HTTPRenderView(msg, response, htmlData) {
+
+		// Load Partial Includes:
 		var rootBasePath = __dirname + "/../../../../", fs = require("fs"), partials = {}, regex = /{{>(.+)}}+/g, found = htmlData.match(regex);
 		if(found){
 			for (var i = 0; i < found.length; i++) {
@@ -774,8 +876,19 @@
 				catch(err){ null; }
 			}
 		}
-		var output = mustache.render(htmlData, msg.response.body, partials);
-		response.end(output);	
+
+		// Inject Context Into View With Mustache:
+		var result = mustache.render(htmlData, msg.response.body, partials);
+
+		// Execute Hooks for onOutgoingResponse
+		executeHookFns(msg.interface, "onOutgoingResponse", result).then(function(output) {
+			response.end(output);
+			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.");
+		}).catch(function(err) {
+			response.end(result);
+			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.");
+		});
+
 	}
 
 	/**
@@ -865,28 +978,40 @@
 
 		if(req.data && !options.headers["Content-Length"]) { options.headers["Content-Length"] = Buffer.byteLength(req.data); }
 
-		var reqObj = httpLib.request(options, function HTTPClientRequestCallback(res) {
-		  let responseData = "";
-		  if(req.encoding) { res.setEncoding(req.encoding) }
-		  else { res.setEncoding("utf8"); }
-		  res.on('data', (chunk) => { responseData += chunk; });
-		  res.on('end', () => {
-		  	if (responseData && core.module("utilities").isJSON(responseData) == "json_string") { responseData = JSON.parse(responseData); }
-		    else if (responseData && responseData.indexOf('<') == -1 && responseData.indexOf('>') == -1 && responseData.indexOf('=') !== -1) {
-		    	var responseDataSplit = responseData.split("&"), responseDataNew = {};
-		    	for (var i = 0; i < responseDataSplit.length; i++) {
-		    		var valueSplit = responseDataSplit[i].split("=");
-		    		responseDataNew[decodeURIComponent(valueSplit[0])] = decodeURIComponent(valueSplit[1]);
-		    	}
-		    	responseData = responseDataNew;
-		    } else { responseData = decodeURIComponent(responseData); }
-		    cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: res.statusCode, data: responseData });
-		    return;
-		  });
+		var makeRequest = function(theOptions) {
+			var reqObj = httpLib.request(theOptions, function HTTPClientRequestCallback(res) {
+			  let responseData = "";
+			  if(req.encoding) { res.setEncoding(req.encoding) }
+			  else { res.setEncoding("utf8"); }
+			  res.on('data', (chunk) => { responseData += chunk; });
+			  res.on('end', () => {
+			  	if (responseData && core.module("utilities").isJSON(responseData) == "json_string") { responseData = JSON.parse(responseData); }
+			    else if (responseData && responseData.indexOf('<') == -1 && responseData.indexOf('>') == -1 && responseData.indexOf('=') !== -1) {
+			    	var responseDataSplit = responseData.split("&"), responseDataNew = {};
+			    	for (var i = 0; i < responseDataSplit.length; i++) {
+			    		var valueSplit = responseDataSplit[i].split("=");
+			    		responseDataNew[decodeURIComponent(valueSplit[0])] = decodeURIComponent(valueSplit[1]);
+			    	}
+			    	responseData = responseDataNew;
+			    } else { responseData = decodeURIComponent(responseData); }
+			    executeHookFns(name, "onIncomingResponse", {"statusCode": res.statusCode, "data": responseData}).then(function(myResOutput) {
+			    	cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: myResOutput.statusCode, data: myResOutput.data });
+			    }).catch(function(err) {
+					cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: res.statusCode, data: responseData });
+				});
+			  });
+			});
+			reqObj.on('error', (error) => { cb({ success: false, code: 5, message: "Request Error", error: error}, null); });
+			if(req.data) { reqObj.write(req.data); }
+			reqObj.end();
+		}
+
+		executeHookFns(name, "onOutgoingRequest", options).then(function(theOptions) {
+			makeRequest(theOptions);
+		}).catch(function(err) {
+			makeRequest(options);
 		});
-		reqObj.on('error', (error) => { cb({ success: false, code: 5, message: "Request Error", error: error}, null); });
-		if(req.data) { reqObj.write(req.data); }
-		reqObj.end();
+
 	}
 
 	/**

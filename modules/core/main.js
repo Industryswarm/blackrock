@@ -19,7 +19,9 @@
 	var core, modules = { interfaces: {} }, globals = {};
 	var log, enableConsole, config, package;
 
-	var displayConsoleBanner = function CoreDisplayConsoleBanner() { 
+	var displayConsoleBanner = function CoreDisplayConsoleBanner(displayCore) { 
+		var alertLineOne = "", alertLineTwo = "";
+		if(displayCore.status == "Error") { var alertLineOne = "Error Initialising:", alertLineTwo = displayCore.reason; }
 		console.log(`\n\n\n
 ================================================================================================
 
@@ -35,8 +37,8 @@
  %  ,%%%%.%%%%%%%%# %%%%%%%%%%%%%%%&  %        Server Name:
  %  ,%%%%    (%% %%%%%%%%%%%%%%%%%%&  %        ` + package.name + ` v` + package.version + `
  %  ,%%         %%%%%%%%%%%%%%%%%%%&  % 
- ##  %           %%%%%%%%%%%%%%%%%%  .%        
-   %%           %%%%%%%%%%%%%%%    &%   
+ ##  %           %%%%%%%%%%%%%%%%%%  .%        ` + alertLineOne + `
+   %%           %%%%%%%%%%%%%%%    &%          ` + alertLineTwo + `
        %%     %%%%%%%%%%%%.    %%       
            .%#    %%%%    ,%(           
                 %%    %%                 
@@ -104,60 +106,74 @@
 		constructor: function CoreConstructor(specName) { 
 			this.name = specName; 
 			this.status = "Inactive"; 
+			this.reason = "";
 		},
 
-		init: function CoreInit(initialConfig) {
+		init: function CoreInit(initialConfig, callbackFn) {
 			var self = this;
-			if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
-			if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
-			if(!initialConfig || !initialConfig.config) { config = require('../../../../config/config.json'); }
-			else { config = initialConfig.config; }
-			if(!initialConfig || !initialConfig.package) { package = require('../../../../package.json'); }
-			else { package = initialConfig.package; }
-			if(!config) { self.status = "Error"; self.reason = "No config provided"; return self; }
-			if(!config.core) { self.status = "Error"; self.reason = "No core module section in config provided"; return self; }
-			if(!config.core.modules) { self.status = "Error"; self.reason = "No modules listed in config"; return self; }
-			if(!config.core.startupModules) { self.status = "Error"; self.reason = "No startup modules listed in config"; return self; }
-			if(!config.core.timeouts) { self.status = "Error"; self.reason = "No timeouts listed in config"; return self; }
-			if(!config.core.timeouts.loadDependencies) { self.status = "Error"; self.reason = "No loadDependencies timeout listed in config"; return self; }
-			if(!config.core.timeouts.closeModules) { self.status = "Error"; self.reason = "No closeModules timeout listed in config"; return self; }
-			modules.core = self;
-			if(self.status != "Inactive" || self.status == "Error") { return self; }
-			self.status = "Starting";
-			if(package && package.name && package.version && ((initialConfig && !initialConfig.silent) || !initialConfig)) { displayConsoleBanner(); }
-			setupExternalModuleMethods(self);
-			if(config && config.core && config.core.startupModules && config.core.startupModules.length > 0) { for (var i = 0; i < config.core.startupModules.length; i++) { self.loadModule("module", config.core.startupModules[i]); } }
-			else { self.shutdown(); return; }
-			setTimeout(function CoreEnableConsoleTimeout(){ enableConsole(); }, 50);
-			self.on("loadDependencies", function CoreLoadDependenciesCallback(){
-				if (process.stdin.isTTY) {
-					var stdin = process.openStdin();
-					stdin.setRawMode(true); 
-					stdin.setEncoding('utf8');
-					stdin.on('data', function(chunk) { if(chunk == "e") { self.shutdown(); } });
+			var myPromise = new Promise(function(resolve, reject) {
+				if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
+				if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
+				if(!initialConfig || !initialConfig.config) { try { config = require('../../../../config/config.json'); } catch(err) {} }
+				else if (initialConfig.config) { config = initialConfig.config; }
+				if(!initialConfig || !initialConfig.package) { try { package = require('../../../../package.json'); } catch(err) {} }
+				else if (initialConfig.package) { package = initialConfig.package; }
+				var resolvePromise = function CoreResolvePromise(){
+					if(callbackFn) { callbackFn(self); } 
+					if(self.status == "Error") { reject(core) }
+					else if (self.status == "Active") { resolve(core) }
+					setTimeout(function(){
+						core.emit("log", { "welcome": "Blackrock Application Server", "name": package.name, "version": package.version, "status": self.status, "reason": self.reason });
+					}, 10);
 				}
-				var fs = require("fs");
-				fs.readdirSync(self.getBasePath("two") + "/modules").forEach(function CoreLoadModulesReadDirCallback(file) { 
-					if(!modules[file]) { self.loadModule("module", file); } 
-				});
-				fs.readdirSync(self.getBasePath("two") + "/interfaces").forEach(function CoreLoadInterfacesReadDirCallback(file) { 
-					if(!modules.interfaces[file]) { self.loadModule("interface", file); } 
-				});
-				self.status = "Finalising";
-			}); 
-			var counter = 0;
-			if(config.core.timeouts.loadDependencies) { var timeout = config.core.timeouts.loadDependencies; } else { var timeout = 5000; }
-			var interval = setInterval(function CoreDependencyLoadIntervalCallback(){
-				enableConsole();
-				if(self.status == "Finalising"){ clearInterval(interval); self.startEventLoop(); }
-				if(counter >= timeout) { 
-					log("error", "Blackrock Core > Timed out initiating startup. Terminating application server.");
-					clearInterval(interval); 
-					self.shutdown(); 
-				}
-				counter += 500;
-			}, 500);
-			return self;
+				if(!package) { self.status = "Error"; self.reason = "No package provided";  }
+				if(!config) { self.status = "Error"; self.reason = "No config provided"; }
+				if(config && !config.core) { self.status = "Error"; self.reason = "No core module section in config provided"; }
+				if(config && config.core && !config.core.modules) { self.status = "Error"; self.reason = "No modules listed in config"; }
+				if(config && config.core && !config.core.startupModules) { self.status = "Error"; self.reason = "No startup modules listed in config"; }
+				if(config && config.core && !config.core.timeouts) { self.status = "Error"; self.reason = "No timeouts listed in config"; }
+				if(config && config.core && config.core.timeouts && !config.core.timeouts.loadDependencies) { self.status = "Error"; self.reason = "No loadDependencies timeout listed in config"; }
+				if(config && config.core && config.core.timeouts && !config.core.timeouts.closeModules) { self.status = "Error"; self.reason = "No closeModules timeout listed in config"; }
+				modules.core = self;
+				if(!package) { package.name = "Unknown"; package.version = "Unknown"; }
+				if((initialConfig && !initialConfig.silent) || !initialConfig) { displayConsoleBanner(self); }
+				if(self.status != "Inactive" || self.status == "Error") { resolvePromise(); return; }
+				self.status = "Starting";
+				setupExternalModuleMethods(self);
+				if(config && config.core && config.core.startupModules && config.core.startupModules.length > 0) { for (var i = 0; i < config.core.startupModules.length; i++) { self.loadModule("module", config.core.startupModules[i]); } }
+				else { self.shutdown(); return; }
+				setTimeout(function CoreEnableConsoleTimeout(){ enableConsole(); }, 50);
+				self.on("loadDependencies", function CoreLoadDependenciesCallback(){
+					if (process.stdin.isTTY) {
+						var stdin = process.openStdin();
+						stdin.setRawMode(true); 
+						stdin.setEncoding('utf8');
+						stdin.on('data', function(chunk) { if(chunk == "e") { self.shutdown(); } });
+					}
+					var fs = require("fs");
+					fs.readdirSync(self.getBasePath("two") + "/modules").forEach(function CoreLoadModulesReadDirCallback(file) { 
+						if(!modules[file]) { self.loadModule("module", file); } 
+					});
+					fs.readdirSync(self.getBasePath("two") + "/interfaces").forEach(function CoreLoadInterfacesReadDirCallback(file) { 
+						if(!modules.interfaces[file]) { self.loadModule("interface", file); } 
+					});
+					self.status = "Finalising";
+				}); 
+				var counter = 0;
+				if(config.core.timeouts.loadDependencies) { var timeout = config.core.timeouts.loadDependencies; } else { var timeout = 5000; }
+				var interval = setInterval(function CoreDependencyLoadIntervalCallback(){
+					enableConsole();
+					if(self.status == "Finalising"){ clearInterval(interval); self.startEventLoop(function(){ resolvePromise(); }); }
+					if(counter >= timeout) { 
+						log("error", "Blackrock Core > Timed out initiating startup. Terminating application server.");
+						clearInterval(interval); 
+						self.shutdown(); 
+					}
+					counter += 500;
+				}, 500);
+			});
+			if(initialConfig && initialConfig.return == "promise") { return myPromise; } 
+			else { return self; }
 		},
 
 		pkg: function CoreGetPkg() { return package; },
@@ -195,7 +211,7 @@
 			get: function CoreGetGlobal(name) { if(!globals[name]) { return; } return globals[name]; }
 		},
 
-		startEventLoop: function CoreStartEventLoop() {
+		startEventLoop: function CoreStartEventLoop(cb) {
 			var self = this;
 			if(self.status == "Shutting Down" || self.status == "Terminated" || self.status == "Active"){ return; }
 			else {
@@ -204,7 +220,7 @@
 						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown."); 
 					} 
 				}, 1000); 
-				self.status = "Active";
+				self.status = "Active"; if(cb) { cb(); }
 				setInterval(function CoreStartLoopInterval(){}, 1000); 
 			} 
 		},
@@ -226,7 +242,9 @@
 				if(cb) { cb(error, null); }
 				return error;
 			}
-			var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully", module: modules[moduleName] };
+			var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully" };
+			if(type == "module") { output.module = modules[moduleName]; }
+			if(type == "interface") { output.module = modules.interfaces[moduleName] }
 			log("debug", "Blackrock Core > " + output.message);
 			if(cb) { cb(null,output); }
 			return output;

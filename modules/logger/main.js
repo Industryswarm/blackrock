@@ -14,7 +14,7 @@
 
 	/** Create parent event emitter object from which to inherit mod object */
 	String.prototype.endsWith = function LoggerEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var core, mod, fileStream, sinks = {}, log, pipelines = {}, utils = {}, streamFns = {}, consoleEnabled = false;
+	var core, mod, fileStream, sinks = {}, log, newLog, logOverride = false, pipelines = {}, utils = {}, streamFns = {}, consoleEnabled = false, coreObjTimeout = 500;
 	var lib, rx, op, Observable, analyticsStore = { sessionEventCount: 0 }, latestHeartbeat = {}, logBuffer = [];
 	var daemonInControl = false, modIsLoaded = false;
 
@@ -38,6 +38,7 @@
 		if(modIsLoaded) { return mod; }
 		core = coreObj, mod = new core.Mod("Logger");
 		mod.log = log = function LoggerQuickLog(level, logMsg, attrObj) {
+			if(logOverride) { return newLog(level, logMsg, attrObj);}
 			var currentDate = new Date();
 			currentDate = currentDate.toISOString();
 			var sEvt = streamFns.detectAvailableSinks({ "noLog": true });
@@ -144,6 +145,9 @@
 						case "elasticsearch":
 							streamFns.sendToElasticSearch(evt);
 							break;
+						case "core":
+							streamFns.sendToCoreObject(evt);
+							break;
 					}
 				});
 			}
@@ -217,6 +221,7 @@
 	 */
 	streamFns.detectAvailableSinks = function LoggerDetectAvailableSinks(evt){
 		evt.sinks = {};
+		evt.sinks.core = true; 
 		if(core.cfg().logger.enabled == true){
 			if(core.cfg().logger.sinks.console && core.cfg().logger.sinks.console.enabled == true){ evt.sinks.console = true; }
 			if(core.cfg().logger.sinks.file && core.cfg().logger.sinks.file.enabled == true){ evt.sinks.file = true; }
@@ -470,7 +475,6 @@
 			}
 
 			var cacheJob = function LoggerCacheJob() {
-				log("debug", "Blackrock Logger > Running Heartbeat Cache Job");
 				var content = JSON.stringify(analyticsStore);
 				var fs = require("fs");
 				var path = core.getBasePath() + "/cache/heartbeat/heartbeats.json";
@@ -551,7 +555,8 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Logger > [9] Setting Up Analytics & Log Endpoint On The Logger Module");
-					mod.log = log = function LoggerLog(level, logMsg, attrObj){
+					logOverride = true;
+					mod.log = log = newLog = function LoggerLog(level, logMsg, attrObj){
 						var currentDate = new Date();
 						currentDate = currentDate.toISOString();
 						var evt2 = {};
@@ -630,7 +635,6 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					//console.log(evt);
 					for(var sink in evt.sinks) { 
 						var evt2 = {
 							"level": evt.level,
@@ -647,6 +651,10 @@
 							evt2.activeSink = "file";
 							observer.next(evt2);
 							evt2 = {};
+						} else if (sink == "core") {
+							evt2.activeSink = "core";
+							observer.next(evt2);
+							evt2 = {};
 						} else if (sink == "elasticsearch") {
 							evt2.activeSink = "elasticsearch";
 							observer.next(evt2);
@@ -658,6 +666,30 @@
 			});
 			return () => subscription.unsubscribe();
 		});
+	}
+
+	/**
+	 * (Internal > Stream Methods [2.5]) Send Log Event to Core Object Event Emitter
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.sendToCoreObject = function LoggerSendToCoreObject(evt){
+		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
+		var logMessage, logMod, logMsgSplit = logMsg.split(">");
+		if(logMsgSplit && logMsgSplit[0]) { logMod = logMsgSplit[0].trim(); }
+		else { logMod = ""; }
+		if(logMsgSplit && logMsgSplit[1]) { logMessage = logMsgSplit[1].trim(); }
+		else { logMessage = ""; }
+		setTimeout(function() {
+			core.emit("log", {
+				"datestamp": currentDate,
+				"level": level,
+				"module": logMod,
+				"msg": logMessage,
+				"attr": attrObj
+			});
+			if(coreObjTimeout > 0) { coreObjTimeout --; }
+		}, coreObjTimeout);
+		return evt;
 	}
 
 	/**
@@ -693,7 +725,7 @@
 	}
 
 	/**
-	 * (Internal > Stream Methods [5]) Send Log Event to Console
+	 * (Internal > Stream Methods [5]) Send Log Event to ElasticSearch
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.sendToElasticSearch = function LoggerSendToElasticSearch(evt){

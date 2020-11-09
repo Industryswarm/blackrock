@@ -6,7 +6,7 @@
 
 ## Introduction
 
-Welcome to the second-generation ISNode Node.JS Web Framework - ISNode Blackrock (Aka: "Blackrock"). This version of the ISNode Web Framework takes what was built for ISNode (v1.0) and re-architects it from the ground up to make use of a Reactive (Event-Driven) Architecture AND to combine all major ISNode modules in to a single dependency for your next project.
+Welcome to the second-generation ISNode Node.JS Web Framework - "Blackrock". Blackrock has a Reactive / Event-Driven Architecture, and contains all the functionality you need to build your next Node.JS application.
 
 
 
@@ -20,7 +20,7 @@ Welcome to the second-generation ISNode Node.JS Web Framework - ISNode Blackrock
 6. Nested Controller Schema For Each Web Service Reflective of URL Path
 7. Built-In Support for Mustache Views (HTTP Controllers)
 8. HTTP Module Can Pipe Filesystem Files Transparently
-
+9. i18n Support For Internationalisation
 
 
 <br/><br/>
