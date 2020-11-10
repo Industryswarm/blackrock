@@ -33,12 +33,13 @@
 	 */
 	var init = function HTTPInit(coreObj){
 		core = coreObj, interface = new core.Interface("HTTP"), log = core.module("logger").log, config = core.cfg();
-		log("debug", "Blackrock HTTP Interface > Initialising...");
+		log("debug", "Blackrock HTTP Interface > Initialising...", {}, "HTTP_INIT");
 		interface.client = client;
 		interface.startInterface = startInterface;
 		interface.get = get;
-		interface.addHook = addHook;
-		interface.removeHook = removeHook;
+		interface.hook = { add: addHook, remove: removeHook };
+		interface.cheerio = cheerio;
+		interface.formidable = formidable;
 		interface.startInterfaces();
 		return interface;
 	}
@@ -49,31 +50,32 @@
 	 */
 	var startInterface = function HTTPStartInterface(name){
 		const cfg = config.interfaces.http[name];
+		var port = process.env.PORT || cfg.port;
 		if(cfg.ssl == true) { var protocol = "HTTPS" }
 		else { var protocol = "HTTP" }
-		log("startup","Blackrock HTTP Interface > Attempting to start " + protocol + " interface (" + name + ") on port " + cfg.port + ".");
+		log("startup","Blackrock HTTP Interface > Attempting to start " + protocol + " interface (" + name + ") on port " + port + ".", {}, "HTTP_STARTING");
 		var routers = [];
 		for(var routerName in config.router.instances){
 			if(config.router.instances[routerName].interfaces && (config.router.instances[routerName].interfaces.includes("*") || config.router.instances[routerName].interfaces.includes(name))) {
 				routers.push(core.module("router").get(routerName));
 			}
 		}
-		if(routers.length <= 0){ log("error","Blackrock HTTP Interface > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers."); return; }
+		if(routers.length <= 0){ log("error","Blackrock HTTP Interface > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers.", {}, "HTTP_NOT_MAPPED_TO_ROUTER"); return; }
 		var ISPipeline = pipelines.processRequestStream();
-		utils.isPortTaken(cfg.port, function HTTPIsPortTakenHandler(err, result){
+		utils.isPortTaken(port, function HTTPIsPortTakenHandler(err, result){
 			var inst;
-			if(result != false){ log("error","Blackrock HTTP Interface > Cannot load HTTP interface (" + name + ") as the defined port (" + cfg.port + ") is already in use."); return; }
-			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ")."); return; }
+			if(result != false){ log("error","Blackrock HTTP Interface > Cannot load HTTP interface (" + name + ") as the defined port (" + port + ") is already in use.", {}, "HTTP_PORT_IN_USE"); return; }
+			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ").", {}, "HTTP_SSL_CERT_OR_KEY_MISSING"); return; }
 			try {
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
 				instances[name] = inst = new core.Base().extend({});
 				inst.listening = false;
-				inst.hooks = { onIncomingRequest: {}, onOutgoingResponse: {}, onOutgoingRequest: {}, onIncomingResponse: {} }, inst.hookIdDirectory = {};
+				inst.hooks = { onIncomingRequest: {}, onOutgoingResponsePostRender: {}, onOutgoingRequest: {}, onIncomingResponse: {} }, inst.hookIdDirectory = {};
 				var serverLib = require('./support/' + httpLib);
 				if(cfg.ssl) { inst.server = serverLib(cfg.key, cfg.cert) } else { inst.server = serverLib() };
 				
 			} catch (err) {
-				log("error","Blackrock HTTP Interface > Error instantiating " + httpLib.toUpperCase() + " interface (" + name + ").",err);
+				log("error","Blackrock HTTP Interface > Error instantiating " + httpLib.toUpperCase() + " interface (" + name + ").", err, "HTTP_ERROR_INST_INTERFACE");
 				if(inst) { delete inst; }
 				return;
 			}
@@ -85,7 +87,7 @@
 					url: request.url,
 					headers: request.headers,
 				}
-				log("debug","Blackrock HTTP Interface > Received Incoming Request", myMsg);
+				log("debug","Blackrock HTTP Interface > Received Incoming Request", myMsg, "HTTP_RECEIVED_INCOMING_REQUEST");
 				request.interface = name;
 				for (var i = 0; i < routers.length; i++) {
 					request.router = routers[i];
@@ -97,8 +99,8 @@
 					});
 				}
 			});
-			inst.server.listen(cfg.port, function HTTPListenHandler(){
-				log("startup","Blackrock HTTP Interface > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port); inst.listening = true;
+			inst.server.listen(port, function HTTPListenHandler(){
+				log("startup","Blackrock HTTP Interface > " + httpLib.toUpperCase() + " Interface (" + name + ") started successfully on port " + cfg.port, {}, "HTTP_STARTED"); inst.listening = true;
 			});
 			interface.instances = instances;
 		});
@@ -148,13 +150,15 @@
 				hookCount = 1;
 				addNow(instances[names], hookType, hookFn);
 			} else {
+				log("debug", "Blackrock HTTP Interface > Failed to Add New Hooks", {"names": names, "type": hookType}, "HTTP_FAILED_TO_ADD_HOOKS");
 				reject({"message": "No Valid Hook Targets Defined", "code": "NO_TARGETS"});
 				return;
 			}
 			var interval = setInterval(function(){
 				if(hooksSet.length >= hookCount) {
 					clearInterval(interval);
-					resolve({"message": "Hooks Set", "code": "HOOKS_SET", "hooks": hooksSet});
+					log("debug", "Blackrock HTTP Interface > New Hooks Added", {"names": names, "type": hookType, "hooks": hooksSet}, "HTTP_HOOKS_ADDED");
+					resolve({"message": "Hooks Added", "code": "HOOKS_ADDED", "hooks": hooksSet});
 					return;
 				}
 			}, 10);
@@ -174,6 +178,7 @@
 				}
 			}
 		}
+		log("debug", "Blackrock HTTP Interface > Hook Removed", {"id": hookId}, "HTTP_HOOK_REMOVED");
 		return true;
 	}
 
@@ -183,31 +188,27 @@
 	 */
 	var executeHookFns = function HTTPExecuteHook(name, type, input){
 		return new Promise((resolve, reject) => {
-			console.log('executing hook fns - outer');
 			var hookCount = Object.keys(instances[name].hooks[type]).length;
 			var hooksExecuted = [], hookStack = [];
 			for(var hookId in instances[name].hooks[type]) {
 				hookStack.push(instances[name].hooks[type][hookId]);
 			}
-			var executeNow = function HTTPExecuteHookInner(newInput, cb) {
-				console.log('executing hook fns - inner', hookStack, hookStack.length);
-				if(!instances[name]) { cb({"message": "Invalid Instance", "code": "INVALID_INSTANCE"}, null); }
-				const types = ["onIncomingRequest", "onOutgoingResponse", "onOutgoingRequest", "onIncomingResponse"];
-				if(!types.includes(type)) { cb({"message": "Invalid Type", "code": "INVALID_TYPE"}, null); }
-				if(hookCount <= 0) { resolve(newInput); }
-				else if (hookStack.length > 0) {
+			var executeNow = function HTTPExecuteHookInner(newInput) {
+				if(!instances[name]) { reject({"message": "Invalid Instance", "code": "INVALID_INSTANCE"}, null); }
+				const types = ["onIncomingRequest", "onOutgoingResponsePostRender", "onOutgoingRequest", "onIncomingResponse"];
+				if(!types.includes(type)) { reject({"message": "Invalid Type", "code": "INVALID_TYPE"}, null); }
+				if (hookStack.length > 0) {
 					var hookFn = hookStack.pop();
 					hookFn(newInput, function(output) {
-						console.log("hook fn completed ", output);
-						executeNow(output, cb);
+						executeNow(output);
 					});
 				} else {
+					log("debug", "Blackrock HTTP Interface > Hooks Executed", {"name": name, "type": type, "before": input, "after": newInput}, "HTTP_HOOK_EXECUTED");
 					resolve(newInput);
 				}		
 			}
 			executeNow(input);
 		});
-		
 	}
 
 
@@ -228,7 +229,7 @@
 			constructor: function HTTPProcessRequestStreamConstructor(evt) { this.evt = evt; },
 			callback: function HTTPProcessRequestStreamCallback(cb) { return cb(this.evt); },
 			pipe: function HTTPProcessRequestStreamPipe() {
-				log("debug", "Blackrock HTTP Interface > Request Event Pipeline Created - Executing Now:");
+				log("debug", "Blackrock HTTP Interface > Request Event Pipeline Created - Executing Now:", {}, "HTTP_EXEC_REQ_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 					op.map(evt => { if(evt) return streamFns.checkErrors(evt); }),
@@ -270,7 +271,7 @@
 			constructor: function HTTPProcessResponseStreamConstructor(evt) { this.evt = evt; },
 			callback: function HTTPProcessResponseStreamCallback(cb) { return cb(this.evt); },
 			pipe: function HTTPProcessResponseStreamPipe() {
-				log("debug", "Blackrock HTTP Interface > Response Event Pipeline Created - Executing Now:");
+				log("debug", "Blackrock HTTP Interface > Response Event Pipeline Created - Executing Now:", {}, "HTTP_EXEC_RESP_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 					op.map(evt => { if(evt) return streamFns.preventDuplicateResponses(evt); }),
@@ -315,8 +316,8 @@
 	 */
 	streamFns.checkErrors = function HTTPCheckErrors(evt) {
 		evt.res.resReturned = false;
-	    evt.req.on('error', (err) => { log("error","HTTP Interface > Error processing incoming request", err); evt.res.statusCode = 400; evt.res.end(); evt.res.resReturned = true; });
-	    evt.res.on('error', (err) => { log("error","HTTP Interface > Error processing outgoing response", err); });
+	    evt.req.on('error', (err) => { log("error","HTTP Interface > Error processing incoming request", err, "HTTP_REQ_ERR_PROCESS_REQ"); evt.res.statusCode = 400; evt.res.end(); evt.res.resReturned = true; });
+	    evt.res.on('error', (err) => { log("error","HTTP Interface > Error processing outgoing response", err, "HTTP_REQ_ERR_PROCESS_RES"); });
 	    log("debug", "Blackrock HTTP Interface > [1] Checked Request for Errors");
 	    return evt;
 	}
@@ -339,7 +340,7 @@
 	    }
 	    if(!boundary) { var boundary = "" }; 
 	    if(multipart) { evt.req.multipart = true; } else { evt.req.multipart = false; }; 
-	    log("debug", "Blackrock HTTP Interface > [2] Content Type Determined");
+	    log("debug", "Blackrock HTTP Interface > [2] Content Type Determined", {}, "HTTP_REQ_CONTENT_TYPE_DETERMINED");
 	    return evt;
 	}
 
@@ -356,7 +357,7 @@
 			else { form.maxFileSize = 50 * 1024 * 1024; }
 			try { form.parse(evt.req, function HTTPParseMultiPartFormParser(err, fields, files) { console.log("err", err); console.log("fields", fields); console.log("files", files); var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
 			catch (err) { evt.data = {error: "File Upload Size Was Too Large"}; resolve(evt); }
-			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message");
+			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message", {}, "HTTP_REQ_PARSED_MULTI_PART");
 		});
 	}
 
@@ -373,7 +374,7 @@
 		    	evt.data = data; 
 		    	resolve(evt); 
 		    });
-		    log("debug", "Blackrock HTTP Interface > [3] Parsed Non-Multi-Part Request Message");
+		    log("debug", "Blackrock HTTP Interface > [3] Parsed Non-Multi-Part Request Message", {}, "HTTP_REQ_PARSED_NON_MULTI_PART");
 	    });
 	}
 
@@ -388,7 +389,7 @@
         else if (data && core.module("utilities").isJSON(data) == "json_object") { data = data; }
         else if (data) { data = require('querystring').parse(data); }
         evt.data = data;
-        log("debug", "Blackrock HTTP Interface > [4] Request Body Data Processed");
+        log("debug", "Blackrock HTTP Interface > [4] Request Body Data Processed", {}, "HTTP_REQ_BODY_DATA_PROCESSED");
 		return evt;
 	}
 
@@ -403,7 +404,7 @@
 	        list[parts.shift().trim()] = decodeURI(parts.join('='));
 	    });
 	    evt.req.cookieObject = list;
-	    log("debug", "Blackrock HTTP Interface > [5] Cookies Parsed");
+	    log("debug", "Blackrock HTTP Interface > [5] Cookies Parsed", {}, "HTTP_REQ_COOKIES_PARSED");
 	    return evt;
 	}
 
@@ -431,7 +432,7 @@
 		evt.req.theHost = host;
 		evt.req.thePort = port;
 		evt.req.thePath = splitPath[0];
-		log("debug", "Blackrock HTTP Interface > [6] Host Path & Query Processed");
+		log("debug", "Blackrock HTTP Interface > [6] Host Path & Query Processed", {}, "HTTP_REQ_PATH_QUERY_PROCESSED");
 		return evt;
 	}
 
@@ -449,7 +450,7 @@
 			var ipv4 = reqIpAddress.slice(startPos + 1, endPos), ipv6 = reqIpAddress.slice(0, startPos - 1);
 			evt.req.reqIpAddress = ipv4; evt.req.reqIpAddressV6 = ipv6;
 		}
-		log("debug", "Blackrock HTTP Interface > [7] IP Addresses Processed");
+		log("debug", "Blackrock HTTP Interface > [7] IP Addresses Processed", {}, "HTTP_REQ_IP_ADDR_PROCESSED");
 		return evt;
 	}
 
@@ -462,7 +463,7 @@
 		if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "http") { evt.req.reqSecure = false; }
 		else if(headers["X-Forwarded-Proto"] && headers["X-Forwarded-Proto"] == "https") { evt.req.reqSecure = true; }
 		else { evt.req.reqSecure = request.secure; }
-		log("debug", "Blackrock HTTP Interface > [8] Request SSL (Secure) Enabled Flag Processed");
+		log("debug", "Blackrock HTTP Interface > [8] Request SSL (Secure) Enabled Flag Processed", {}, "HTTP_REQ_SSL_FLAG_PROCESSED");
 		return evt;
 	}
 
@@ -480,7 +481,7 @@
 				"ip": evt.req.reqIpAddress, "ipv6": evt.req.reqIpAddressV6, "verb": method, "secure": evt.req.reqSecure, "body": evt.data,
 			}
 		}
-		log("debug", "Blackrock HTTP Interface > [9] Request Message Prepared");
+		log("debug", "Blackrock HTTP Interface > [9] Request Message Prepared", {}, "HTTP_REQ_MSG_PREPARED");
 		return evt;
 	}
 
@@ -502,7 +503,7 @@
 			response.end();
 			return;
 		}
-		log("debug", "Blackrock HTTP Interface > [10] Trailing Slash Fixed If Present");
+		log("debug", "Blackrock HTTP Interface > [10] Trailing Slash Fixed If Present", {}, "HTTP_REQ_TRAILING_SLASH_FIXED");
 		return evt;
 	}
 
@@ -515,7 +516,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					const request = evt.req, {theMessage} = request;
-					log("debug", "Blackrock HTTP Interface > [11] Searching For Request Route");
+					log("debug", "Blackrock HTTP Interface > [11] Searching For Request Route", {}, "HTTP_REQ_SEARCHING_FOR_ROUTE");
 					request.router.route(theMessage.request.host, theMessage.request.path, function HTTPRouterRouteCallback(route) {
 						if(route && route.match && route.match.service){
 							var basePath = core.module("services").service(route.match.service).cfg().basePath;
@@ -562,10 +563,10 @@
 			response.writeHead(200, { "Content-Type": mimeType });
 			fs.createReadStream(pathToRead).pipe(response);
 			evt.res.resReturned = true;
-			log("debug", "Blackrock HTTP Interface > [12] Filesystem file piped directly through", { file: theMessage.request.path, msgId: theMessage.msgId });
+			log("debug", "Blackrock HTTP Interface > [12] Filesystem file piped directly through", { file: theMessage.request.path, msgId: theMessage.msgId }, "HTTP_REQ_FILE_PIPED");
 			return;
 		} else {
-			log("debug", "Blackrock HTTP Interface > [12] Requested File is Not a Filesystem File (would have piped if so)");
+			log("debug", "Blackrock HTTP Interface > [12] Requested File is Not a Filesystem File (would have piped if so)", {}, "HTTP_REQ_NO_FILE_PIPED");
 			return evt;
 		}
 	}
@@ -598,7 +599,7 @@
 				clearInterval(interval);
 			}
 		}, 10);
-		log("debug","HTTP Interface > [13] Sending incoming message " + request.theMessage.msgId + " to router", request.theMessage);
+		log("debug","HTTP Interface > [13] Sending incoming message " + request.theMessage.msgId + " to router", request.theMessage, "HTTP_REQ_SEND_TO_ROUTER");
 		request.router.incoming(request.theMessage);
 		return evt;
 	}
@@ -624,7 +625,7 @@
 	 * @param {object} evt - Response Message From Router (Not Same As Request Event)
 	*/
 	streamFns.preventDuplicateResponses = function HTTPPreventDuplicateResponses(evt) {
-		log("debug", "Blackrock HTTP Interface > [1] Received response from router, Mitigating Against Duplicate Responses", { msgId: evt.msg.msgId });
+		log("debug", "Blackrock HTTP Interface > [1] Received response from router, Mitigating Against Duplicate Responses", { msgId: evt.msg.msgId }, "HTTP_RES_STOP_DUP_RES");
  		if(!evt.msg.interface) { return; }; if(evt.res.resReturned) { return; }
 		evt.res.resReturned = true;
 		return evt;
@@ -651,7 +652,7 @@
 				evt.res.setHeader(header, evt.msg.response.headers[header]);
 			}
 		}
-		log("debug", "Blackrock HTTP Interface > [2] Status, Headers & Cookies Set Against the Response Message");
+		log("debug", "Blackrock HTTP Interface > [2] Status, Headers & Cookies Set Against the Response Message", {}, "HTTP_RES_STATUS_COOKIES_HEADERS_SET");
 		return evt;
 	}
 
@@ -663,10 +664,10 @@
 		if(evt.msg.response.location){
 			evt.res.setHeader('Location', evt.msg.response.location);
 			evt.res.end();
-			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & Redirected Request");
+			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & Redirected Request", {"location": evt.msg.response.location}, "HTTP_RES_EXEC_REDIRECT");
 			return;
 		} else {
-			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & It Was Not");
+			log("debug", "Blackrock HTTP Interface > [3] Checked If Redirect & It Was Not", {}, "HTTP_RES_NOT_REDIRECT");
 			return evt;
 		}
 	}
@@ -679,10 +680,10 @@
 		if(!evt.msg.response.view && evt.msg.response.body){
 			evt.res.setHeader('Content-Type', 'application/json');
 			evt.res.end(JSON.stringify(evt.msg.response.body));
-			log("debug", "Blackrock HTTP Interface > [4] Checked If No View & Finalised Response");
+			log("debug", "Blackrock HTTP Interface > [4] Checked If No View & Finalised Response", {}, "HTTP_RES_SENT_JSON_RES");
 			return;
 		} else {
-			log("debug", "Blackrock HTTP Interface > [4] Checked If No View But There Was One");
+			log("debug", "Blackrock HTTP Interface > [4] Checked If No View But There Was One", {}, "HTTP_RES_FOUND_VIEW");
 			return evt;
 		}
 	}
@@ -698,7 +699,7 @@
 			catch(e) { var stats = false; }
 			if(stats && stats.isFile()){
 				var pathToRead = evt.msg.response.file;
-				log("debug","Blackrock HTTP Interface > [5] Found File - Sending to client ", {file: pathToRead, msgId: evt.msg.msgId });
+				log("debug","Blackrock HTTP Interface > [5] Found File - Sending to client ", {file: pathToRead, msgId: evt.msg.msgId }, "HTTP_RES_SENT_FILE_TO_CLIENT");
 				var filename = pathToRead.split("/");
 				var mimeType = utils.checkMIMEType(filename[filename.length - 1].split('.').pop());
 				if (!mimeType) { mimeType = 'application/octet-stream'; }
@@ -713,13 +714,13 @@
 				});
 				return;
 			} else {
-				log("debug", "Blackrock HTTP Interface > [5] Could Not Find File - Responding With Error");
+				log("debug", "Blackrock HTTP Interface > [5] Could Not Find File - Responding With Error", { "file": evt.msg.response.file }, "HTTP_RES_CANNOT_FIND_FILE");
 				evt.res.setHeader('Content-Type', 'application/json');
 				evt.res.end(JSON.stringify({error: "Cannot Find File"}));
 				return;
 			}
 		} else {
-			log("debug", "Blackrock HTTP Interface > [5] Checked If This Was a File Response But It Was Not");
+			log("debug", "Blackrock HTTP Interface > [5] Checked If This Was a File Response But It Was Not", {}, "HTTP_RES_NOT_FILE_RES");
 			return evt;
 		}
 	}
@@ -735,7 +736,7 @@
 		var mimeType = utils.checkMIMEType(fileType);
 		if (!mimeType) { mimeType = 'text/html'; }
 		evt.res.setHeader('Content-Type', mimeType);
-		log("debug", "Blackrock HTTP Interface > [6] Checked & Set MIME Type for This Response", {mimeType: mimeType});
+		log("debug", "Blackrock HTTP Interface > [6] Checked & Set MIME Type for This Response", {mimeType: mimeType}, "HTTP_RES_SET_MIME");
 		return evt;
 	}
 
@@ -746,7 +747,7 @@
 	streamFns.detectViewType = function HTTPDetectViewType(evt) {
 		if(typeof evt.msg.response.view === 'object' && evt.msg.response.view !== null) { evt.msg.viewType = "object"; }
 		else { evt.msg.viewType = "file"; }
-		log("debug", "Blackrock HTTP Interface > [7] View Type Detected", {viewType: evt.msg.viewType});
+		log("debug", "Blackrock HTTP Interface > [7] View Type Detected", {viewType: evt.msg.viewType}, "HTTP_RES_VIEW_TYPE_DETECTED");
 		return evt;
 	}
 
@@ -762,34 +763,34 @@
 					try {
 						fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function HTTPProcessObjectViewResponseReadFileCallback(err, htmlData) {
 						    if (err) {
-								log("error","Blackrock HTTP Interface > [8] " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg);
+								log("error","Blackrock HTTP Interface > [8] " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg, "HTTP_RES_ERR_VIEW_NOT_EXIST");
 								evt.res.setHeader('Content-Type', 'application/json');
 								evt.res.end(JSON.stringify(evt.msg.response.body));	
 								return;							    	
 						    }       
-						    log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...");
+						    log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...", {}, "HTTP_RES_RENDERING_OBJ_VIEW");
 						    utils.renderView(evt.msg, evt.res, htmlData);
 						    return;
 						});
 					} catch(err){
-						log("error","Blackrock HTTP Interface > [8] View does not exist", { view: evt.msg.response.view });
+						log("error","Blackrock HTTP Interface > [8] View does not exist", { view: evt.msg.response.view }, "HTTP_RES_ERR_VIEW_NOT_EXIST");
 						evt.res.setHeader('Content-Type', 'application/json');
 						evt.res.end(JSON.stringify(evt.msg.response.body));	
 						return;	
 					}
 				} else if (evt.msg.response.view.html) {
 					var htmlData = evt.msg.response.view.html;
-					log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...");
+					log("debug","Blackrock HTTP Interface > [8] Rendering Object-Type HTML View...", {}, "HTTP_RES_RENDERING_OBJ_VIEW");
 					utils.renderView(evt.msg, evt.res, htmlData);
 					return;
 				} else {
-					log("error","Blackrock HTTP Interface > [8] Error Loading View - Unknown Type.");
+					log("error","Blackrock HTTP Interface > [8] Error Loading View - Unknown Type.", {}, "HTTP_RES_ERR_LOADING_VIEW_UNKNOWN");
 					evt.res.setHeader('Content-Type', 'application/json');
 					evt.res.end(JSON.stringify(evt.msg.response.body));
 					return;	
 				}
 			} else {
-				log("error","Blackrock HTTP Interface > [8] Skipped Method to Process Object View Response");
+				log("error","Blackrock HTTP Interface > [8] Skipped Method to Process Object View Response", {}, "HTTP_RES_NOT_OBJ_VIEW");
 				resolve(evt);
 			}
 		});
@@ -804,7 +805,7 @@
 			var basePath = __dirname + "/../../../../", fs = require('fs');
 			var viewPath = basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view;
 			if(viewCache[viewPath] && viewCache[viewPath].content) {
-				log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...");
+				log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...", {}, "HTTP_RES_RENDERING_FILE_VIEW");
 				utils.renderView(evt.msg, evt.res, viewCache[viewPath].content);
 				resolve(evt);
 				return;
@@ -812,7 +813,7 @@
 				try {
 					fs.readFile(viewPath, "utf8", function HTTPProcessFileViewResReadFileCallback(err, htmlData) {
 					    if (err) {
-							log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view });
+							log("error","Blackrock HTTP Interface > [9] View does not exist", {view: evt.msg.response.view }, "HTTP_RES_ERR_FILE_VIEW_NOT_EXIST");
 							evt.res.setHeader('Content-Type', 'application/json');
 							evt.res.end(JSON.stringify(evt.msg.response.body));	
 							return;							    	
@@ -821,12 +822,12 @@
 					    	content: htmlData,
 					    	expiry: "TBC"
 					    }
-					    log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...");
+					    log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...", {}, "HTTP_RES_RENDERING_FILE_VIEW");
 					    utils.renderView(evt.msg, evt.res, htmlData);
 					    return;
 					});
 				} catch(err){
-					log("error","Blackrock HTTP Interface > [9] View does not exist...", {view: evt.msg.response.view });
+					log("error","Blackrock HTTP Interface > [9] View does not exist...", {view: evt.msg.response.view }, "HTTP_RES_ERR_FILE_VIEW_NOT_EXIST");
 					evt.res.setHeader('Content-Type', 'application/json');
 					evt.res.end(JSON.stringify(evt.msg.response.body));
 				}
@@ -881,12 +882,12 @@
 		var result = mustache.render(htmlData, msg.response.body, partials);
 
 		// Execute Hooks for onOutgoingResponse
-		executeHookFns(msg.interface, "onOutgoingResponse", result).then(function(output) {
+		executeHookFns(msg.interface, "onOutgoingResponsePostRender", result).then(function(output) {
 			response.end(output);
-			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.");
+			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.", {}, "HTTP_RES_VIEW_RENDERED");
 		}).catch(function(err) {
 			response.end(result);
-			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.");
+			log("debug","Blackrock HTTP Interface > [10] View Rendered Successfully.", {}, "HTTP_RES_VIEW_RENDERED");
 		});
 
 	}
@@ -994,7 +995,9 @@
 			    	}
 			    	responseData = responseDataNew;
 			    } else { responseData = decodeURIComponent(responseData); }
-			    executeHookFns(name, "onIncomingResponse", {"statusCode": res.statusCode, "data": responseData}).then(function(myResOutput) {
+			    var resObj = {"statusCode": res.statusCode, "data": responseData};
+			    log("debug","Blackrock HTTP Interface > Received Incoming HTTP Response.", { "response": resObj }, "HTTP_RECEIVED_RESPONSE");
+			    executeHookFns(name, "onIncomingResponse", resObj).then(function(myResOutput) {
 			    	cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: myResOutput.statusCode, data: myResOutput.data });
 			    }).catch(function(err) {
 					cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: res.statusCode, data: responseData });
@@ -1007,8 +1010,10 @@
 		}
 
 		executeHookFns(name, "onOutgoingRequest", options).then(function(theOptions) {
+			log("debug","Blackrock HTTP Interface > Making Outgoing HTTP Request.", { "options": theOptions }, "HTTP_SENDING_REQUEST");
 			makeRequest(theOptions);
 		}).catch(function(err) {
+			log("debug","Blackrock HTTP Interface > Making Outgoing HTTP Request.", { "options": theOptions }, "HTTP_SENDING_REQUEST");
 			makeRequest(options);
 		});
 

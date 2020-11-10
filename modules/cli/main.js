@@ -31,7 +31,7 @@
 	var init = function CLIInit(coreObj){ 
 		core = coreObj, mod = new core.Mod("CLI");
 		setupExternalModuleMethods();
-		log("debug", "Blackrock CLI > Initialising...");
+		log("debug", "Blackrock CLI > Initialising...", {}, "CLI_INIT");
 		start(); 
 		return mod; 
 	}
@@ -51,9 +51,9 @@
 	var setupExternalModuleMethods = function CLISetupExternalModuleMethods(){ 
 
 		// LOGGER MODULE (LOG METHOD):
-		log = function CLILog(level, logMsg, attrObj) {
+		log = function CLILog(level, logMsg, attrObj, evtName) {
 			var logger = core.module("logger");
-			if(logger && logger.log) { logger.log(level, logMsg, attrObj); }
+			if(logger && logger.log) { logger.log(level, logMsg, attrObj, evtName); }
 		}
 		
 	}
@@ -99,7 +99,7 @@
 				return;
  			}
 
- 			log("debug", "Blackrock CLI > Server Initialisation Pipeline Created - Executing Now:");
+ 			log("debug", "Blackrock CLI > Server Initialisation Pipeline Created - Executing Now:", {}, "CLI_EXEC_INIT_PIPELINE");
 
  			stream.pipe(
 
@@ -112,14 +112,14 @@
  				}),
 
  				op.map(function CLIStreamFn2Map(evt) {
- 					log("debug", "Blackrock CLI > [1] Command-Line Arguments Filtered");
+ 					log("debug", "Blackrock CLI > [1] Command-Line Arguments Filtered", {}, "CLI_ARGS_FILTERED");
  					return evt; 
  				}),
 
  				op.reduce(function CLIStreamFn3Reduce(acc, one) { return acc + " " + one }),
 
   				op.map(function CLIStreamFn4Map(evt) {
- 					log("debug", "Blackrock CLI > [2] Remaining Arguments Reduced");
+ 					log("debug", "Blackrock CLI > [2] Remaining Arguments Reduced", {}, "CLI_ARGS_REDUCED");
  					return evt; 
  				})
 
@@ -127,21 +127,21 @@
  				subRec = true;
  				var daemonOptions = ["start", "start daemon", "stop", "stop daemon", "restart", "restart daemon", "status", "status daemon"];
 				if(((val && daemonOptions.includes(val) && core.module("daemon")) || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "daemon")) && !process.send) {
-					log("debug", "Blackrock CLI > [3] Events sent to 'Start Daemon' and 'Load Dependencies'");
+					log("debug", "Blackrock CLI > [3] Events sent to 'Start Daemon' and 'Load Dependencies'", {}, "CLI_EVTS_DAEMON_DEP");
 					core.emit("startDaemon");
 				} else if (process.send || val == "start console" || core.globals.get("test") || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "console")) {
-					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies' (but not to 'Start Daemon')");
+					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies' (but not to 'Start Daemon')", {}, "CLI_EVTS_DEP");
 					core.emit("loadDependencies");
 				} else {
 					showHelp();
-					log("debug", "Blackrock CLI > [3] No valid commands received - Displaying Command-Line Help");
+					log("debug", "Blackrock CLI > [3] No valid commands received - Displaying Command-Line Help", {}, "CLI_NO_ARGS_SHOWING_HELP");
 				}
 			  
 			}).unsubscribe();
 
 			setTimeout(function CLIHelpTimeoutCallback(){ if(!subRec) {
 				showHelp(); 
-				log("debug", "Blackrock CLI > [4] Timed Out Whilst Processing Command-Line Arguments - Displaying Command-Line Help");
+				log("debug", "Blackrock CLI > [4] Timed Out Whilst Processing Command-Line Arguments - Displaying Command-Line Help", {}, "CLI_TIMEOUT_SHOWING_HELP");
 			} }, 1);
 
 		});

@@ -32,7 +32,7 @@
 	 */
 	var init = function ErrorHandlerInit(coreObj){
 		core = coreObj, mod = new core.Mod("ErrorHandler"), mod.log = log = core.module("logger").log;
-		log("debug", "Blackrock Error Handler > Initialising...");
+		log("debug", "Blackrock Error Handler > Initialising...", {}, "ERRORHANDLER_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		if(core.cfg().errorHandler && core.cfg().errorHandler.enabled == true){
 			var Pipeline = pipelines.setupErrorHandler();
@@ -61,7 +61,7 @@
 			constructor: function ErrorHandlerSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ErrorHandlerSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ErrorHandlerSetupPipelinePipe() {
-				log("debug", "Blackrock Error Handler > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Error Handler > Server Initialisation Pipeline Created - Executing Now:", {}, "ERRORHANDLER_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -106,7 +106,7 @@
 				return;
 			}
 		});
-		log("debug", "Blackrock Error Handler > [1] Setup Listener Method for the 'errorhandled' event");
+		log("debug", "Blackrock Error Handler > [1] Setup Listener Method for the 'errorhandled' event", {}, "ERRORHANDLER_SETUP_HANDLED_LISTENER");
 		return evt;
 	}
 
@@ -124,19 +124,19 @@
 			var interval = setInterval(function ErrorHandlerUncaughtExceptionTimeout(){
 				if(errorCount <= 0){
 					clearInterval(interval);
-					log("debug", "Blackrock Error Handler > Thrown exception(s) handled by a listening module or service - " + err.message, err);
+					log("debug", "Blackrock Error Handler > Thrown exception(s) handled by a listening module or service - " + err.message, err, "ERRORHANDLER_EXCEPT_HANDLED");
 					return;
 				}
 				if(counter >= timeout){
 					clearInterval(interval);
-					log("fatal", "Blackrock Error Handler > Caught unhandled exception(s). Terminating application server. Error - " + err.message, err);
+					log("fatal", "Blackrock Error Handler > Caught unhandled exception(s). Terminating application server. Error - " + err.message, err, "ERRORHANDLER_EXCEPT_UNHANDLED");
 					core.shutdown();
 					return;
 				}
 				counter += 10;
 			}, 10);
 		});
-		log("debug", "Blackrock Error Handler > [2] Setup Listener Method for the 'uncaughtexception' event");
+		log("debug", "Blackrock Error Handler > [2] Setup Listener Method for the 'uncaughtexception' event", {}, "ERRORHANDLER_SETUP_UNCAUGHT_LISTENER");
 		return evt;
 	}
 

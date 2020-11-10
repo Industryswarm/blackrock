@@ -35,7 +35,7 @@
 	 */
 	var init = function i18nInit(coreObj){
 		core = coreObj, log = core.module("logger").log;
-		log("debug", "Blackrock i18n > Initialising...");
+		log("debug", "Blackrock i18n > Initialising...", {}, "I18N_INIT");
 		mod = new core.Mod("i18n")
 		i18nLib = require("./support/i18next.js");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
@@ -64,13 +64,14 @@
 			constructor: function i18nSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function i18nSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function i18nSetupPipelinePipe() {
-				log("debug", "Blackrock i18n > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock i18n > Server Initialisation Pipeline Created - Executing Now:", {}, "I18N_EXEC_INIT_PIPEINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
 					// Fires once on server initialisation:
 					op.map(evt => { if(evt) return streamFns.bindi18nMethods(evt); }),
-					op.map(evt => { if(evt) return streamFns.loadi18nForServices(evt); })
+					op.map(evt => { if(evt) return streamFns.loadi18nResources(evt); }),
+					op.map(evt => { if(evt) return streamFns.bindTranslator(evt); })
 					
 				);
 				stream1.subscribe(function i18nSetupPipelineSubscribe(res) {
@@ -97,7 +98,7 @@
 	 */
 
 	/**
-	 * (Internal > Stream Methods [1]) Fetch Settings
+	 * (Internal > Stream Methods [1]) Bind i18n Methods
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.bindi18nMethods = function i18nBindi18nMethods(evt){
@@ -130,16 +131,76 @@
 		mod.getResourceBundle = function(lng, ns) { return i18nLib.getResourceBundle(lng, ns); }
 		mod.removeResourceBundle = function(lng, ns) { return i18nLib.removeResourceBundle(lng, ns); }
 
-		log("debug", "Blackrock i18n > [1] i18n Methods Bound");
+		log("debug", "Blackrock i18n > [1] i18n Methods Bound", {}, "I18N_METHODS_BOUND");
 		return evt;
 	}
 
 	/**
-	 * (Internal > Stream Methods [1]) Fetch Settings
+	 * (Internal > Stream Methods [2]) Load i18n Resources
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.loadi18nForServices = function i18nLoadi18nForServices(evt){
-		log("debug", "Blackrock i18n > [2] i18n Loaded For Services");
+	streamFns.loadi18nResources = function i18nLoadi18nResources(evt){
+		//var serviceList = core.module("services").serviceList();
+		mod.init({
+		  lng: 'es',
+		  debug: false,
+		  resources: {
+		    en: {
+		      translation: {
+		        "IndustrySwarm Identity": "IndustrySwarm Identity"
+		      }
+		    },
+		    fr: {
+		      translation: {
+		        "IndustrySwarm Identity": "Frenchy French French"
+		      }
+		    },
+		    es: {
+		      translation: {
+		        "IndustrySwarm Identity": "Espanional"
+		      }
+		    },
+		    to: {
+		      translation: {
+		        "IndustrySwarm Identity": "TONGGGGA"
+		      }
+		    }
+		  }
+		});
+		log("debug", "Blackrock i18n > [2] i18n Resources Loaded", {}, "I18N_RESOURCES_LOADED");
+		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [3]) Load i18n Resources & Bind Translator
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.bindTranslator = function i18nBindTranslator(evt){
+		var http;
+		if(core.module("http", "interface")){ 
+			http = core.module("http", "interface"); 
+			addHook();
+		} else { 
+			var onHttpFn = function i18nOnHttpFn(coreEvt) {
+				core.off("Blackrock HTTP Interface", onHttpFn);
+				http = core.module("http", "interface"); 
+				addHook();
+			}
+			core.on("Blackrock HTTP Interface", onHttpFn);
+		}
+		var addHook = function i18nAddHook(){
+			http.hook.add("*", "onOutgoingResponsePostRender", function(input, cb) {
+				const $ = http.cheerio.load(input);
+				$('*[i18n]').each(function( index ) {
+					var innerText = $(this).text();
+					innerText = mod.t(innerText, {lng: "fr"});
+					$(this).text(innerText);
+					$(this).removeAttr("i18n");
+				});
+				cb($.html());
+			});
+			log("debug", "Blackrock i18n > [3] i18n Translator Bound to HTTP Interface Module", {}, "I18N_TRANSLATOR_BOUND");
+		}
 		return evt;
 	}
 

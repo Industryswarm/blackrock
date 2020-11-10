@@ -101,7 +101,7 @@
     		var cb = var4;
 		}
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -179,7 +179,7 @@
 	res.prototype.json = function RouterResObjJson(body){
 		this.view = false;
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -238,7 +238,7 @@
 		}
 		this.view = false;
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -269,7 +269,7 @@
 		var body = locals;
 		this.view = view;
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -298,7 +298,7 @@
 	res.prototype.send = function RouterResObjSend(body){
 		this.view = false;
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -335,7 +335,7 @@
 			var cb = var3
 		}
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;
@@ -391,7 +391,7 @@
 	 */
 	res.prototype.sendStatus = function RouterResObjSendStatus(status){
 		if(this.headersSent == true){
-			this.log("debug","Router > Attempting to send another response after response has already been sent");
+			this.log("debug","Router > Attempting to send another response after response has already been sent", {}, "ROUTER_RES_DUPLICATE");
 			return;
 		}
 		this.headersSent = true;

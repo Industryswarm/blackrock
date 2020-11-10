@@ -31,7 +31,7 @@
 	 */
 	var init = function RouterInit(coreObj){
 		core = coreObj, mod = new core.Mod("Router"), log = core.module("logger").log;
-		log("debug", "Blackrock Router > Initialising...");
+		log("debug", "Blackrock Router > Initialising...", {}, "ROUTER_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.createRouters();
 		new Pipeline({}).pipe();
@@ -58,7 +58,7 @@
 			constructor: function RouterCreatePipelineConstructor(evt) { this.evt = evt; },
 			callback: function RouterCreatePipelineCallback(cb) { return cb(this.evt); },
 			pipe: function RouterCreatePipelinePipe() {
-				log("debug", "Blackrock Router > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Router > Server Initialisation Pipeline Created - Executing Now:", {}, "ROUTER_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -114,7 +114,7 @@
 				return;
 			}
 		});
-		log("debug", "Blackrock Router > [1] Router Prototype Created");
+		log("debug", "Blackrock Router > [1] Router Prototype Created", {}, "ROUTER_PROTOTYPE_CREATED");
 	    return evt;
 	}
 
@@ -126,7 +126,7 @@
 		mod.get = function RouterGetInstance(name){ if(routers[name]){ return routers[name]; } else { return; } }
 		mod.count = function RouterCountInstances(){ return routerCount; }
 		evt.mod = mod;
-		log("debug", "Blackrock Router > [2] External Methods 'get' and 'count' Attached to This Module");
+		log("debug", "Blackrock Router > [2] External Methods 'get' and 'count' Attached to This Module", {}, "ROUTER_BOUND_GET_COUNT");
 	    return evt;
 	}
 
@@ -144,11 +144,11 @@
 							if(core.cfg().router.instances[instance].services && core.cfg().router.instances[instance].interfaces) {
 								evt.instanceName = instance; observer.next(evt); routerCount ++;
 							} else {
-								log("fatal", "Blackrock Router > [3a] One or more routers are misconfigured. Terminating application server..."); core.shutdown();			
+								log("fatal", "Blackrock Router > [3a] One or more routers are misconfigured. Terminating application server...", {}, "ROUTER_MISCONFIGURED"); core.shutdown();			
 							}
 						}
 					} else {
-						log("fatal", "Blackrock Router > [3a] No routers configured. Terminating application server..."); core.shutdown();
+						log("fatal", "Blackrock Router > [3a] No routers configured. Terminating application server...", {}, "ROUTER_NO_ROUTERS"); core.shutdown();
 					}
 				},
 				error(error) { observer.error(error); },
@@ -183,7 +183,7 @@
 		var routerCfg = core.cfg().router.instances[name];
 		routers[name] = new evt.Router();
 		evt.routers = routers;
-		log("debug", "Blackrock Router > [3a] New Router (" + name + ") Instantiated");		
+		log("debug", "Blackrock Router > [3a] New Router (" + name + ") Instantiated", {}, "ROUTER_NEW_ROUTER_INIT");		
 	    return evt;
 	}
 
@@ -206,11 +206,11 @@
 					"statusCode": statusCode
 				}
 			}	
-			log("debug","Blackrock Router > Sending message " + msgObject.msgId + " back to originating interface", msgObject);
+			log("debug","Blackrock Router > Sending message " + msgObject.msgId + " back to originating interface", msgObject, "ROUTER_RES_TO_INTERFACE");
 			if(msgObject.sessionId) { core.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.sessionId,msg); }
 			else { core.module(msgObject.type, "interface").get(msgObject.interface).emit("outgoing." + msgObject.msgId, msg); }
 		}
-		log("debug", "Blackrock Router > [3b] 'ReturnError' Method Attached To This Router");
+		log("debug", "Blackrock Router > [3b] 'ReturnError' Method Attached To This Router", {}, "ROUTER_RETURN_ERROR_BOUND");
 	    return evt;
 	}
 
@@ -227,7 +227,7 @@
 			}, cb);
 		}
 		routers[evt.instanceName].route = evt.Route;
-		log("debug", "Blackrock Router > [3c] 'Route' Method Attached To This Router");
+		log("debug", "Blackrock Router > [3c] 'Route' Method Attached To This Router", {}, "ROUTER_ROUTE_BOUND");
 	    return evt;
 	}
 
@@ -245,7 +245,7 @@
 						observer.next(message); 
 					}
 					routers[evt.instanceName].incoming = evt.Listener;
-					log("debug", "Blackrock Router > [3d] 'Listener' Method Attached To This Router (Accessible via 'get')");
+					log("debug", "Blackrock Router > [3d] 'Listener' Method Attached To This Router (Accessible via 'get')", {}, "ROUTER_LISTENER_BOUND");
 				},
 				error(error) { observer.error(error); }
 			});
@@ -281,13 +281,13 @@
 					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
 					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function RouterDetermineNewRequestRouteCallback(routeResult) {
 						evt.routerInternals.route = routeResult;
-						log("debug","Blackrock Router > Received Incoming Request:", evt.routerMsg);
+						log("debug","Blackrock Router > Received Incoming Request:", evt.routerMsg, "ROUTER_RECEIVED_REQUEST");
 						if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
 							evt.parentEvent.ReturnError(evt.routerMsg,"Page Not Found",404); 
-							log("warning","Blackrock Router > [1] Could not resolve endpoint - 404 - " + evt.routerMsg.msgId);
+							log("warning","Blackrock Router > [1] Could not resolve endpoint - 404 - " + evt.routerMsg.msgId, {}, "ROUTER_404");
 						} else {
 							evt.routerInternals.controller = evt.routerInternals.route.match.controller;
-							log("debug","Blackrock Router > [1] Found Route for " + evt.routerMsg.request.host + evt.routerMsg.request.path);
+							log("debug","Blackrock Router > [1] Found Route for " + evt.routerMsg.request.host + evt.routerMsg.request.path, {}, "ROUTER_FOUND_ROUTE");
 							observer.next(evt); 			
 						}
 					});
@@ -327,7 +327,7 @@
 			body: evt.routerMsg.request.body,
 			log: log
 		});
-		log("debug", "Blackrock Router > [2] Built Request Object");
+		log("debug", "Blackrock Router > [2] Built Request Object", {}, "ROUTER_REQ_OBJ_BUILT");
 	    return evt;
 	}
 
@@ -345,7 +345,7 @@
 			interface: evt.routerMsg.interface,
 			router: evt.parentEvent.instanceName
 		});
-		log("debug", "Blackrock Router > [3] Built Response Object");
+		log("debug", "Blackrock Router > [3] Built Response Object", {}, "ROUTER_RES_OBJ_BUILT");
 	    return evt;
 	}
 
@@ -354,7 +354,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.logAnalyticsNotificationForRequest = function RouterLogReqAnalyticsNotification(evt) {
-		log("debug", "Blackrock Router > [4] Logging Analytics Notification");
+		log("debug", "Blackrock Router > [4] Logging Analytics Notification", {}, "ROUTER_LOGGING_ANALYTICS_NOTE");
 		var reqSize = JSON.stringify(evt.routerMsg.request.verb) +
 						 JSON.stringify(evt.routerMsg.request.host) +
 						 JSON.stringify(evt.routerMsg.request.port) +
@@ -383,7 +383,7 @@
 	 */
 	streamFns.prepareResponseListener = function RouterPrepareResponseListener(evt) {
 		evt.routerInternals.responseListener = function RouterResponseListener(msg){
-			log("debug","Blackrock Router > [7] Received response from controller - Routing back to original interface. Message ID: " + msg.msgId, msg);
+			log("debug","Blackrock Router > [7] Received response from controller - Routing back to original interface. Message ID: " + msg.msgId, msg, "ROUTER_RES_FROM_CTRL");
 			var resSize = (JSON.stringify(msg.response.body) || "") +
 						  (JSON.stringify(msg.response.headers) || "") +
 						  (JSON.stringify(msg.response.cookies) || "");
@@ -408,7 +408,7 @@
 			routers[evt.parentEvent.instanceName].removeListener('router.' + msg.msgId, evt.routerInternals.responseListener);
 		}
 		routers[evt.parentEvent.instanceName].on('router.' + evt.routerMsg.msgId, evt.routerInternals.responseListener);
-		log("debug", "Blackrock Router > [5] Attached Response Listener (Specific to this Router Message) To This Router");
+		log("debug", "Blackrock Router > [5] Attached Response Listener (Specific to this Router Message) To This Router", {}, "ROUTER_ATTACHED_RES_LISTENER");
 	    return evt;
 	}
 
@@ -422,15 +422,15 @@
 			var service = core.module("services").service(evt.routerInternals.route.match.service);
 			if(service.middleware.count() == 0) {
 				evt.routerInternals.controller[evt.routerInternals.verb](evt.routerInternals.req, evt.routerInternals.res);
-				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller Without Middleware");
+				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller Without Middleware", {}, "ROUTER_ROUTED_TO_CTRL_NO_MW");
 			} else {
 				service.middleware.handle(evt.routerInternals.controller[evt.routerInternals.verb]);
 				service.middleware(evt.routerInternals.req, evt.routerInternals.res);
-				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller With Middleware");
+				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller With Middleware", {}, "ROUTER_ROUTED_TO_CTRL_MW");
 			}
 
 		} else {
-			log("error","Blackrock Router > [6] Controller Function Cannot Be Found - " + JSON.stringify(evt.routerInternals.controller), evt.routerMsg);
+			log("error","Blackrock Router > [6] Controller Function Cannot Be Found - " + JSON.stringify(evt.routerInternals.controller), evt.routerMsg, "ROUTER_INVALID_CTRL_FN");
 			evt.parentEvent.ReturnError(evt.routerMsg,"Internal Server Error", 500);
 		}
 	    return evt;

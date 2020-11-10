@@ -37,19 +37,19 @@
 	var init = function LoggerInit(coreObj){
 		if(modIsLoaded) { return mod; }
 		core = coreObj, mod = new core.Mod("Logger");
-		mod.log = log = function LoggerQuickLog(level, logMsg, attrObj) {
+		mod.log = log = function LoggerQuickLog(level, logMsg, attrObj, evtName) {
 			if(logOverride) { return newLog(level, logMsg, attrObj);}
 			var currentDate = new Date();
 			currentDate = currentDate.toISOString();
 			var sEvt = streamFns.detectAvailableSinks({ "noLog": true });
-			var evt = { "level": level, "logMsg": logMsg, "attrObj": attrObj, "datestamp": currentDate, "sinks": sEvt.sinks }
+			var evt = { "level": level, "logMsg": logMsg, "attrObj": attrObj, "datestamp": currentDate, "sinks": sEvt.sinks, "evtName": evtName }
 			logBuffer.push(evt);
 			return true;
 		}
 		var loadDependencies = false;
 		core.on("startDaemon", function LoggerOnStartDaemon(){ daemonInControl = true; });
 		core.on("loadDependencies", function LoggerOnLoadDependencies(){ loadDependencies = true; });
-		log("debug", "Blackrock Logger > Initialising...");
+		log("debug", "Blackrock Logger > Initialising...", {}, "LOGGER_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var intervalCounter = 0;
 		var interval = setInterval(function LoggerInitInterval(){
@@ -64,7 +64,7 @@
 			intervalCounter += 10;
 		}, 10);
 		mod.unload = function LoggerUnload(){
-			log("debug","Logger Module > Closing any open logging connections and shutting down.");
+			log("debug","Logger Module > Closing any open logging connections and shutting down.", {}, "LOGGER_UNLOAD");
 			if(fileStream){ delete fileStream; core.emit("module-shut-down", "Logger"); } 
 			else { core.emit("module-shut-down", "Logger"); }
 		}
@@ -94,7 +94,7 @@
 			pipe: function LoggerSetupPipelinePipe() {
 				const self = this; 
 				process.nextTick(function LoggerSetupPipelineNextTick(){
-					log("debug", "Blackrock Logger > Server Initialisation Pipeline Created - Executing Now:");
+					log("debug", "Blackrock Logger > Server Initialisation Pipeline Created - Executing Now:", {}, "LOGGER_EXEC_INIT_PIPELINE");
 					const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 					const stream1 = stream.pipe(
 
@@ -207,9 +207,9 @@
 			if (fs.existsSync(location)) {
 			    fileStream = fs.createWriteStream(location, {flags:'a'});
 			}
-			log("debug", "Blackrock Logger > [1] Setup the File Stream");
+			log("debug", "Blackrock Logger > [1] Setup the File Stream", {}, "LOGGER_SETUP_FILE_STREAM");
 		} else {
-			log("debug", "Blackrock Logger > [1] Skipped Creation of File Stream");
+			log("debug", "Blackrock Logger > [1] Skipped Creation of File Stream", {}, "LOGGER_NO_FILE_STREAM");
 		}
 		
 		return evt;
@@ -226,9 +226,9 @@
 			if(core.cfg().logger.sinks.console && core.cfg().logger.sinks.console.enabled == true){ evt.sinks.console = true; }
 			if(core.cfg().logger.sinks.file && core.cfg().logger.sinks.file.enabled == true){ evt.sinks.file = true; }
 			if(core.cfg().logger.sinks.elasticsearch && core.cfg().logger.sinks.elasticsearch.enabled == true){ evt.sinks.elasticsearch = true; }
-			if(!evt.noLog) { log("debug", "Blackrock Logger > [2] Detected Available Log Sinks"); }
+			if(!evt.noLog) { log("debug", "Blackrock Logger > [2] Detected Available Log Sinks", { "sinks": evt.sinks }, "LOGGER_DETECTED_SINKS"); }
 		} else {
-			if(!evt.noLog) { log("debug", "Blackrock Logger > [2] Did Not Detect Log Sinks - As Logger is Disabled in Config"); }
+			if(!evt.noLog) { log("debug", "Blackrock Logger > [2] Did Not Detect Log Sinks - As Logger is Disabled in Config", {}, "LOGGER_DISABLED"); }
 		}
 		return evt;
 	}
@@ -379,7 +379,7 @@
 
 		mod.analytics.view = function LoggerExternalViewAnalyticsMethod(){ return viewObject.process(); }
 
-		log("debug", "Blackrock Logger > [3] View Analytics Setup & Ready For Use");
+		log("debug", "Blackrock Logger > [3] View Analytics Setup & Ready For Use", {}, "LOGGER_VIEW_ANALYTICS_SETUP");
 
 		return evt;
 	}
@@ -389,7 +389,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupJobs = function LoggerSetupJobs(evt){
-		log("debug", "Blackrock Logger > [4] Setting Up Heartbeat + Cache Jobs");
+		log("debug", "Blackrock Logger > [4] Setting Up Heartbeat + Cache Jobs", {}, "LOGGER_SETUP_HEARTBEAT_JOBS");
 		if(core.cfg().logger.heartbeat) {
 			var heartbeatJob = function LoggerHeartbeatJob() {
 				var beat = core.module("logger").analytics.view();
@@ -493,7 +493,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetAndUpdateLatestHeartbeat = function LoggerSetupGetAndUpdateLatestHeartbeat(evt){
-		log("debug", "Blackrock Logger > [5] Setting up the 'getLatestHeartbeat' and 'updateLatestHeartbeat' Methods on Logger");
+		log("debug", "Blackrock Logger > [5] Setting up the 'getLatestHeartbeat' and 'updateLatestHeartbeat' Methods on Logger", {}, "LOGGER_BOUND_GET_UPDATE_HEARTBEAT_METHODS");
 		mod.getLatestHeartbeat = function LoggerGetLatestHeartbeat() {
 			return latestHeartbeat;
 		}
@@ -509,7 +509,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.loadCachedHeartbeats = function LoggerLoadCachedHeartbeats(evt){
-		log("debug", "Blackrock Logger > [6] Loading cached heartbeats if they exist");
+		log("debug", "Blackrock Logger > [6] Loading cached heartbeats if they exist", {}, "LOGGER_LOAD_CACHED_HEARTBEATS");
 		setTimeout(function LoggerLoadCachedHeartbeatsTimeout() {
 			var fs = require("fs");
 			var path = core.getBasePath() + "/cache/heartbeat/heartbeats.json";
@@ -525,7 +525,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.fireServerBootAnalyticsEvent = function LoggerFireServerBootAnalyticsEvent(evt){
-		log("debug", "Blackrock Logger > [7] Firing the \"Server Boot\" Analytics Event");
+		log("debug", "Blackrock Logger > [7] Firing the \"Server Boot\" Analytics Event", {}, "LOGGER_FIRE_SERVER_BOOT_EVT");
 		setTimeout(function LoggerFireBootAnalyticsEventTimeout() {
 			var dayjs = lib.dayjs;
 			mod.analytics.log({ "server": { "dateLastBoot": dayjs().format() } });
@@ -538,9 +538,9 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.bindEnableConsole = function LoggerBindEnableConsole(evt){
-		log("debug", "Blackrock Logger > [8a] Binding 'enableConsole' method to this module");
+		log("debug", "Blackrock Logger > [8a] Binding 'enableConsole' method to this module", {}, "LOGGER_BOUND_ENABLE_CONSOLE");
 		mod.enableConsole = function LoggerEnableConsole() { 
-			log("debug", "Blackrock Logger > [8b] 'enableConsole' has been called");
+			log("debug", "Blackrock Logger > [8b] 'enableConsole' has been called", {}, "LOGGER_ENABLE_CONSOLE_CALLED");
 			consoleEnabled = true; 
 		}
 		return evt;
@@ -554,9 +554,9 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug", "Blackrock Logger > [9] Setting Up Analytics & Log Endpoint On The Logger Module");
+					log("debug", "Blackrock Logger > [9] Bound Analytics & Log Endpoint On The Logger Module", {}, "LOGGER_BOUND_ANALYTICS_LOG_ENDPOINTS");
 					logOverride = true;
-					mod.log = log = newLog = function LoggerLog(level, logMsg, attrObj){
+					mod.log = log = newLog = function LoggerLog(level, logMsg, attrObj, evtName){
 						var currentDate = new Date();
 						currentDate = currentDate.toISOString();
 						var evt2 = {};
@@ -565,6 +565,7 @@
 							"level": level,
 							"logMsg": logMsg,
 							"attrObj": attrObj,
+							"evtName": evtName,
 							"sinks": evt.sinks
 						}
 						mod.emit("logEvent", evt2);
@@ -640,6 +641,7 @@
 							"level": evt.level,
 							"logMsg": evt.logMsg,
 							"attrObj": evt.attrObj,
+							"evtName": evt.evtName,
 							"sinks": evt.sinks
 						};
 						if(evt.datestamp) { evt2.datestamp = evt.datestamp; }
@@ -673,20 +675,24 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.sendToCoreObject = function LoggerSendToCoreObject(evt){
-		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
+		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp, evtName = evt.evtName;
 		var logMessage, logMod, logMsgSplit = logMsg.split(">");
 		if(logMsgSplit && logMsgSplit[0]) { logMod = logMsgSplit[0].trim(); }
 		else { logMod = ""; }
 		if(logMsgSplit && logMsgSplit[1]) { logMessage = logMsgSplit[1].trim(); }
 		else { logMessage = ""; }
 		setTimeout(function() {
-			core.emit("log", {
+			var emitObj = {
 				"datestamp": currentDate,
+				"evtName": evtName,
 				"level": level,
 				"module": logMod,
 				"msg": logMessage,
 				"attr": attrObj
-			});
+			};
+			core.emit("log", emitObj);
+			if(evtName) { core.emit(evtName, emitObj) };
+			if(logMod) { core.emit(logMod, emitObj) };
 			if(coreObjTimeout > 0) { coreObjTimeout --; }
 		}, coreObjTimeout);
 		return evt;

@@ -32,7 +32,7 @@
 	 */
 	var init = function UniverseInit(coreObj){
 		core = coreObj, mod = new core.Mod("Universe"), mod.log = log = core.module("logger").log;
-		log("debug", "Blackrock Universe > Initialising...");
+		log("debug", "Blackrock Universe > Initialising...", {}, "UNIVERSE_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupUniverse();
 		new Pipeline({}).pipe();
@@ -59,7 +59,7 @@
 			constructor: function UniverseSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function UniverseSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function UniverseSetupPipelinePipe() {
-				log("debug", "Blackrock Universe > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Universe > Server Initialisation Pipeline Created - Executing Now:", {}, "UNIVERSE_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -95,7 +95,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupModule = function UniverseSetup(evt){
-		log("debug", "Blackrock Universe > [1] Setup Universe Module Initial State");
+		log("debug", "Blackrock Universe > [1] Setup Universe Module Initial State", {}, "UNIVERSE_SETUP_INIT_STATE");
 		return evt;
 	}
 

@@ -38,7 +38,7 @@
 	 */
 	var init = function SandboxInit(coreObj){
 		core = coreObj, mod = new core.Mod("Sandbox"), log = core.module("logger").log;
-		log("debug", "Blackrock Sandbox > Initialising...");
+		log("debug", "Blackrock Sandbox > Initialising...", {}, "SANDBOX_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupSandbox();
 		new Pipeline({}).pipe();
@@ -67,7 +67,7 @@
 			constructor: function SandboxSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function SandboxSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function SandboxSetupPipelinePipe() {
-				log("debug_deep", "Blackrock Sandbox > Setup Sandbox Pipeline Created - Executing Now:");
+				log("debug_deep", "Blackrock Sandbox > Setup Sandbox Pipeline Created - Executing Now:", {}, "SANDBOX_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -109,7 +109,7 @@
 	streamFns.importLibraries = function SandboxImportLibraries(evt){
 		const { NodeVM } = require('./support/lib/main.js');
 		evt.NodeVM = NodeVM;
-		log("debug_deep", "Blackrock Sandbox > [1] Libraries Imported.");
+		log("debug_deep", "Blackrock Sandbox > [1] Libraries Imported.", {}, "SANDBOX_LIBS_IMPORTED");
 		return evt;
 	}
 
@@ -121,7 +121,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					evt.Execute = function SandboxExecute(options, cb) { 
-						log("debug_deep", "Blackrock Sandbox > [3] Call Received to Execute Code", {options: options});
+						log("debug_deep", "Blackrock Sandbox > [3] Call Received to Execute Code", {options: options}, "SANDBOX_CALL_TO_EXEC_CODE");
 						var message = { 
 							parentEvent: evt,
 							options: options,
@@ -129,7 +129,7 @@
 						};
 						observer.next(message); 
 					}
-					log("debug_deep", "Blackrock Sandbox > [2] Code Execution Endpoint Attached To This Module");
+					log("debug_deep", "Blackrock Sandbox > [2] Code Execution Endpoint Attached To This Module", {}, "SANDBOX_EXEC_ENDPOINT_BOUND");
 					mod.execute = evt.Execute;
 				},
 				error(error) { observer.error(error); }
@@ -156,7 +156,7 @@
 		        }
 		    }
 		});
-		log("debug_deep", "Blackrock Sandbox > [4] VM Created");
+		log("debug_deep", "Blackrock Sandbox > [4] VM Created", {}, "SANDBOX_VM_CREATED");
 		return evt;
 	}
 
@@ -181,15 +181,15 @@
 							    if(err) throw(err);
 								event.options.code = "" + data;
 								observer.next(event); 
-								log("debug_deep", "Blackrock Sandbox > [4] Code Read From File"); 
+								log("debug_deep", "Blackrock Sandbox > [4] Code Read From File", {}, "SANDBOX_CODE_READ_FROM_FILE"); 
 							});
 						} catch(e) { 
 							observer.next(evt); 
-							log("error", "Blackrock Sandbox > [4] Error Attempting to Read Code From File"); 
+							log("error", "Blackrock Sandbox > [4] Error Attempting to Read Code From File", {}, "SANDBOX_ERR_READ_CODE_FROM_FILE"); 
 						}
 					} else {
 						observer.next(evt); 
-						log("debug_deep", "Blackrock Sandbox > [4] No Need to Read Code From File - Provided Directly"); 						
+						log("debug_deep", "Blackrock Sandbox > [4] No Need to Read Code From File - Provided Directly", {}, "SANDBOX_CODE_PROVIDED_DIRECT"); 						
 					}
 				},
 				error(error) { observer.error(error); }
@@ -208,7 +208,7 @@
 					evt.ctrl = ObjectInSandbox = evt.vm.run(evt.options.code, basePath + "/modules/sandbox/main.js");
 					evt.cb({ctrl: evt.ctrl, file: evt.options.file, i: evt.options.i});
 					observer.next(evt);
-					log("debug_deep", "Blackrock Sandbox > [5] Code Executed"); 
+					log("debug_deep", "Blackrock Sandbox > [5] Code Executed", {}, "SANDBOX_EXEC_CODE"); 
 				},
 				error(error) { observer.error(error); }
 			});

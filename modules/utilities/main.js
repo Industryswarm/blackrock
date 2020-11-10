@@ -40,7 +40,7 @@
 	var init = function UtilitiesInit(coreObj){
 		core = coreObj, mod = new core.Mod("Utilities"), log = core.module("logger").log;
 		core.on("updateLogFn", function(){ log = core.module("logger").log });
-		log("debug", "Blackrock Utilities > Initialising...");
+		log("debug", "Blackrock Utilities > Initialising...", {}, "UTILITIES_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable, mod.crypto = {}, mod.system = {};
 		var Pipeline = pipelines.setupUtilities();
 		new Pipeline({}).pipe();
@@ -69,7 +69,7 @@
 			constructor: function UtilitiesSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function UtilitiesSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function UtilitiesSetupPipelinePipe() {
-				log("debug", "Blackrock Utilities > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Utilities > Server Initialisation Pipeline Created - Executing Now:", {}, "UTILITIES_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -123,7 +123,7 @@
 		mod.crypto = crypto;
 		mod.modules = modules;
 		mod.csv = csv;
-		log("debug", "Blackrock Utilities > [1] Base Object Schema Initialised");
+		log("debug", "Blackrock Utilities > [1] Base Object Schema Initialised", {}, "UTILITIES_BASE_OBJ_SCHEMA_INIT");
 		return { 
 			methods: {
 				crypto: crypto,
@@ -161,7 +161,7 @@
 			}
 			return uuid;
 		};
-		log("debug", "Blackrock Utilities > [2] 'uuid4' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [2] 'uuid4' Method Attached To This Module", {}, "UTILITIES_BOUND_UUID4");
 		return evt;
 	}
 
@@ -181,7 +181,7 @@
 			   return "string";
 			}
 		};
-		log("debug", "Blackrock Utilities > [3] 'isJSON' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [3] 'isJSON' Method Attached To This Module", {}, "UTILITIES_BOUND_IS_JSON");
 		return evt;
 	}
 
@@ -197,7 +197,7 @@
 	    		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	  		return text;
 		};
-		log("debug", "Blackrock Utilities > [4] 'randomString' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [4] 'randomString' Method Attached To This Module", {}, "UTILITIES_BOUND_RANDOM_STRING");
 		return evt;
 	}
 
@@ -215,7 +215,7 @@
 		    }
 		    return length;
 		};
-		log("debug", "Blackrock Utilities > [5] 'objectLength' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [5] 'objectLength' Method Attached To This Module", {}, "UTILITIES_BOUND_OBJ_LENGTH");
 		return evt;
 	}
 
@@ -229,7 +229,7 @@
 			currentDate = currentDate.toISOString();
 			return currentDate;
 		};
-		log("debug", "Blackrock Utilities > [6] 'getCurrentDateInISO' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [6] 'getCurrentDateInISO' Method Attached To This Module", {}, "UTILITIES_BOUND_GET_CURRENT_DATE_IN_ISO");
 		return evt;
 	}
 
@@ -273,7 +273,7 @@
 				return false;
 			}
 		};
-		log("debug", "Blackrock Utilities > [7] 'validateString' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [7] 'validateString' Method Attached To This Module", {}, "UTILITIES_BOUND_VALIDATE_STRING");
 		return evt;
 	}
 
@@ -291,7 +291,7 @@
 			}
 			return target;
 		};
-		log("debug", "Blackrock Utilities > [8] 'cloneObject' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [8] 'cloneObject' Method Attached To This Module", {}, "UTILITIES_BOUND_CLONE_OBJ");
 		return evt;
 	}
 
@@ -304,7 +304,7 @@
 		mod.modules.loadModule = evt.methods.modules.loadModule = function UtilitiesLoadModule(name) {
 			return require(name + ".js");
 		};
-		log("debug", "Blackrock Utilities > [9] 'loadModule' Method Attached To This Module");
+		log("debug", "Blackrock Utilities > [9] 'loadModule' Method Attached To This Module", {}, "UTILITIES_BOUND_LOAD_MOD");
 		return evt;
 	}
 
@@ -389,7 +389,7 @@
 				return;
 			}
 		};
-		log("debug", "Blackrock Utilities > [10] 'parse' Method Attached To 'csv' Object On This Module");
+		log("debug", "Blackrock Utilities > [10] 'parse' Method Attached To 'csv' Object On This Module", {}, "UTILITIES_BOUND_CSV_PARSE");
 		return evt;
 	}
 
@@ -411,7 +411,7 @@
 			var encrypted = key.encrypt(text, encoding);
 			return encrypted;
 		};
-		log("debug", "Blackrock Utilities > [11] 'encrypt' Method Attached To 'crypto' Object On This Module");
+		log("debug", "Blackrock Utilities > [11] 'encrypt' Method Attached To 'crypto' Object On This Module", {}, "UTILITIES_BOUND_CRYPTO_ENCRYPT");
 		return evt;
 	}
 
@@ -433,7 +433,7 @@
 			var decrypted = key.decrypt(text, encoding);
 			return decrypted;
 		};
-		log("debug", "Blackrock Utilities > [12] 'decrypt' Method Attached To 'crypto' Object On This Module");
+		log("debug", "Blackrock Utilities > [12] 'decrypt' Method Attached To 'crypto' Object On This Module", {}, "UTILITIES_BOUND_CRYPTO_DECRYPT");
 		return evt;
 	}
 
@@ -448,7 +448,7 @@
 		 * https://github.com/NaturalIntelligence/fast-xml-parser
 		 */
 		mod.xml = evt.methods.xml = require("./support/xml/parser.js");
-		log("debug", "Blackrock Utilities > [13] XML Parser Library Attached To This Module");
+		log("debug", "Blackrock Utilities > [13] XML Parser Library Attached To This Module", {}, "UTILITIES_BOUND_XML_PARSER_LIB");
 		return evt;
 	}
 
@@ -467,7 +467,7 @@
 				return memoryUse;
 			}
 		};
-		log("debug", "Blackrock Utilities > [14] 'getMemoryUse' Method Attached To 'system' Object On This Module");
+		log("debug", "Blackrock Utilities > [14] 'getMemoryUse' Method Attached To 'system' Object On This Module", {}, "UTILITIES_BOUND_GET_MEM_USE");
 		return evt;
 	}
 
@@ -500,7 +500,7 @@
 			}, 100);
 			return;
 		};
-		log("debug", "Blackrock Utilities > [15] 'getCpuLoad' Method Attached To 'system' Object On This Module");
+		log("debug", "Blackrock Utilities > [15] 'getCpuLoad' Method Attached To 'system' Object On This Module", {}, "UTILITIES_BOUND_GET_CPU_LOAD");
 		return evt;
 	}
 
@@ -512,7 +512,7 @@
 		mod.system.getStartTime = function UtilitiesGetStartTime() {
 			return process.hrtime();
 		};
-		log("debug", "Blackrock Utilities > [16] 'getStartTime' Method Attached To 'system' Object On This Module");
+		log("debug", "Blackrock Utilities > [16] 'getStartTime' Method Attached To 'system' Object On This Module", {}, "UTILITIES_BOUND_GET_START_TIME");
 		return evt;
 	}
 
@@ -530,7 +530,7 @@
 		    start = process.hrtime();
 		    return end;
 		};
-		log("debug", "Blackrock Utilities > [17] 'getEndTime' Method Attached To 'system' Object On This Module");
+		log("debug", "Blackrock Utilities > [17] 'getEndTime' Method Attached To 'system' Object On This Module", {}, "UTILITIES_BOUND_GET_END_TIME");
 		return evt;
 	}
 
@@ -570,7 +570,7 @@
 			}
 			return size;
 		};
-		log("debug", "Blackrock Utilities > [18] 'getObjectMemoryUsage' Method Attached To 'system' Object On This Module");
+		log("debug", "Blackrock Utilities > [18] 'getObjectMemoryUsage' Method Attached To 'system' Object On This Module", {}, "UTILITIES_BOUND_GET_OBJ_MEM_USE");
 		return evt;
 	}
 
@@ -602,7 +602,7 @@
 		   }
 		   obj[keyPath[lastKeyIndex]] = value;
 		}
-		log("debug", "Blackrock Utilities > [19] Setup Simplify Coding Methods");
+		log("debug", "Blackrock Utilities > [19] Setup Simplify Coding Methods", {}, "UTILITIES_BOUND_SIMPLIFY_LIB");
 
 		return evt;
 	}

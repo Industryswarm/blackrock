@@ -347,6 +347,9 @@
 						}
 						return stats;
 					}
+					mod.serviceList = function ServicesServiceList() {
+						return Object.keys(services);
+					}
 					observer.next(evt);
 				},
 				error(error) { observer.error(error); }

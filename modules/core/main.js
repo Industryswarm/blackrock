@@ -75,9 +75,9 @@
 	var setupExternalModuleMethods = function CoreSetupExternalModuleMethods(core){ 
 
 		// LOGGER MODULE (LOG METHOD):
-		log = function CoreLog(level, logMsg, attrObj) {
+		log = function CoreLog(level, logMsg, attrObj, evtName) {
 			var logger = core.module("logger");
-			if(logger && logger.log) { logger.log(level, logMsg, attrObj); }
+			if(logger && logger.log) { logger.log(level, logMsg, attrObj, evtName); }
 		}
 
 		// LOGGER MODULE (ENABLE CONSOLE METHOD):
@@ -123,7 +123,10 @@
 					if(self.status == "Error") { reject(core) }
 					else if (self.status == "Active") { resolve(core) }
 					setTimeout(function(){
-						core.emit("log", { "welcome": "Blackrock Application Server", "name": package.name, "version": package.version, "status": self.status, "reason": self.reason });
+						const welcomeMsg = { "welcome": "Blackrock Application Server", "name": package.name, "version": package.version, "status": self.status, "reason": self.reason };
+						core.emit("log", welcomeMsg);
+						core.emit("Blackrock Core", welcomeMsg);
+						core.emit("CORE_WELCOME", welcomeMsg);
 					}, 10);
 				}
 				if(!package) { self.status = "Error"; self.reason = "No package provided";  }
@@ -165,7 +168,7 @@
 					enableConsole();
 					if(self.status == "Finalising"){ clearInterval(interval); self.startEventLoop(function(){ resolvePromise(); }); }
 					if(counter >= timeout) { 
-						log("error", "Blackrock Core > Timed out initiating startup. Terminating application server.");
+						log("error", "Blackrock Core > Timed out initiating startup. Terminating application server.", {}, "CORE_STARTUP_TIMEOUT");
 						clearInterval(interval); 
 						self.shutdown(); 
 					}
@@ -188,7 +191,7 @@
 		shutdown: function CoreShutdown() {
 			var self = this;
 			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
-			log("shutdown","Blackrock Core > Initiating System Shutdown.");
+			log("shutdown","Blackrock Core > Initiating System Shutdown.", {}, "CORE_INIT_SHUTDOWN");
 			self.status == "Shutting Down";
 			self.closeModules(function CoreCloseModulesCallback(){ self.exitProcess(); });
 			return;
@@ -217,7 +220,7 @@
 			else {
 				setTimeout(function CoreStartLoopTimeout(){ 
 					if(!self.status == "Shutting Down" && !self.status == "Terminated" && !self.status == "Active") { 
-						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown."); 
+						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown.", {}, "CORE_SYSTEM_LOADED"); 
 					} 
 				}, 1000); 
 				self.status = "Active"; if(cb) { cb(); }
@@ -238,21 +241,21 @@
 					modules.interfaces[moduleName] = require(self.getBasePath("two") + "/" + type + "s/" + moduleName + "/main.js")(core);
 			} catch(err) {
 				var error = { success: false, message: "Error Loading '" + moduleName + "' Module (Type: " + type + ")", error: err };
-				log("debug", "Blackrock Core > " + error.message, error.error);
+				log("debug", "Blackrock Core > " + error.message, error.error, "CORE_ERR_LOADING_MOD");
 				if(cb) { cb(error, null); }
 				return error;
 			}
 			var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully" };
 			if(type == "module") { output.module = modules[moduleName]; }
 			if(type == "interface") { output.module = modules.interfaces[moduleName] }
-			log("debug", "Blackrock Core > " + output.message);
+			log("debug", "Blackrock Core > " + output.message, {}, "CORE_MOD_LOADED");
 			if(cb) { cb(null,output); }
 			return output;
 		},
 
 		closeModules: function CoreCloseModules(cb) {
 			var self = this;
-			log("shutdown","Blackrock Core > Attempting to Close All Open Modules.");
+			log("shutdown","Blackrock Core > Attempting to Close All Open Modules.", {}, "CORE_CLOSING_MODULES");
 			var modCount = 0, stdModCount = 0, interfaceModCount = 0, counter = 0, timeoutTimer = 0;
 			if(config.core.timeouts.closeModules) { var timeout = config.core.timeouts.closeModules }
 			else { var timeout = 2000; }
@@ -262,13 +265,13 @@
 			modCount = stdModCount + interfaceModCount;
 			var interval = setInterval(function CoreCloseModulesIntervalCallback(){
 		    	if(counter >= (modCount - 1)) {
-		    		log("shutdown","Blackrock Core > Modules All Shutdown Successfully ("+counter+"/"+(modCount - 1)+").");
+		    		log("shutdown","Blackrock Core > Modules All Closed Successfully ("+counter+"/"+(modCount - 1)+").", {}, "CORE_MODS_CLOSED");
 				    clearInterval(interval);
-				    cb(null, {success:true, message: "Modules All Shutdown Successfully"});
+				    cb(null, {success:true, message: "Modules All Closed Successfully"});
 				    return;	
 		    	}
 		    	if(timeoutTimer > timeout) {
-		    		log("shutdown","Blackrock Core > Module Shutdown Timed Out ("+counter+"/"+(modCount - 1)+" Closed Successfully).");
+		    		log("shutdown","Blackrock Core > Module Closure Timed Out ("+counter+"/"+(modCount - 1)+" Closed Successfully).", {}, "CORE_TIMEOUT_CLOSING_MODS");
 		    		clearInterval(interval);
 		    		cb({ message: "Module Shutdown Timed Out" }, null);
 		    		return;
@@ -316,7 +319,7 @@
 
 		unload: function CoreModUnload() { 
 			var self = this; 
-			log("debug", self.name + " Module > Module Unloaded");
+			log("debug", self.name + " Module > Module Unloaded", {}, "CORE_MOD_UNLOADED");
 			self.uber.emit("module-shut-down", self.name); 
 			delete self; 
 		}
@@ -349,12 +352,12 @@
 			var self = this;
 			process.nextTick(function CoreInterfaceStartInterfacesNextTickCallback(){
 				var myName = self.name.toLowerCase();
-				if(!core.cfg().interfaces || !core.cfg().interfaces[myName]) { log("debug", self.name + " Interface Module > No Interfaces Defined in System Configuration File."); return; }
+				if(!core.cfg().interfaces || !core.cfg().interfaces[myName]) { log("debug", self.name + " Interface Module > No Interfaces Defined in System Configuration File.", {}, "CORE_ERR_START_INTERFACES_NONE_DEFINED"); return; }
 				if(!core.cfg().router || !core.cfg().router.instances){ log("error", self.name + " Interface Module > Cannot start interfaces as there are no routers defined."); return; }
 				for(var interface in core.cfg().interfaces[myName]) {
 					var cfg = core.cfg().interfaces[myName][interface];
-					if(self.instances[interface]){ log("error", self.name + " Interface Module > Attempting to load an interface that has already been loaded (" + interface + ")."); }
-					else if (!cfg.enabled || cfg.enabled != true) { log("warning", self.name + " Interface Module > Attempting to load an interface that is not enabled in the system configuration (" + interface + ")."); } 
+					if(self.instances[interface]){ log("error", self.name + " Interface Module > Attempting to load an interface that has already been loaded (" + interface + ").", {}, "CORE_ERR_START_INTERFACES_ALREADY_LOADED"); }
+					else if (!cfg.enabled || cfg.enabled != true) { log("warning", self.name + " Interface Module > Attempting to load an interface that is not enabled in the system configuration (" + interface + ").", {}, "CORE_ERR_START_INTERFACE_NOT_DEFINED"); } 
 					else { self.startInterface(interface); }
 				}
 			});
@@ -381,7 +384,7 @@
 		unload: function CoreInterfaceUnload(){
 			var self = this;
 			self.closeInterfaces(function CoreInterfaceUnloadCloseInterfacesCallback(){
-				log("debug", self.name + " Interface > Closing interface instances... Succeeded.");
+				log("debug", self.name + " Interface > Closing interface instances... Succeeded.", {}, "CORE_INTERFACES_CLOSED");
 				self.uber.emit("module-shut-down", self.name);
 				delete self;
 			});

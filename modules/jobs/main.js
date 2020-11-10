@@ -35,7 +35,7 @@
 	 */
 	var init = function JobsInit(coreObj){
 		core = coreObj, mod = new core.Mod("Jobs"), mod.log = log = core.module("logger").log;
-		log("debug", "Blackrock Jobs > Initialising...");
+		log("debug", "Blackrock Jobs > Initialising...", {}, "JOBS_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupJobs();
 		new Pipeline({}).pipe();
@@ -62,7 +62,7 @@
 			constructor: function JobsSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function JobsSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function JobsSetupPipelinePipe() {
-				log("debug", "Blackrock Jobs > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Jobs > Server Initialisation Pipeline Created - Executing Now:", {}, "JOBS_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -109,7 +109,7 @@
 		else { evt.interval = 500; }
 		if(core.cfg().jobs && core.cfg().jobs.queue && core.cfg().jobs.queue.jobsPerInterval) { evt.jobsPerInterval = core.cfg().jobs.queue.jobsPerInterval; }
 		else { evt.jobsPerInterval = 5; }
-		log("debug", "Blackrock Jobs > [1] Set Up The Intervals");
+		log("debug", "Blackrock Jobs > [1] Set Up The Intervals", {}, "JOBS_SETUP_INTERVALS");
 		return evt;
 	}
 
@@ -118,7 +118,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.processQueue = function JobsProcessQueue(evt){
-		log("debug", "Blackrock Jobs > [2] Created 'Process Queue' Method w/ Indefinite Interval. Processing Queue Now...");
+		log("debug", "Blackrock Jobs > [2] Created 'Process Queue' Method w/ Indefinite Interval. Processing Queue Now...", {}, "JOBS_CREATED_QUEUE");
 		var iterateThroughQueue = function JobsIterateThroughQueue() {
 			setInterval(function JobsIterateThroughQueueInterval(){
 				if(queue.length > 0) {
@@ -174,7 +174,7 @@
 					evt.methods.add = mod.jobs.add = mod.add = add;
 					evt.methods.remove = mod.jobs.remove = mod.remove = remove;
 					evt.methods.execute = mod.jobs.execute = mod.execute = execute;
-					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'");
+					log("debug", "Blackrock Jobs > [3] Setup the Jobs Module Endpoint Methods - 'add' and 'remove'", {}, "JOBS_ADD_REMOVE_BOUND");
 				},
 				error(error) { observer.error(error); }
 			});
@@ -189,28 +189,28 @@
 	streamFns.addJobToQueue = function JobsAddJobToQueue(evt){
 		if(evt.action == "add") {
 			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
-				log("error", "Blackrock Jobs > Attempted to Add Job But Module Not Enabled", evt.input.definition);
+				log("error", "Blackrock Jobs > Attempted to Add Job But Module Not Enabled", evt.input.definition, "JOBS_ERR_ADD_MOD_DISABLED");
 				return false;
 			}
 			if(!evt.input.definition) {
-				log("error", "Blackrock Jobs > Attempted to Add Job But Definition Object Not Set", evt.input.definition);
+				log("error", "Blackrock Jobs > Attempted to Add Job But Definition Object Not Set", evt.input.definition, "JOBS_ERR_ADD_DEF_INVALID");
 				return false;
 			}
 			if(evt.input.definition && !evt.input.definition.id) {
-				log("error", "Blackrock Jobs > Attempted to Add Job But Job ID Not Set", evt.input.definition);
+				log("error", "Blackrock Jobs > Attempted to Add Job But Job ID Not Set", evt.input.definition, "JOBS_ERR_ADD_ID_NOT_SET");
 				return false;
 			}
 			if(evt.input.definition && !evt.input.definition.name) {
-				log("error", "Blackrock Jobs > Attempted to Add Job But Job Name Not Set", evt.input.definition);
+				log("error", "Blackrock Jobs > Attempted to Add Job But Job Name Not Set", evt.input.definition, "JOBS_ERR_ADD_NAME_NOT_SET");
 				return false;
 			}			
 			if (evt.input.definition && evt.input.definition.type == "queue") {
 				queue.push({definition: evt.input.definition, fn: evt.input.fn, input: evt.input.input});
-				log("debug", "Blackrock Jobs > Job #"+evt.input.definition.id+" ("+evt.input.definition.name+") Queued Successfully", evt.input.definition);
+				log("debug", "Blackrock Jobs > Job #"+evt.input.definition.id+" ("+evt.input.definition.name+") Queued Successfully", evt.input.definition, "JOBS_SINGLE_ADD_SUCCESSFUL");
 				return true;
 			} else if (evt.input.definition && evt.input.definition.type == "recurring") {
 				if(!evt.input.definition.delay){
-					log("error", "Blackrock Jobs > Attempted to Add Recurring Job But Delay Not Set", evt.input.definition);
+					log("error", "Blackrock Jobs > Attempted to Add Recurring Job But Delay Not Set", evt.input.definition, "JOBS_ERR_ADD_RECCURING_DELAY_NOT_SET");
 					return false;
 				}
 				recurringFns[evt.input.definition.id] = {
@@ -221,13 +221,13 @@
 					if(evt.input.definition.local == true || (evt.input.definition.local == false && core.module("farm").isJobServer() == true))
 						evt.input.fn(evt.input.input);
 				}, evt.input.definition.delay)
-				log("debug", "Blackrock Jobs > Recurring Job #" + evt.input.definition.id+" (" + evt.input.definition.name + ") Queued Successfully", evt.input.definition);
+				log("debug", "Blackrock Jobs > Recurring Job #" + evt.input.definition.id+" (" + evt.input.definition.name + ") Queued Successfully", evt.input.definition, "JOBS_RECURRING_ADD_SUCCESSFUL");
 				return true;
 			} else if (evt.input.definition && evt.input.definition.type == "schedule") {
-				log("error", "Blackrock Jobs > Unsupported Definition Type", evt.input.definition);
+				log("error", "Blackrock Jobs > Unsupported Definition Type", evt.input.definition, "JOBS_RECURRING_ADD_ERR_DEF_UNSUPPORTED");
 				return false;
 			} else {
-				log("error", "Blackrock Jobs > Unsupported Definition Type", evt.input.definition);
+				log("error", "Blackrock Jobs > Unsupported Definition Type", evt.input.definition, "JOBS_RECURRING_ADD_ERR_DEF_UNSUPPORTED");
 				return false;
 			}
 		}
@@ -242,7 +242,7 @@
 		if(evt.action == "remove") {
 			var found = false;
 			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
-				log("error", "Blackrock Jobs > Attempted to Remove Job But Jobs Module Not Enabled");
+				log("error", "Blackrock Jobs > Attempted to Remove Job But Jobs Module Not Enabled", {}, "JOBS_ERR_REMOVE_MOD_DISABLED");
 				return;
 			}
 			if(recurring[id]){
@@ -250,18 +250,18 @@
 				delete recurring[id];
 				delete recurringFns[id];
 				found = true;
-				log("debug", "Blackrock Jobs > Job #" + id + " removed from recurring queue successfully");
+				log("debug", "Blackrock Jobs > Job #" + id + " removed from recurring queue successfully", {}, "JOBS_RECURRING_REMOVE_SUCCESSFUL");
 			} else {
 				for (var i = 0; i < queue.length; i++) {
 					if(queue[i].definition.id == id) {
 						delete queue[i];
 						found = true;
-						log("debug", "Blackrock Jobs > Job #" + id + " removed from queue successfully");
+						log("debug", "Blackrock Jobs > Job #" + id + " removed from queue successfully", {}, "JOBS_SINGLE_REMOVE_SUCCESSFUL");
 					}
 				}
 			}
 			if(!found)
-				log("error", "Blackrock Jobs > Could not find and remove Job #" + id);
+				log("error", "Blackrock Jobs > Could not find and remove Job #" + id, {}, "JOBS_REMOVE_ERR_INVALID_JOB_ID");
 		}
 		return evt;
 	}
@@ -272,7 +272,7 @@
 	streamFns.executeJob = function JobsExecuteJob(evt){
 		if(evt.action == "execute") {
 			if(core.cfg().jobs && (core.cfg().jobs.enabled != true || !core.cfg().jobs.enabled)){
-				log("error", "Blackrock Jobs > Attempted to Execute Job But Jobs Module Not Enabled");
+				log("error", "Blackrock Jobs > Attempted to Execute Job But Jobs Module Not Enabled", "JOBS_ERR_EXEC_MOD_DISABLED");
 				return;
 			}
 			var fnInfo = recurringFns[evt.input.id];

@@ -39,7 +39,7 @@
 	var init = function DaemonInit(coreObj){
 		core = coreObj, mod = new core.Mod("Daemon"), log = core.module("logger").log, config = core.cfg();
 		core.on("updateLogFn", function(){ log = core.module("logger").log });
-		log("debug", "Blackrock Daemon > Initialising...");
+		log("debug", "Blackrock Daemon > Initialising...", {}, "DAEMON_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupDaemon();
 		new Pipeline({}).pipe();
@@ -67,7 +67,7 @@
 			constructor: function DaemonSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function DaemonSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function DaemonSetupPipelinePipe() {
-				log("debug", "Blackrock Daemon > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Daemon > Server Initialisation Pipeline Created - Executing Now:", {}, "DAEMON_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -114,13 +114,13 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event");
+					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event", {}, "DAEMON_LISTENER_CREATED");
 					core.on("startDaemon", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
-						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received");
+						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received", {}, "DAEMON_LISTENER_EVT_RECEIVED");
 						evt.name = core.pkg().name;
 						evt.isChildProcess = process.send;
 						if(!process.send) {  observer.next(evt); }
-						else { log("fatal", "Blackrock Daemon > Initiated, but running in daemon mode. Terminating..."); }
+						else { log("fatal", "Blackrock Daemon > Initiated, but running in daemon mode. Terminating...", {}, "DAEMON_RUNNING_IN_DAEMON_MODE_TERM"); }
 					});
 				},
 				error(error) { observer.error(error); }
@@ -135,7 +135,7 @@
 	 */
 	streamFns.checkNameAndInit = function DaemonPipelineFnsCheckNameAndInit(evt){
 		if(!evt.name){
-			log("error", "Blackrock Daemon > Name not passed correctly to daemon module");
+			log("error", "Blackrock Daemon > Name not passed correctly to daemon module", {}, "DAEMON_INCORRECT_NAME");
 			process.exit();
 		}
 		daemonize = require("./support/daemonize");
@@ -147,7 +147,7 @@
     		cwd: process.cwd(),
     		silent: true
 		});
-		log("debug", "Blackrock Daemon > [2] Daemon Name Checked & Daemon Initialised");
+		log("debug", "Blackrock Daemon > [2] Daemon Name Checked & Daemon Initialised", {}, "DAEMON_NAME_CHECKED_AND_INIT");
 		return evt;
 	}
 
@@ -172,11 +172,11 @@
 		} else if (((process.argv[i] == "restart" && process.argv[i+1] == "daemon") || (process.argv[i] == "restart" && !process.argv[i+1]))  && !evt.isChildProcess) {
 			evt.status = "restart";
 		} else {
-			log("fatal", "Daemon received invalid command. Terminating application.");
+			log("fatal", "Daemon received invalid command. Terminating application.", {}, "DAEMON_INVALID_COMMAND");
 			process.exit();
 			return;
 		}
-		log("debug", "Blackrock Daemon > [3] Status Calculated From Command-Line Arguments");
+		log("debug", "Blackrock Daemon > [3] Status Calculated From Command-Line Arguments", {}, "DAEMON_STATUS_CALCULATED");
 		return evt;
 	}
 
@@ -219,7 +219,7 @@
 		        process.exit();
 		    });
 	    }
-	    log("debug", "Blackrock Daemon > [4] Setup callbacks for daemon");
+	    log("debug", "Blackrock Daemon > [4] Setup callbacks for daemon", {}, "DAEMON_CALLBACKS_SETUP");
 	    return evt;
 	}
 

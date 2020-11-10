@@ -35,7 +35,7 @@
 	 */
 	var init = function IdentityInit(coreObj){
 		core = coreObj, mod = new core.Mod("Identity"), mod.log = log = core.module("logger").log;
-		log("debug", "Blackrock Identity > Initialising...");
+		log("debug", "Blackrock Identity > Initialising...", {}, "IDENTITY_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupIdentity();
 		new Pipeline({}).pipe();
@@ -62,7 +62,7 @@
 			constructor: function IdentitySetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function IdentitySetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function IdentitySetupPipelinePipe() {
-				log("debug", "Blackrock Identity > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Identity > Server Initialisation Pipeline Created - Executing Now:", {}, "IDENTITY_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -101,7 +101,7 @@
 	 */
 	streamFns.fetchSettings = function IdentityFetchSettings(evt){
 		evt.settings = core.globals.get("settings");
-		log("debug", "Blackrock Identity > [1] Settings Fetched");
+		log("debug", "Blackrock Identity > [1] Settings Fetched", {}, "IDENTITY_SETTINGS_FETCHED");
 		return evt;
 	}
 
@@ -138,7 +138,7 @@
 				}
 			});
 		}
-		log("debug", "Blackrock Identity > [2] 'status' Method Is Now Setup");
+		log("debug", "Blackrock Identity > [2] 'status' Method Is Now Setup", {}, "IDENTITY_STATUS_BOUND");
 		return evt;
 	}
 
@@ -183,7 +183,7 @@
 				}
 			});
 		}
-		log("debug", "Blackrock Identity > [3] 'buildAuthorizeUri' Method Is Now Setup");
+		log("debug", "Blackrock Identity > [3] 'buildAuthorizeUri' Method Is Now Setup", {}, "IDENTITY_BUILD_AUTH_BOUND");
 		return evt;
 	}
 

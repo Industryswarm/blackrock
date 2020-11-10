@@ -32,7 +32,7 @@
 	 */
 	var init = function FarmInit(coreObj){
 		core = coreObj, mod = new core.Mod("Farm"), mod.log = log = core.module("logger").log;
-		log("debug", "Blackrock Farm > Initialising...");
+		log("debug", "Blackrock Farm > Initialising...", {}, "FARM_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var Pipeline = pipelines.setupFarm();
 		new Pipeline({}).pipe();
@@ -59,7 +59,7 @@
 			constructor: function FarmSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function FarmSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function FarmSetupPipelinePipe() {
-				log("debug", "Blackrock Farm > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Farm > Server Initialisation Pipeline Created - Executing Now:", {}, "FARM_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -116,7 +116,7 @@
 			},
 			net: require("net")
 		};
-		log("debug", "Blackrock Farm > [1] Loaded Scuttlebutt Libraries");
+		log("debug", "Blackrock Farm > [1] Loaded Scuttlebutt Libraries", {}, "FARM_LOADED_SCUTTLEBUTT");
 		return evt;
 	}
 
@@ -128,13 +128,13 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug", "Blackrock Farm > [2] Attempting to create model and start server");
+					log("debug", "Blackrock Farm > [2] Attempting to create model and start server", {}, "FARM_SERVER_STARTING");
 					if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 					if(farm.server && farm.server.port) { var port = farm.server.port; } else { var port = 8000; }
 					utils.isPortTaken(port, function FarmCreateModelAndServerPortTakenCallback(err, result){
 						if(result != false){ 
 							evt.serverNotStarted = true;
-							log("error","Blackrock Farm > Cannot start Scuttlebutt as the defined port (" + port + ") is already in use"); 
+							log("error","Blackrock Farm > Cannot start Scuttlebutt as the defined port (" + port + ") is already in use", {}, "FARM_SERVER_PORT_IN_USE"); 
 							observer.next(evt);
 							return; 
 						}
@@ -151,7 +151,7 @@
 							ms.on('error', function FarmCreateModelAndServerOnMSError() { stream.destroy(); });
 							stream.on('error', function FarmCreateModelAndServerOnStreamError() { ms.destroy(); });
 						}).listen(port, function () {
-							log("debug", "Blackrock Farm > Created New Scuttlebutt Model + TCP Server Listening On Port " + port);
+							log("debug", "Blackrock Farm > Created New Scuttlebutt Model + TCP Server Listening On Port " + port, {}, "FARM_SERVER_STARTED");
 						});
 						serverModel = scuttleBucketInstance.get("model");
 						serverEmitter = scuttleBucketInstance.get("events");
@@ -170,7 +170,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.persistToDisk = function FarmPersistToDisk(evt){
-		log("debug", "Blackrock Farm > [3] Setting Up Disk Persistance...");
+		log("debug", "Blackrock Farm > [3] Setting Up Disk Persistance...", {}, "FARM_INIT_DISK_PERS");
 		if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 		if(farm.server && farm.server.cache) { var cache = farm.server.cache; } else { var cache = null; }
 		if(cache) {
@@ -189,7 +189,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupUpdateListener = function FarmSetupUpdateListener(evt){
-		log("debug", "Blackrock Farm > [4] Setting Up Update Listener...");
+		log("debug", "Blackrock Farm > [4] Setting Up Update Listener...", {}, "FARM_INIT_UPDATE_LISTENER");
 		mod.updateListener = function FarmUpdateListener(fn) { return serverModel.on('update', fn); }
 		return evt;
 	}	
@@ -199,7 +199,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.connectToSeeds = function FarmConnectToSeeds(evt){
-		log("debug", "Blackrock Farm > [5] Connecting To Seed Server...");
+		log("debug", "Blackrock Farm > [5] Connecting To Seed Server...", {}, "FARM_CONNECTING_TO_SEED_SERVER");
 		var connectToSeed = function FarmConnectToSeed(host, port) {
 			var stream = evt.lib.net.connect(port);
 			var ms = scuttleBucketInstance.createStream();
@@ -222,7 +222,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupGetAndSetMethods = function FarmSetupGetAndSetMethods(evt){
-		log("debug", "Blackrock Farm > [6] Setting Up Model Get & Set Methods...");
+		log("debug", "Blackrock Farm > [6] Setting Up Model Get & Set Methods...", {}, "FARM_SETUP_MODEL_GET_SET");
 		mod.get = function FarmGetDataValue(key) { return serverModel.get(key); }
 		mod.set = function FarmSetDataValue(key, value) { return serverModel.set(key, value); }
 		return evt;
@@ -233,7 +233,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupIsJobServer = function FarmSetupIsJobServer(evt){
-		log("debug", "Blackrock Farm > [7] Setting Up 'isJobServer' Method...");
+		log("debug", "Blackrock Farm > [7] Setting Up 'isJobServer' Method...", {}, "FARM_SETUP_IS_JOB_SERVER_METHOD");
 		mod.isJobServer = function FarmIsJobServer() { return jobServer; }
 		return evt;
 	}
@@ -243,7 +243,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupEventEmitter = function FarmSetupEventEmitter(evt){
-		log("debug", "Blackrock Farm > [8] Setting Up Event Emitter...");
+		log("debug", "Blackrock Farm > [8] Setting Up Event Emitter...", {}, "FARM_SETUP_EMITTER");
 		mod.events = {
 			emit: function FarmEventEmitterEmit(event, data) {
 				return serverEmitter.emit(event, data);
@@ -265,7 +265,7 @@
 	 * This method sets up an Update Router
 	 */
 	streamFns.setupUpdateRouter = function FarmSetupUpdateRouter(evt){
-		log("debug", "Blackrock Farm > [9] Setting Up The Update Router...");
+		log("debug", "Blackrock Farm > [9] Setting Up The Update Router...", {}, "FARM_SETUP_UPDATE_ROUTER");
 		serverModel.on('update', function FarmSetupUpdateRouterOnUpdate(f1, f2, f3) {
 			var key = f1[0], val = f1[1];
 			if(key.startsWith("servers")) {
@@ -289,7 +289,7 @@
 	 * for this server with the latest information from these sources. This job runs every 2 seconds.
 	 */
 	streamFns.updateServerStatus = function FarmUpdateServerStatus(evt){
-		log("debug", "Blackrock Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...");
+		log("debug", "Blackrock Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...", {}, "FARM_SETUP_HEARTBEAT_JOB");
 		var dayjs = lib.dayjs
 		var interval = setInterval(function FarmUpdateServerStatusInterval(){
 			var latestHeartbeat = core.module("logger").getLatestHeartbeat();
@@ -317,7 +317,7 @@
 	 * properties to become "inactive"
 	 */
 	streamFns.inactivateStaleServers = function FarmInactivateStaleServers(evt){
-		log("debug", "Blackrock Farm > [11] Setting Up Job to Inactivate Stale Servers...");
+		log("debug", "Blackrock Farm > [11] Setting Up Job to Inactivate Stale Servers...", {}, "FARM_SETUP_INACTIVATE_STALE_JOB");
 		var dayjs = lib.dayjs;
 		var interval = setInterval(function FarmInactivateStaleServersInterval(){
 			var currentDateStamp = dayjs();
@@ -350,9 +350,9 @@
 			for(var key in farmServers) { if(farmServers[key].status == "active") { serverCount++; } }
 			if(serverCount <= 1) {
 				jobServer = true;
-				log("debug", "Blackrock Farm > [12] This stand-alone server has been toggled as the Primary Job Server");
+				log("debug", "Blackrock Farm > [12] This stand-alone server has been toggled as the Primary Job Server", {}, "FARM_IS_PRIMARY_JOB_SERVER");
 			} else {
-				log("debug", "Blackrock Farm > [12] This server is part of a farm and may be allocated the Primary Job Server role in the future");
+				log("debug", "Blackrock Farm > [12] This server is part of a farm and may be allocated the Primary Job Server role in the future", {}, "FARM_NOT_PRIMARY_JOB_SERVER");
 			}
 		//}, 10000);
 		return evt;
