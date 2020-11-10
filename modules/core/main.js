@@ -114,7 +114,7 @@
 			var myPromise = new Promise(function(resolve, reject) {
 				if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
 				if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
-				if(!initialConfig || !initialConfig.config) { try { config = require('../../../../config/config.json'); } catch(err) {} }
+				if(!initialConfig || !initialConfig.config) { try { config = process.env.CONFIG || require('../../../../config/config.json'); } catch(err) {} }
 				else if (initialConfig.config) { config = initialConfig.config; }
 				if(!initialConfig || !initialConfig.package) { try { package = require('../../../../package.json'); } catch(err) {} }
 				else if (initialConfig.package) { package = initialConfig.package; }
