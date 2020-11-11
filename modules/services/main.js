@@ -839,6 +839,7 @@
 						if(hostname == services[service].cfg.host) { evt2.srv = service; }
 						else if (services[service].cfg.host == "*" && !evt.hosts.includes(hostname)) { evt2.srv = service; }
 						if(evt2.srv) { observer.next(evt2); }
+						else { observer.next(evt); }
 					}
 				},
 				error(error) { observer.error(error); }
@@ -852,7 +853,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.initSearchForService = function ServicesInitSearchForService(evt){
-	    if(!services[evt.srv]) { throw new Error('Service does not exist'); return; }
+	    if(!services[evt.srv]) { return evt; }
 	    evt.urlParts = evt.url.split("/");
 	    evt.param = {}, evt.currentRoute = null, evt.override = false, evt.routes = {};
 	    evt.routes[services[evt.srv].cfg.host] = services[evt.srv].routes;
@@ -871,9 +872,9 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					if(!evt) { throw new Error('Event does not exist'); return; }
+					if(!evt) { observer.next({}); }
 					log("debug","Blackrock Services > [5] Iterating Over Service Routes", {}, "SERVICES_ITERATING_OVER_ROUTES");
-					if(!evt.routes[evt.host]) { observer.next(evt); }
+					if(!evt || !evt.routes || !evt.routes[evt.host]) { observer.next(evt); }
 					var processIteration = function ServicesProcessIteration(index) {
 				        evt.match = true;
 				        var patternSplit = evt.routes[evt.host][index].pattern.split("/");
@@ -921,17 +922,18 @@
 			        		else { evt.currentRoute.matchType = "direct"; }
 				        }
 					}
-					for(var index = 0, total = evt.routes[evt.host].length; index<total; index++){ processIteration(index); }
+					if(evt && evt.routes && evt.routes[evt.host])
+						for(var index = 0, total = evt.routes[evt.host].length; index<total; index++){ processIteration(index); }
 				    if(!evt.match){
 				    	evt.match = true;
 				    	if(evt.wildcardSet && evt.routes[evt.wildcardSet[evt.host]] && evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]]) {
 				    		evt.currentRoute = evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]];
-				    	} else {
+				    	} else if (evt && evt.routes && evt.routes[evt.host] && evt.routes[evt.host][0] && evt.routes[evt.host][0].service) {
 				    		evt.currentRoute = { service: evt.routes[evt.host][0].service }	
 				    	}
-		        		if(evt.host == "*")
+		        		if(evt.host == "*" && evt.currentRoute)
 		        			evt.currentRoute.matchType = "wildcard";
-		        		else
+		        		else if (evt.currentRoute)
 		        			evt.currentRoute.matchType = "direct";	    	
 				    }
 					observer.next(evt);
