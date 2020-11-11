@@ -36,7 +36,6 @@
 		log("debug", "Blackrock HTTP Interface > Initialising...", {}, "HTTP_INIT");
 		interface.client = client;
 		interface.startInterface = startInterface;
-		interface.get = get;
 		interface.hook = { add: addHook, remove: removeHook };
 		interface.cheerio = cheerio;
 		interface.formidable = formidable;
@@ -49,6 +48,7 @@
 	 * @param {string} name - The name of the interface
 	 */
 	var startInterface = function HTTPStartInterface(name){
+		var self = this;
 		const cfg = config.interfaces.http[name];
 		var port = process.env.PORT || cfg.port;
 		if(cfg.ssl == true) { var protocol = "HTTPS" }
@@ -68,7 +68,7 @@
 			if(cfg.ssl && (!cfg.key || !cfg.cert)){ log("error","Blackrock HTTP Interface > Cannot load SSL interface as either the key or cert has not been defined (" + name + ").", {}, "HTTP_SSL_CERT_OR_KEY_MISSING"); return; }
 			try {
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
-				instances[name] = inst = new core.Base().extend({});
+				instances[name] = inst = self.instances[name] = new core.Base().extend({});
 				inst.listening = false;
 				inst.hooks = { onIncomingRequest: {}, onOutgoingResponsePostRender: {}, onOutgoingRequest: {}, onIncomingResponse: {} }, inst.hookIdDirectory = {};
 				var serverLib = require('./support/' + httpLib);
@@ -105,18 +105,6 @@
 			interface.instances = instances;
 		});
 
-	}
-
-
-
-
-	/**
-	 * (Internal > Get Instances) Exports the HTTP/S Server Interface
-	 * @param {string} name - The name of the interface
-	 */
-	var get = function HTTPGetInstances(name){
-		if(name) { return instances[name]; }
-		else { return instances; }
 	}
 
 	/**
@@ -352,7 +340,7 @@
   		return new Promise((resolve, reject) => {
 			var form = new formidable.IncomingForm();
 			if(config.interfaces.http[evt.req.interface].fileUploadPath) { form.uploadDir = config.interfaces.http[evt.req.interface].fileUploadPath; }
-			else { form.uploadDir = "./tmp/"; }
+			else { form.uploadDir = core.fetchBasePath("root") + "./upload/"; }
 			if(config.interfaces.http[evt.req.interface].maxUploadFileSizeMb) { form.maxFileSize = config.interfaces.http[evt.req.interface].maxUploadFileSizeMb * 1024 * 1024; }
 			else { form.maxFileSize = 50 * 1024 * 1024; }
 			try { form.parse(evt.req, function HTTPParseMultiPartFormParser(err, fields, files) { console.log("err", err); console.log("fields", fields); console.log("files", files); var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
@@ -547,17 +535,17 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.pipeFilesystemFiles = function HTTPPipeFilesystemFiles(evt) {
-		var fs = require('fs'), os = require("os"), request = evt.req, response = evt.res, resReturned = false, {method, url, headers, route, htmlPath, theMessage} = request, rootBasePath = __dirname + "/../../../../";
+		var fs = require('fs'), os = require("os"), request = evt.req, response = evt.res, resReturned = false, {method, url, headers, route, htmlPath, theMessage} = request;
 		var msg = request.theMessage;
-		try { var stats = fs.lstatSync(rootBasePath + "services/" + route.match.service + "/html" + htmlPath); var directPath = true; } 
+		try { var stats = fs.lstatSync(core.fetchBasePath("services") + "/" + route.match.service + "/html" + htmlPath); var directPath = true; } 
 		catch(e) { var stats = false; }
 		if(!stats || stats.isDirectory()){
-			try { var stats = fs.lstatSync(rootBasePath + "services/" + route.match.service + "/html" + htmlPath + "/index.html"); var directPath = false; } 
+			try { var stats = fs.lstatSync(core.fetchBasePath("services") + "/" + route.match.service + "/html" + htmlPath + "/index.html"); var directPath = false; } 
 			catch(e) { var stats = false; }
 		}
 		if(stats && stats.isFile()){
-			if(directPath == true){ var pathToRead = rootBasePath + "services/" + route.match.service + "/html/" + htmlPath; }
-			else { var pathToRead = rootBasePath + "services/" + route.match.service+"/html/" + htmlPath + "/index.html"; }
+			if(directPath == true){ var pathToRead = core.fetchBasePath("services") + "/" + route.match.service + "/html/" + htmlPath; }
+			else { var pathToRead = core.fetchBasePath("services") + "/" + route.match.service+"/html/" + htmlPath + "/index.html"; }
 			var filename = theMessage.request.path.split("/"), mimeType = utils.checkMIMEType(filename[filename.length - 1].split('.').pop());
 			if (!mimeType) { mimeType = 'application/octet-stream'; }
 			response.writeHead(200, { "Content-Type": mimeType });
@@ -757,11 +745,11 @@
 	*/
 	streamFns.processObjectViewResponse = function HTTPProcessObjectViewResponse(evt) {
 		return new Promise((resolve, reject) => {
-			var basePath = __dirname + "/../../../../", fs = require('fs');
+			const fs = require('fs');
 			if(typeof evt.msg.response.view === 'object' && evt.msg.response.view !== null) {
 				if(evt.msg.response.view.file) {
 					try {
-						fs.readFile(basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function HTTPProcessObjectViewResponseReadFileCallback(err, htmlData) {
+						fs.readFile(core.fetchBasePath("services") + "/" + evt.msg.service + "/views/" + evt.msg.response.view.file, "utf8", function HTTPProcessObjectViewResponseReadFileCallback(err, htmlData) {
 						    if (err) {
 								log("error","Blackrock HTTP Interface > [8] " + basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view.file + " view does not exist.", evt.msg, "HTTP_RES_ERR_VIEW_NOT_EXIST");
 								evt.res.setHeader('Content-Type', 'application/json');
@@ -802,8 +790,8 @@
 	*/
 	streamFns.processFileViewResponse = function HTTPProcessFileViewResponse(evt) {
 		return new Promise((resolve, reject) => {
-			var basePath = __dirname + "/../../../../", fs = require('fs');
-			var viewPath = basePath + "services/" + evt.msg.service + "/views/" + evt.msg.response.view;
+			const fs = require('fs');
+			var viewPath = core.fetchBasePath("services") + "/" + evt.msg.service + "/views/" + evt.msg.response.view;
 			if(viewCache[viewPath] && viewCache[viewPath].content) {
 				log("debug","Blackrock HTTP Interface > [9] Rendering File-Type View...", {}, "HTTP_RES_RENDERING_FILE_VIEW");
 				utils.renderView(evt.msg, evt.res, viewCache[viewPath].content);
@@ -869,11 +857,11 @@
 	utils.renderView = function HTTPRenderView(msg, response, htmlData) {
 
 		// Load Partial Includes:
-		var rootBasePath = __dirname + "/../../../../", fs = require("fs"), partials = {}, regex = /{{>(.+)}}+/g, found = htmlData.match(regex);
+		var fs = require("fs"), partials = {}, regex = /{{>(.+)}}+/g, found = htmlData.match(regex);
 		if(found){
 			for (var i = 0; i < found.length; i++) {
 				var frontRemoved = found[i].substring(4).slice(0, -2);
-				try { partials[frontRemoved] = fs.readFileSync(rootBasePath + "services/" + msg.service + "/views/includes/" + frontRemoved + ".mustache", "utf8"); }
+				try { partials[frontRemoved] = fs.readFileSync(core.fetchBasePath("services") + "/" + msg.service + "/views/includes/" + frontRemoved + ".mustache", "utf8"); }
 				catch(err){ null; }
 			}
 		}

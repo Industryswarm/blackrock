@@ -18,7 +18,7 @@
 	 */
 	var init = function AxonInit(coreObj){
 		core = coreObj, interface = new core.Interface("Axon"), log = core.module("logger").log;
-		log("debug", "Blackrock Axon Interface > Initialising...");
+		log("debug", "Blackrock Axon Interface > Initialising...", {}, "AXON_INIT");
 		interface.startInterface = startInterface;
 		interface.startInterfaces();
 		return interface;
@@ -31,15 +31,15 @@
 	var startInterface = function AxonStartInterface(name){
 		var myName = ismod.name.toLowerCase();
 		var cfg = core.cfg().interfaces[myName][name];
-		log("startup", interface.name + " Interface Module > Starting Interface (" + name + ").");
+		log("startup", interface.name + " Interface Module > Starting Interface (" + name + ").", {}, "AXON_STARTING");
 		var routers = [];
 		for(var routerName in core.cfg().router.instances){
 			if(core.cfg().router.instances[routerName].interfaces && (core.cfg().router.instances[routerName].interfaces.includes("*") || core.cfg().router.instances[routerName].interfaces.includes(name))) {
 				routers.push(core.module("router").get(routerName));
 			}
 		}
-		if(routers.length <= 0){ log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers."); } 
-		else { log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented."); }
+		if(routers.length <= 0){ log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers.", {}, "AXON_NO_ROUTERS"); } 
+		else { log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented.", {}, "AXON_NOT_IMPLEMENTED"); }
 	}
 
 	/**

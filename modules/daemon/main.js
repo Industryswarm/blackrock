@@ -141,7 +141,7 @@
 		daemonize = require("./support/daemonize");
 		var strippedName = evt.name.replace(/-/g, "");
 		evt.daemon = daemonize.setup({
-    		main: "../../../server.js",
+    		main: core.fetchBasePath("root") + "/" + core.pkg().main,
     		name: strippedName,
     		pidfile: "/var/run/" + strippedName + ".pid",
     		cwd: process.cwd(),

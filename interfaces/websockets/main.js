@@ -16,7 +16,7 @@
 	 */
 	var init = function WebSocketsInit(coreObj){
 		core = coreObj, interface = new core.Interface("WebSockets"), log = core.module("logger").log;
-		log("debug", "Blackrock WebSockets Interface > Initialising...");
+		log("debug", "Blackrock WebSockets Interface > Initialising...", {}, "WEBSOCKETS_INIT");
 		interface.startInterface = startInterface;
 		interface.startInterfaces();
 		return interface;
@@ -27,8 +27,9 @@
 	 * @param {string} name - The name of the interface
 	 */
 	var startInterface = function WebSocketsStartInterface(name){
+		var self = this;
 		var cfg = core.cfg().interfaces.websockets[name];
-		log("startup","WebSockets Server Interface > Starting and binding WebSockets Interface (" + name + ") to the HTTP Server Interface (" + cfg.httpInterface + ").");
+		log("startup","WebSockets Server Interface > Starting and binding WebSockets Interface (" + name + ") to the HTTP Server Interface (" + cfg.httpInterface + ").", {}, "WEBSOCKETS_STARTING");
 		var routers = [];
 		for(var routerName in core.cfg().router.instances){
 			if(core.cfg().router.instances[routerName].interfaces && (core.cfg().router.instances[routerName].interfaces.includes("*") || core.cfg().router.instances[routerName].interfaces.includes(name))) {
@@ -36,7 +37,7 @@
 			}
 		}
 		if(routers.length <= 0){
-			log("startup","WebSockets Interface Module > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers.");
+			log("startup","WebSockets Interface Module > Cannot start " + protocol + " interface (" + name + ") on port " + cfg.port + " as it is not mapped to any routers.", {}, "WEBSOCKETS_NO_ROUTERS");
 			return;
 		}
 		var	WebSocket = require('./support/ws/ws');
@@ -48,15 +49,16 @@
 			if(httpInterface && httpInterface.server && httpInterface.listening == true){
 				clearInterval(intervalObject);
 				var server = httpInterface.server;
-				if(!instances[name]) { instances[name] = {}; }
+				instances = self.instances;
+				if(!instances[name]) { instances[name] = new core.Base().extend({}); }
 				instances[name].wss = new WebSocket.Server({server});
-				listen(instances[name].wss);
-				log("startup","WebSockets Interface > Started, Bound to HTTP Server Interface and Listening.");
+				listen(instances[name].wss, name, routers);
+				log("startup","WebSockets Interface > Started, Bound to HTTP Server Interface and Listening.", {}, "WEBSOCKETS_STARTED");
 				return true;				
 			}
 			if(timeoutCounter >= timeout){
 				clearInterval(intervalObject);
-				log("error","WebSockets Interface > Error binding to HTTP interface.");
+				log("error","WebSockets Interface > Error binding to HTTP interface.", {}, "WEBSOCKETS_ERR_BIND_TO_HTTP");
 				return false;
 			}
 		},100);
@@ -66,24 +68,24 @@
 	 * (Internal) Listen for Incoming Connections
 	 * @param {object} server - WebSockets Server Object
 	 */
-	var listen = function WebSocketsListen(server) {
+	var listen = function WebSocketsListen(server, name, routers) {
 		var os = require("os");
 		server.on('connection', function WebSocketsConnectionHandler(ws, req) {
-			log("debug","WebSockets Interface > New remote client session initiated");
+			log("debug","WebSockets Interface > New remote client session initiated", {}, "WEBSOCKETS_NEW_SESSION");
 			var cxnFormat = "string";
 			var cxnMode = "gateway";
 			var sessionId = core.module("utilities").uuid4();
 			var responseListener = function WebSocketsConnectionResponseListener(resMsg){
-				log("debug","WebSockets Interface > Received message " + resMsg.msgId + " from router", resMsg);
+				log("debug","WebSockets Interface > Received message " + resMsg.msgId + " from router", resMsg, "WEBSOCKETS_RES_FROM_ROUTER");
 				if(cxnFormat == "string")
 					ws.send(resMsg.response.message);
 				else
 					ws.send(JSON.stringify(resMsg.response.body));
 			}
-			interface.core.interfaces.server.websockets.on('outgoing.' + sessionId, responseListener);
+			instances[name].on('outgoing.' + sessionId, responseListener);
 			ws.on('close', function incoming(msg){
-				interface.core.interfaces.server.websockets.removeListener('outgoing.' + sessionId, responseListener);
-				log("debug","WebSockets Server Interface > Remote client session closed.",{sessionId: sessionId});
+				instances[name].removeListener('outgoing.' + sessionId, responseListener);
+				log("debug","WebSockets Server Interface > Remote client session closed.", {sessionId: sessionId}, "WEBSOCKETS_SESSION_CLOSED");
 			});
 			ws.on('message', function WebSocketsIncomingMessageHandler(msg) {
 				if(cxnMode == "gateway"){
@@ -108,7 +110,10 @@
 					} else if(msgObject.command == "exit"){
 						Exit(ws,req,msgObject,cxnFormat,responseListener,sessionId);
 					} else {
-						RouteMessage(ws,req,msgObject,cxnFormat,sessionId);
+						for (var i = 0; i < routers.length; i++) {
+							req.router = routers[i];
+							RouteMessage(ws, req, msgObject, cxnFormat, sessionId, name);
+						}	
 					}
 				}
 			});
@@ -117,7 +122,7 @@
 	}
 
 	var Help = function WebSocketsHelp(ws, req, msgObject, cxnFormat){
-		log("debug","WebSockets Server Interface > Returning help section on client request");
+		log("debug","WebSockets Server Interface > Returning help section on client request", {}, "WEBSOCKETS_SHOWING_HELP");
 		if(cxnFormat == "string"){
 			ws.send('Help not implemented.');
 		} else if (cxnFormat == "json"){
@@ -155,11 +160,11 @@
 				}
 			}
 		}
-		log("debug","WebSockets Server Interface > Updating session format to "+cxnFormat+" on client request");
+		log("debug","WebSockets Server Interface > Updating session format to " + cxnFormat + " on client request", {}, "WEBSOCKETS_UPDATE_FORMAT");
 		return cxnFormat;
 	}
 
-	var RouteMessage = function WebSocketsRouteMessage(ws, req, msgObject, cxnFormat, sessionId){
+	var RouteMessage = function WebSocketsRouteMessage(ws, req, msgObject, cxnFormat, sessionId, name){
 		var resReturned = false;
 		var msgId = core.module("utilities").uuid4();
 		var host = req.headers.host;
@@ -186,15 +191,15 @@
 				"body": msgObject,					
 			}
 		}
-		log("debug","WebSockets Server Interface > Sending message " + message.msgId + " to router", message);
+		log("debug","WebSockets Server Interface > Sending message " + message.msgId + " to router", message, "WEBSOCKETS_REQ_TO_ROUTER");
 		var responseListener = function WebSocketsRouteMessageResponseListener(msg){
-			log("debug","WebSockets Server Interface > Received response " + msg.msgId + " from router", msg);
+			log("debug","WebSockets Server Interface > Received response " + msg.msgId + " from router", msg, "WEBSOCKETS_RES_FROM_ROUTER");
 			resReturned = true;
 			ws.send(JSON.stringify(msg.response.body));
-			interface.core.interfaces.server.websockets.removeListener('outgoing.' + msgId, responseListener);
+			instances[name].removeListener('outgoing.' + msgId, responseListener);
 		}
-		interface.core.interfaces.server.websockets.on('outgoing.' + msgId, responseListener);
-		interface.core.router.incoming(message);
+		instances[name].on('outgoing.' + msgId, responseListener);
+		req.router.incoming(message);
 		var timeout = 5000;
 		var timer = 0;
 		var interval = setInterval(function WebsocketsRouteMessageTimeoutHandler(){
@@ -204,10 +209,10 @@
 				ws.send(JSON.stringify({"error":"Request timed out"}));
 				resReturned = true;
 				clearInterval(interval);
-				interface.core.interfaces.server.websockets.removeListener('outgoing.' + msgId, responseListener);
+				instances[name].removeListener('outgoing.' + msgId, responseListener);
 			} else if (resReturned) {
 				clearInterval(interval);
-				interfaceinterface.core.interfaces.server.websockets.removeListener('outgoing.' + msgId, responseListener);
+				instances[name].removeListener('outgoing.' + msgId, responseListener);
 			}
 		},500);
 		return;

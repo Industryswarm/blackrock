@@ -389,7 +389,7 @@
 						  (JSON.stringify(msg.response.cookies) || "");
 			resSize = resSize.length;
 			if(msg.view) {
-				var fs = require("fs"), stats = fs.statSync(core.getBasePath() + "services/" + msg.service + "/views/" + msg.view);
+				var fs = require("fs"), stats = fs.statSync(core.fetchBasePath("services") + "/" + msg.service + "/views/" + msg.view);
 				resSize += stats["size"];
 			}
 			var endTime = core.module("utilities").system.getEndTime(evt.startTime);

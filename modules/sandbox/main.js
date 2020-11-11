@@ -15,7 +15,7 @@
 
 
 	/** Setup Global Variables for this Module */
-	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, basePath = __dirname + "/../..";
+	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable;
 
 
 
@@ -205,7 +205,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					evt.ctrl = ObjectInSandbox = evt.vm.run(evt.options.code, basePath + "/modules/sandbox/main.js");
+					evt.ctrl = ObjectInSandbox = evt.vm.run(evt.options.code, core.fetchBasePath("module") + "/modules/sandbox/main.js");
 					evt.cb({ctrl: evt.ctrl, file: evt.options.file, i: evt.options.i});
 					observer.next(evt);
 					log("debug_deep", "Blackrock Sandbox > [5] Code Executed", {}, "SANDBOX_EXEC_CODE"); 

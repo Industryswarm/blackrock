@@ -28,7 +28,7 @@
 	 * (Constructor) Initialises the module
 	 * @param {object} coreObj - The parent core object
 	 */
-	var init = function CLIInit(coreObj){ 
+	var init = function CLIInit(coreObj) {
 		core = coreObj, mod = new core.Mod("CLI");
 		setupExternalModuleMethods();
 		log("debug", "Blackrock CLI > Initialising...", {}, "CLI_INIT");
@@ -83,13 +83,17 @@
  			var subRec = false;
 
  			var showHelp = function CLIShowHelp() {
+ 				var servicesAvailable = true;
  				console.log("Usage: " + core.pkg().name + " [options]\n");
 				console.log("Options: ");
-				if(core.module("daemon")){
+				console.log("  config			Starts Server Configuration Flow");
+				if(core.module("daemon") && servicesAvailable){
 					console.log("  start				Starts the daemon server");
 				}
-				console.log("  start console			Starts a non-interactive console server (blocking)");
-				if(core.module("daemon")){
+				if(servicesAvailable){
+					console.log("  start console			Starts a non-interactive console server (blocking)");
+				}
+				if(core.module("daemon") && servicesAvailable){
 					console.log("  stop 				Stops the daemon server");
 					console.log("  restart 			Restarts the daemon server");
 					console.log("  status	 		Shows the status of the daemon server");
@@ -106,7 +110,7 @@
  				op.filter(function CLIStreamFn1Filter(evt) { 
 					var endsWithAny = function CLIEndsWithAny(suffixes, string) { for (let suffix of suffixes) { if(string.endsWith(suffix)) return true; } return false; };
  					return !endsWithAny([
- 							"sudo", "node", "nodemon", "forever", 
+ 							"sudo", "node", "nodemon", "forever", "blackrock", "index.js",
  							"npm", "pm2", "server.js", Object.keys(core.pkg().bin)[0]
  						], evt);
  				}),
@@ -127,10 +131,10 @@
  				subRec = true;
  				var daemonOptions = ["start", "start daemon", "stop", "stop daemon", "restart", "restart daemon", "status", "status daemon"];
 				if(((val && daemonOptions.includes(val) && core.module("daemon")) || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "daemon")) && !process.send) {
-					log("debug", "Blackrock CLI > [3] Events sent to 'Start Daemon' and 'Load Dependencies'", {}, "CLI_EVTS_DAEMON_DEP");
+					log("debug", "Blackrock CLI > [3] Event sent to 'Start Daemon'", {}, "CLI_EVTS_DAEMON_DEP");
 					core.emit("startDaemon");
 				} else if (process.send || val == "start console" || core.globals.get("test") || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "console")) {
-					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies' (but not to 'Start Daemon')", {}, "CLI_EVTS_DEP");
+					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies'", {}, "CLI_EVTS_DEP");
 					core.emit("loadDependencies");
 				} else {
 					showHelp();

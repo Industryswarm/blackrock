@@ -203,7 +203,7 @@
 			if(core.cfg().logger.sinks.file.location)
 				var location = core.cfg().logger.sinks.file.location;
 			else
-				var location = "./isnode.log";
+				var location = core.fetchBasePath("root") + "/blackrock.log";
 			if (fs.existsSync(location)) {
 			    fileStream = fs.createWriteStream(location, {flags:'a'});
 			}
@@ -477,7 +477,7 @@
 			var cacheJob = function LoggerCacheJob() {
 				var content = JSON.stringify(analyticsStore);
 				var fs = require("fs");
-				var path = core.getBasePath() + "/cache/heartbeat/heartbeats.json";
+				var path = core.fetchBasePath("cache") + "/heartbeat/heartbeats.json";
 				fs.writeFile(path, content, {encoding:'utf8', flag:'w'}, function LoggerCacheJobWriteFileCallback(err){});
 			}
 
@@ -512,7 +512,7 @@
 		log("debug", "Blackrock Logger > [6] Loading cached heartbeats if they exist", {}, "LOGGER_LOAD_CACHED_HEARTBEATS");
 		setTimeout(function LoggerLoadCachedHeartbeatsTimeout() {
 			var fs = require("fs");
-			var path = core.getBasePath() + "/cache/heartbeat/heartbeats.json";
+			var path = core.fetchBasePath("cache") + "/heartbeat/heartbeats.json";
 			fs.readFile(path, 'utf8', function loggerLoadCachedHeartbeatsReadFileCallback(err, content){
 				if(content) { analyticsStore = JSON.parse(content); }
 			});
@@ -721,7 +721,7 @@
 	streamFns.sendToFile = function LoggerSendToFile(evt){
 		var level = evt.level, logMsg = evt.logMsg, attrObj = evt.attrObj, currentDate = evt.datestamp;
 		if(evt.activeSink == "file") {
-			if(core.cfg().logger.levels.includes(level)){
+			if(fileStream && core.cfg().logger.levels.includes(level)){
 				fileStream.write(currentDate + " (" + level  +") " + logMsg + "\n\n");
 				if(attrObj && core.cfg().logger.logMetadataObjects == true)
 					fileStream.write(JSON.stringify(attrObj));

@@ -16,7 +16,7 @@
 	 */
 	var init = function NanoMsgInit(coreObj){
 		core = coreObj, interface = new core.Interface("NanoMSG"), log = core.module("logger").log;
-		log("debug", "Blackrock NanoMSG Interface > Initialising...");
+		log("debug", "Blackrock NanoMSG Interface > Initialising...", {}, "NANOMSG_INIT");
 		interface.startInterface = startInterface;
 		interface.startInterfaces();
 		return interface;
@@ -29,15 +29,15 @@
 	var startInterface = function NanoMsgStartInterface(name){
 		var myName = interface.name.toLowerCase();
 		var cfg = core.cfg().interfaces[myName][name];
-		log("startup", interface.name + " Interface Module > Starting Interface (" + name + ").");
+		log("startup", interface.name + " Interface Module > Starting Interface (" + name + ").", {}, "NANOMSG_STARTING");
 		var routers = [];
 		for(var routerName in core.cfg().router.instances){
 			if(core.cfg().router.instances[routerName].interfaces && (core.cfg().router.instances[routerName].interfaces.includes("*") || core.cfg().router.instances[routerName].interfaces.includes(name))) {
 				routers.push(core.module("router").get(routerName));
 			}
 		}
-		if(routers.length <= 0){ log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers."); } 
-		else { log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented."); }
+		if(routers.length <= 0){ log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not mapped to any routers.", {}, "NANOMSG_NO_ROUTERS"); } 
+		else { log("startup", interface.name + " Interface Module > Cannot start interface (" + name + ") as it is not implemented.", {}, "NANOMSG_NOT_IMPLEMENTED"); }
 	}
 
 	/**

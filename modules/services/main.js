@@ -16,7 +16,7 @@
 	/** Create parent event emitter object from which to inherit mod object */
 	String.prototype.endsWith = function ServicesEndWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
 	var core, mod, Service, log, map, orphans, services = {}, config, util;
-	var loadMessages = {}, basePath = __dirname + "/../../../../", pipelines = {}, streamFns = {};
+	var loadMessages = {}, pipelines = {}, streamFns = {};
 
 
 
@@ -39,7 +39,7 @@
 	var init = function ServicesInit(coreObj){
 		core = coreObj, mod = new core.Mod("Services"), util = core.module("utilities");
 		log = core.module("logger").log, config = core.cfg(), map = {}, orphans = {};
-		log("debug", "Blackrock Services > Initialising...");
+		log("debug", "Blackrock Services > Initialising...", {}, "SERVICES_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		Service = new core.Mod().extend({ constructor: function ServicesServiceConstructor() { return; } });
 		var Pipeline = pipelines.setupServicesPipeline();
@@ -70,7 +70,7 @@
 			constructor: function ServicesSetupPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ServicesSetupPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ServicesSetupPipelinePipe() {
-				log("debug", "Blackrock Services > Server Initialisation Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Services > Server Initialisation Pipeline Created - Executing Now:", {}, "SERVICES_EXEC_INIT_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -110,7 +110,7 @@
 			constructor: function ServicesRunSearchPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ServicesRunSearchPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ServicesRunSearchPipelinePipe(cb) {
-				log("debug", "Blackrock Services > Route Search Query Pipeline Created - Executing Now:");
+				log("debug", "Blackrock Services > Route Search Query Pipeline Created - Executing Now:", {}, "SERVICES_EXEC_ROUTE_SEARCH_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
 
@@ -165,12 +165,12 @@
 						for (var i = 0; i < services[service].routes.length; i++) {
 							var route = services[service].routes[i];
 							if(!route.controller.shutdown || !(route.controller.shutdown instanceof Function)){
-								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + "  but no shutdown interface exists.");
+								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + "  but no shutdown interface exists.", {}, "SERVICES_SHUTDOWN_CTRL_NO_INT");
 								counter ++;
 							} else {
-								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + ", waiting for controller response...");
+								log("debug_deep", "Blackrock Services > Attempting to shutdown controller (" + route.pattern + ") for service " + services[service].cfg.name + ", waiting for controller response...", {}, "SERVICES_SHUTDOWN_CTRL_WAITING");
 								route.controller.shutdown(function ServicesUnloadShutdownCallback(){
-									log("debug", "Controller " + route.pattern + " for service " + services[service].cfg.name + " shutdown successful.");
+									log("debug", "Controller " + route.pattern + " for service " + services[service].cfg.name + " shutdown successful.", {}, "SERVICES_SHUTDOWN_CTRL_SUCCESS");
 									counter ++;
 								});
 							}
@@ -178,15 +178,15 @@
 					}
 				}
 				var timeout = 5000, timeoutTimer = 0, interval = setInterval(function ServicesCloseControllersTimeout(){
-			    	if(counter >= ctrlCount){ log("shutdown","Blackrock Services > Controllers all shutdown where possible."); clearInterval(interval); cb(); return; }
-			    	if(timeoutTimer > timeout) { log("shutdown","Blackrock Services > Controller shutdown timed out."); clearInterval(interval); cb(); return; }
+			    	if(counter >= ctrlCount){ log("shutdown","Blackrock Services > Controllers all shutdown where possible.", {}, "SERVICES_SHUTDOWN_CTRL_COMPLETE"); clearInterval(interval); cb(); return; }
+			    	if(timeoutTimer > timeout) { log("shutdown","Blackrock Services > Controller shutdown timed out.", {}, "SERVICES_SHUTDOWN_CTRL_TIMEOUT"); clearInterval(interval); cb(); return; }
 			    	timeoutTimer += 500;
 			    }, 500);
 				return;
 			}
 			closeControllers(function ServicesCloseControllersCallback(){ core.emit("module-shut-down", "Services"); });
 		}
-		log("debug", "Blackrock Services > [1] Attached 'unload' Method To This Module");
+		log("debug", "Blackrock Services > [1] Attached 'unload' Method To This Module", {}, "SERVICES_UNLOAD_BOUND");
 		return evt;
 	}
 
@@ -211,7 +211,7 @@
 			var ISPipeline = pipelines.runSearchPipeline();
 			new ISPipeline({ "searchObj": searchObj }).pipe(function(result) { cb(result); });
 		}
-		log("debug", "Blackrock Services > [2] Attached 'search' Method To This Module");
+		log("debug", "Blackrock Services > [2] Attached 'search' Method To This Module", {}, "SERVICES_SEARCH_BOUND");
 		return evt;
 	}
 
@@ -305,7 +305,7 @@
 			service.use = service.middleware.use;
 			return service;
 		}
-		log("debug", "Blackrock Services > [3] Setup & Attached 'service' Method To This Module (incl. Setting Up Middleware)");
+		log("debug", "Blackrock Services > [3] Setup & Attached 'service' Method To This Module (incl. Setting Up Middleware)", {}, "SERVICES_SERVICE_BOUND");
 		return evt;
 	}
 
@@ -317,7 +317,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug","Blackrock Services > [4] Binding Support Methods");
+					log("debug","Blackrock Services > [4] Binding Support Methods", {}, "SERVICES_SUPPORT_FNS_BOUND");
 					mod.serviceStats = function ServicesServiceStats(name) {
 						var stats = {};
 						stats.servicesRouteCount = 0;
@@ -366,14 +366,14 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("startup","Blackrock Services > [5] Enumerating and loading services...");
+					log("startup","Blackrock Services > [5] Enumerating and loading services...", {}, "SERVICES_ENUM_SERVICES");
 					var loadService = function ServicesLoadService(serviceName) {
-			        	if(fs.existsSync(basePath + "services/" + serviceName + "/service.json") === true) {
-			        		var cfg = require(basePath + "services/" + serviceName + "/service.json");
+			        	if(fs.existsSync(core.fetchBasePath("services") + "/" + serviceName + "/service.json") === true) {
+			        		var cfg = require(core.fetchBasePath("services") + "/" + serviceName + "/service.json");
 			        		if(cfg.active) {
-				        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...");
+				        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...", {}, "SERVICES_LOADING_SERVICE");
 				            	services[serviceName] = new Service();
-				            	services[serviceName].cfg = require(basePath + "services/" + serviceName + "/service.json");
+				            	services[serviceName].cfg = require(core.fetchBasePath("services") + "/" + serviceName + "/service.json");
 				            	var middlewareRouter = new evt.MiddlewareRouter();
 				            	services[serviceName].middleware = middlewareRouter.myRouter;
 				            	evt.service = serviceName;
@@ -383,7 +383,7 @@
 			        }
 					if(config.services.runtime.services.allowLoad == true){ mod.loadService = loadService; }
 					var fs = require('fs');
-					fs.readdirSync(basePath + "services").forEach(function ServicesLoadServicesReadDirCallback(file) { loadService(file); });
+					fs.readdirSync(core.fetchBasePath("services")).forEach(function ServicesLoadServicesReadDirCallback(file) { loadService(file); });
 				},
 				error(error) { observer.error(error); }
 			});
@@ -418,14 +418,14 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("startup","Blackrock Services > [6] Building routes for " + evt.service + " service.");
+					log("startup","Blackrock Services > [6] Building routes for " + evt.service + " service.", {}, "SERVICES_BUILDING_ROUTES");
 					if(services[evt.service].routes) {
-						log("startup","Blackrock Services > [6a] Service Routes for " + evt.service + " Have Already Been Built");
+						log("startup","Blackrock Services > [6a] Service Routes for " + evt.service + " Have Already Been Built", {}, "SERVICES_ROUTES_ALREADY_BUILT");
 						return;
 					}
 					if(services[evt.service].cfg.routing && (services[evt.service].cfg.routing == "auto") || !services[evt.service].cfg.routing){
 						var filewalker = require("./support/filewalker.js");
-						filewalker(basePath + "services/" + evt.service + "/controllers", function ServicesFetchCtrlNamesFilewalkerCallback(err, data){
+						filewalker(core.fetchBasePath("services") + "/" + evt.service + "/controllers", function ServicesFetchCtrlNamesFilewalkerCallback(err, data){
 							evt.fileWalkerErr = err;
 							evt.data = data;
 							observer.next(evt);	
@@ -448,7 +448,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug","Blackrock Services > [7] Controllers Are Being Pre-Processed (" + evt.service + ")");
+					log("debug","Blackrock Services > [7] Controllers Are Being Pre-Processed (" + evt.service + ")", {}, "SERVICES_CTRLS_PREPROCESSED");
 					if(evt.fileWalkerErr){throw evt.fileWalkerErr;}
 					evt.dataPreProcess = evt.data;
 					if(!evt.data){ return {success: false, message: "No controllers exist for the " + evt.service + " service."}; }
@@ -483,7 +483,7 @@
 						if (evt.data[i].endsWith("controller.js") && evt.data[i] != "/controller.js") { delete evt.data[i]; }
 						else if (evt.data[i].endsWith("controller.js") && evt.data[i] == "/controller.js") { evt.data[i] = "/"; }
 					}
-					log("debug","Blackrock Services > [8] Invalid Controllers Have Been Removed (" + evt.service + ")");
+					log("debug","Blackrock Services > [8] Invalid Controllers Have Been Removed (" + evt.service + ")", {}, "SERVICES_INVALID_CTRLS_REMOVED");
 					observer.next(evt);
 				},
 				error(error) { observer.error(error); }
@@ -529,7 +529,7 @@
 							});
 						}
 					}
-					log("debug","Blackrock Services > [9] Have Set Base Path Controller & Service Routes");
+					log("debug","Blackrock Services > [9] Have Set Base Path Controller & Service Routes", {}, "SERVICES_BASE_PATH_CTRL_SET");
 					observer.next(evt);
 				},
 				error(error) { observer.error(error); }
@@ -546,7 +546,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug","Blackrock Services > [10] Controller Events Being Generated");
+					log("debug","Blackrock Services > [10] Controller Events Being Generated", {}, "SERVICES_CTRL_EVTS_GEN");
 					for (i = 0; i < evt.data.length; i++) { 
 						if(evt.data[i]){
 							evt.path = evt.controllerBasePath + evt.data[i] + "/controller.js"
@@ -593,7 +593,7 @@
 					else { var type = "require"; var typeString = "Direct"; }
 					if(!loadMessages["1-10"]) {
 						loadMessages["1-10"] = true;
-						log("debug","Blackrock Services > [11] Loading Controller Files In To Memory (" + typeString + ")");
+						log("debug","Blackrock Services > [11] Loading Controller Files In To Memory (" + typeString + ")", {}, "SERVICES_CTRL_FILES_LOADING");
 					}
 					var fs = require("fs");
 					if (fs.existsSync(evt.path)) {
@@ -611,7 +611,7 @@
 											if(cfg.shutdown) { self.shutdown = core.shutdown; }
 											if(cfg.cfg) { self.cfg = core.cfg; }
 											if(cfg.pkg) { self.pkg = core.pkg; }
-											if(cfg.getBasePath) { self.getBasePath = core.getBasePath; }
+											if(cfg.fetchBasePath) { self.fetchBasePath = core.fetchBasePath; }
 											if(cfg.getCurrentService) { self.pkg = function() { return srv; } }
 											return self;
 										},
@@ -694,7 +694,7 @@
 				next(evt) {
 					if(!loadMessages["1-11"]) {
 						loadMessages["1-11"] = true;
-						log("debug","Blackrock Services > [12] Base Path & Pattern Being Set Now");
+						log("debug","Blackrock Services > [12] Base Path & Pattern Being Set Now", {}, "SERVICES_BASE_PATH_PATTERN_SET");
 					}
 					if(!services[evt.service].cfg.basePath && core.cfg().core && core.cfg().core.basePath){
 						services[evt.service].cfg.basePath = core.cfg().core.basePath;
@@ -726,7 +726,7 @@
 					}
 					if(!loadMessages["1-12"]) {
 						loadMessages["1-12"] = true;
-						log("debug","Blackrock Services > [13] Checked If Wildcard Path");
+						log("debug","Blackrock Services > [13] Checked If Wildcard Path", {}, "SERVICES_WILDCARD_PATH_CHECKED");
 					}
 					observer.next(evt);
 				},
@@ -756,7 +756,7 @@
 					}
 					if(!loadMessages["1-13"]) {
 						loadMessages["1-13"] = true;
-						log("debug","Blackrock Services > [14] Routes Added To Routes Object");
+						log("debug","Blackrock Services > [14] Routes Added To Routes Object", {}, "SERVICES_BUILT_ROUTES_OBJ");
 					}
 					observer.next(evt);
 				},
@@ -799,7 +799,7 @@
 				evt.hostname = evt.searchObj.hostname, evt.url = evt.searchObj.url, evt.services = evt.searchObj.services;
 			}
 		} else { evt.searchComplete = true; }
-		log("debug","Blackrock Services > [1] Search object has been parsed");
+		log("debug","Blackrock Services > [1] Search object has been parsed", {}, "SERVICES_SEARCH_OBJ_PARSED");
 		return evt;
 	}
 
@@ -815,7 +815,7 @@
 			}
 			evt.hosts.push(services[sv].cfg.host); 
 		}
-		log("debug","Blackrock Services > [2] Hosts Have Been Setup");
+		log("debug","Blackrock Services > [2] Hosts Have Been Setup", {}, "SERVICES_HOSTS_SETUP");
 		return evt;
 	}
 
@@ -827,7 +827,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					log("debug","Blackrock Services > [3] Generating Service Events...");
+					log("debug","Blackrock Services > [3] Generating Service Events...", {}, "SERVICES_GEN_SRV_EVTS");
 					var hostname = evt.hostname, url = evt.url, eServices = evt.services, hosts = evt.hosts;
 					for(var service in services) {
 						var evt2 = {
@@ -859,7 +859,7 @@
 	    evt.directMatch = false, evt.wildcardSet = null;
 	    if(evt.routes[evt.hostname]) { evt.host = evt.hostname; }
 	    else if(evt.routes["*"] && !evt.routes[evt.hostname] && services[evt.srv].cfg.host == "*") { evt.host = "*"; }
-		log("debug","Blackrock Services > [4] Search has been initialised for this service (" + evt.srv + ")");
+		log("debug","Blackrock Services > [4] Search has been initialised for this service (" + evt.srv + ")", {}, "SERVICES_SEARCH_INIT");
 		return evt;
 	}
 
@@ -872,7 +872,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					if(!evt) { throw new Error('Event does not exist'); return; }
-					log("debug","Blackrock Services > [5] Iterating Over Service Routes");
+					log("debug","Blackrock Services > [5] Iterating Over Service Routes", {}, "SERVICES_ITERATING_OVER_ROUTES");
 					if(!evt.routes[evt.host]) { observer.next(evt); }
 					var processIteration = function ServicesProcessIteration(index) {
 				        evt.match = true;
@@ -963,7 +963,7 @@
 			else { evt.result = false; }
 		} 
 		else { evt.result = evt.results[0]; }
-		log("debug","Blackrock Services > [6] Overrides and matches have been checked");
+		log("debug","Blackrock Services > [6] Overrides and matches have been checked", {}, "SERVICES_OVERRIDES_CHECKED_AND_MATCHED");
 		return evt;
 	}
 

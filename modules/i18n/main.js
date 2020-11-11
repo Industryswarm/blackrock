@@ -16,6 +16,7 @@
 
 	/** Create parent event emitter object from which to inherit mod object */
 	var core, mod, log, pipelines = {}, streamFns = {}, lib, rx, op, Observable, i18nLib;
+	var basePath = __dirname + "/../../../../", serviceInstances = {};
 
 
 
@@ -70,6 +71,7 @@
 
 					// Fires once on server initialisation:
 					op.map(evt => { if(evt) return streamFns.bindi18nMethods(evt); }),
+					streamFns.createServiceInstances,
 					op.map(evt => { if(evt) return streamFns.loadi18nResources(evt); }),
 					op.map(evt => { if(evt) return streamFns.bindTranslator(evt); })
 					
@@ -104,35 +106,76 @@
 	streamFns.bindi18nMethods = function i18nBindi18nMethods(evt){
 
 		// Primary API Methods:
-		mod.init = function(options, callback) { return i18nLib.init(options, callback); }
-		mod.t = function(key) { return i18nLib.t(key); }
-		mod.use = function(module) { return i18nLib.use(module); }
-		mod.exists = function(key, options) { return i18nLib.exists(key, options); }
-		mod.getFixedT = function(lng, ns) { return i18nLib.getFixedT(lng, ns); }
-		mod.changeLanguage = function(lng, callback) { return i18nLib.changeLanguage(lng, callback); }
-		mod.loadNamespaces = function(ns, callback) { return i18nLib.loadNamespaces(ns, callback); }
-		mod.loadLanguages = function(lngs, callback) { return i18nLib.loadLanguages(lngs, callback); }
-		mod.reloadResources = function() { return i18nLib.reloadResources(); }
-		mod.setDefaultNamespace = function(ns) { return i18nLib.setDefaultNamespace(ns); }
-		mod.dir = function(lng) { return i18nLib.dir(lng); }
-		mod.format = function(data, format, lng) { return i18nLib.format(data, format, lng); }
-		mod.createInstance = function(options, callback) { return i18nLib.createInstance(options, callback); }
-		mod.cloneInstance = function(options) { return i18nLib.cloneInstance(options); }
-		mod.on = function(name, myFn) { return i18nLib.on(name, myFn); }
-		mod.off = function(name, myFn) { return i18nLib.off(name, myFn); }
+		mod.init = function i18nExtInit(options, callback) { return i18nLib.init(options, callback); }
+		mod.t = function i18nExtT(key) { return i18nLib.t(key); }
+		mod.use = function i18nExtUse(module) { return i18nLib.use(module); }
+		mod.exists = function i18nExtExists(key, options) { return i18nLib.exists(key, options); }
+		mod.getFixedT = function i18nExtGetFixedT(lng, ns) { return i18nLib.getFixedT(lng, ns); }
+		mod.changeLanguage = function i18nExtChangeLanguage(lng, callback) { return i18nLib.changeLanguage(lng, callback); }
+		mod.loadNamespaces = function i18nExtLoadNamespaces(ns, callback) { return i18nLib.loadNamespaces(ns, callback); }
+		mod.loadLanguages = function i18nExtLoadLanguages(lngs, callback) { return i18nLib.loadLanguages(lngs, callback); }
+		mod.reloadResources = function i18nExtReloadResources() { return i18nLib.reloadResources(); }
+		mod.setDefaultNamespace = function i18nExtSetDefaultNamespace(ns) { return i18nLib.setDefaultNamespace(ns); }
+		mod.dir = function i18nExtDir(lng) { return i18nLib.dir(lng); }
+		mod.format = function i18nExtFormat(data, format, lng) { return i18nLib.format(data, format, lng); }
+		mod.createInstance = function i18nExtCreateInstance(options, callback) { return i18nLib.createInstance(options, callback); }
+		mod.cloneInstance = function i18nExtCloneInstance(options) { return i18nLib.cloneInstance(options); }
+		mod.on = function i18nExtOn(name, myFn) { return i18nLib.on(name, myFn); }
+		mod.off = function i18nExtOff(name, myFn) { return i18nLib.off(name, myFn); }
 
 		// Resource Handling API Methods:
-		mod.getResource = function(lng, ns, key, options) { return i18nLib.getResource(lng, ns, key, options); }
-		mod.addResource = function(lng, ns, key, value, options) { return i18nLib.addResource(lng, ns, key, value, options); }
-		mod.addResources = function(lng, ns, resources) { return i18nLib.addResources(lng, ns, resources); }
-		mod.addResourceBundle = function(lng, ns, resources, deep, overwrite) { return i18nLib.addResourceBundle(lng, ns, resources, deep, overwrite); }
-		mod.hasResourceBundle = function(lng, ns) { return i18nLib.hasResourceBundle(lng, ns); }
-		mod.getDataByLanguage = function(lng) { return i18nLib.getDataByLanguage(lng); }
-		mod.getResourceBundle = function(lng, ns) { return i18nLib.getResourceBundle(lng, ns); }
-		mod.removeResourceBundle = function(lng, ns) { return i18nLib.removeResourceBundle(lng, ns); }
+		mod.getResource = function i18nExtGetResource(lng, ns, key, options) { return i18nLib.getResource(lng, ns, key, options); }
+		mod.addResource = function i18nExtAddResource(lng, ns, key, value, options) { return i18nLib.addResource(lng, ns, key, value, options); }
+		mod.addResources = function i18nExtAddResources(lng, ns, resources) { return i18nLib.addResources(lng, ns, resources); }
+		mod.addResourceBundle = function i18nExtAddResourceBundle(lng, ns, resources, deep, overwrite) { return i18nLib.addResourceBundle(lng, ns, resources, deep, overwrite); }
+		mod.hasResourceBundle = function i18nExtHasResourceBundle(lng, ns) { return i18nLib.hasResourceBundle(lng, ns); }
+		mod.getDataByLanguage = function i18nExtGetDataByLanguage(lng) { return i18nLib.getDataByLanguage(lng); }
+		mod.getResourceBundle = function i18nExtGetResourceBundle(lng, ns) { return i18nLib.getResourceBundle(lng, ns); }
+		mod.removeResourceBundle = function i18nExtRemoveResourceBundle(lng, ns) { return i18nLib.removeResourceBundle(lng, ns); }
+
+		// Custom Methods:
+		mod.createServiceInstances = function i18nExtCreateServiceInstances(services, cb) {
+			var servicesCount = services.length, serviceInstancesCreated = 0;
+			for (var i = 0; i < services.length; i++) {
+				serviceInstances[services[i]] = mod.createInstance({ fallbackLng: 'en', debug: false }, function(err, t) { serviceInstancesCreated ++; });
+			}
+			var interval = setInterval(function(){
+				if(serviceInstancesCreated >= servicesCount) {
+					clearInterval(interval); cb(null, { "success": true });
+				}
+			}, 10);
+		}
 
 		log("debug", "Blackrock i18n > [1] i18n Methods Bound", {}, "I18N_METHODS_BOUND");
 		return evt;
+	}
+
+	/**
+	 * (Internal > Stream Methods [2]) Create Service Instances
+	 * @param {object} evt - The Request Event
+	 */
+	streamFns.createServiceInstances = function i18nCreateServiceInstances(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					var serviceList;
+					var createTheServiceInstances = function i18nCreateTheServiceInstances() {
+						mod.createServiceInstances(serviceList, function(err, res) {
+							log("debug", "Blackrock i18n > [2] Created Service Instances...", {}, "I18N_CREATED_SRV_INST");
+							observer.next(evt);
+						});
+					}
+					try { serviceList = core.module("services").serviceList(); createTheServiceInstances(); } 
+					catch(err) {
+						core.on("SERVICES_BUILT_ROUTES_OBJ", function(sEvt) {
+							setTimeout(function(){ serviceList = core.module("services").serviceList(); createTheServiceInstances(); }, 100);
+						});			
+					}
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
 	}
 
 	/**
@@ -140,7 +183,6 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.loadi18nResources = function i18nLoadi18nResources(evt){
-		//var serviceList = core.module("services").serviceList();
 		mod.init({
 		  lng: 'es',
 		  debug: false,
@@ -167,7 +209,7 @@
 		    }
 		  }
 		});
-		log("debug", "Blackrock i18n > [2] i18n Resources Loaded", {}, "I18N_RESOURCES_LOADED");
+		log("debug", "Blackrock i18n > [3] Loading i18n Resources...", {}, "I18N_RESOURCES_LOADING");
 		return evt;
 	}
 
@@ -199,7 +241,7 @@
 				});
 				cb($.html());
 			});
-			log("debug", "Blackrock i18n > [3] i18n Translator Bound to HTTP Interface Module", {}, "I18N_TRANSLATOR_BOUND");
+			log("debug", "Blackrock i18n > [4] i18n Translator Bound to HTTP Interface Module", {}, "I18N_TRANSLATOR_BOUND");
 		}
 		return evt;
 	}

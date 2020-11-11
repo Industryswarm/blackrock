@@ -1,16 +1,24 @@
 {
   "name": "is-blackrock",
-  "version": "0.2.7",
-  "description": "Blackrock Application Server Module",
+  "version": "0.2.8",
+  "description": "Blackrock Application Server (Stand-Alone and/or Module)",
   "author": {
     "name": "Darren Smith",
-    "email": "darren.smith@industryswarm.com",
+    "email": "contact@darrensmith.com.au",
     "url": "https://www.darrensmith.com.au/"
+  },
+  "scripts": {
+    "test": "nyc mocha **/*.br-test.js",
+    "lint": "eslint .",
+    "start": "node index.js start console"
+  },
+  "bin": {
+    "blackrock": "./index.js"
   },
   "maintainers": [
     {
       "name": "Darren Smith",
-      "email": "darren.smith@industryswarm.com"
+      "email": "contact@darrensmith.com.au"
     }
   ],
   "repository": {
@@ -18,5 +26,49 @@
     "url": "https://github.com/Industryswarm/isnode-blackrock.git"
   },
   "main": "index.js",
-  "engines": [ "node" ]
+  "engines": [
+    "node"
+  ],
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-uuid": "^1.0.6",
+    "eslint": "^7.10.0",
+    "eslint-config-google": "^0.14.0",
+    "mocha": "^8.1.3",
+    "nyc": "^15.1.0",
+    "sinon": "^9.0.3"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "google"
+    ],
+    "env": {
+      "node": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 6
+    },
+    "rules": {
+      "max-len": [
+        2,
+        120,
+        4,
+        {
+          "ignoreUrls": true
+        }
+      ],
+      "no-console": 0
+    }
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "!node_modules/is-blackrock"
+  ],
+  "nyc": {
+    "include": [
+      "node_modules/is-blackrock/**/*.js"
+    ],
+    "excludeNodeModules": false
+  }
 }

@@ -12,12 +12,12 @@
 
 
 
-	/* ================================= *
-	 * Initialise Core Module Variables: *
-	 * ================================= */
+	/* ===================================================== *
+	 * Initialise Core Module Variables And Banner Function: *
+	 * ===================================================== */
 	 
-	var core, modules = { interfaces: {} }, globals = {};
-	var log, enableConsole, config, package;
+	var core, modules = { interfaces: {} }, globals = {}, fs = require("fs");
+	var log, enableConsole, config, package, basePaths = {};
 
 	var displayConsoleBanner = function CoreDisplayConsoleBanner(displayCore) { 
 		var alertLineOne = "", alertLineTwo = "";
@@ -46,6 +46,48 @@
 ------------------------------------------------------------------------------------------------\n
 		`);
 	}
+
+
+
+
+
+
+
+
+
+
+
+	/* =================== *
+	 * Determine Path Set: *
+	 * =================== */
+
+	var dirName = __dirname;
+	dirName = dirName.split("/");
+	dirName.pop(); dirName.pop();
+	basePaths.module = dirName.join("/");
+	dirName = basePaths.module.split("/");
+	dirName.pop(); dirName.pop();
+	dirName = dirName.join("/");
+	basePaths.services = "";
+	basePaths.config = "";
+	basePaths.cache = "";
+	basePaths.root = basePaths.module;
+	if (fs.existsSync(dirName + "/services")) { basePaths.services = dirName + "/services"; basePaths.root = dirName; }
+	if (fs.existsSync(dirName + "/config/is-blackrock.json")) { basePaths.config = dirName + "/config/is-blackrock.json"; }
+	if (fs.existsSync(dirName + "/cache")) { basePaths.cache = dirName + "/cache"; }
+
+
+
+
+
+
+
+
+
+
+	/* ================== *
+	 * Import Base Class: *
+	 * ================== */
 
 	try { 
 		var Base = require('./support/base');
@@ -98,7 +140,7 @@
 
 
 	/* ======================== *
-	 * Define Core Prototype: *
+	 * Define Core Prototype: 	*
 	 * ======================== */
 
 	var Core = new Base().extend({
@@ -112,12 +154,6 @@
 		init: function CoreInit(initialConfig, callbackFn) {
 			var self = this;
 			var myPromise = new Promise(function(resolve, reject) {
-				if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
-				if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
-				if(!initialConfig || !initialConfig.config) { try { config = process.env.CONFIG || require('../../../../config/config.json'); } catch(err) {} }
-				else if (initialConfig.config) { config = initialConfig.config; }
-				if(!initialConfig || !initialConfig.package) { try { package = require('../../../../package.json'); } catch(err) {} }
-				else if (initialConfig.package) { package = initialConfig.package; }
 				var resolvePromise = function CoreResolvePromise(){
 					if(callbackFn) { callbackFn(self); } 
 					if(self.status == "Error") { reject(core) }
@@ -129,8 +165,31 @@
 						core.emit("CORE_WELCOME", welcomeMsg);
 					}, 10);
 				}
-				if(!package) { self.status = "Error"; self.reason = "No package provided";  }
-				if(!config) { self.status = "Error"; self.reason = "No config provided"; }
+				if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
+				if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
+				if(!initialConfig || !initialConfig.config) { try { config = require(basePaths.config); } catch(err) { self.status = "Error"; self.reason = "No config provided"; } }
+				if(!initialConfig && !config) { try { config = require(basePaths.module + '/../../config/config.json'); } catch(err) { self.status = "Error"; self.reason = "No config provided"; } }
+				else if (initialConfig && initialConfig.config) { config = initialConfig.config; }
+				if(!initialConfig || !initialConfig.package) { try { package = require(basePaths.root + '/package.json'); } catch(err) { self.status = "Error"; self.reason = "No package provided"; } }
+				else if (initialConfig.package) { package = initialConfig.package; }
+				if(!config) {
+					if (fs.existsSync("/etc/is-blackrock.json")) { 
+						self.status = "Inactive"; self.reason = "";
+						basePaths.config = "/etc/is-blackrock.json";
+						config = require("/etc/is-blackrock.json");
+					} else {
+						self.status = "Error"; self.reason = "No config provided";
+					}
+				}
+				if(config && (!basePaths.services || !basePaths.cache)) {
+					if(config && config.core && config.core.locations && config.core.locations.services && fs.existsSync(config.core.locations.services))
+						basePaths.services = config.core.locations.services;
+					if(config && config.core && config.core.locations && config.core.locations.cache && fs.existsSync(config.core.locations.cache))
+						basePaths.cache = config.core.locations.cache;
+				}
+				if(!basePaths || !basePaths.module || !basePaths.root || !basePaths.services || !basePaths.cache || !basePaths.config) {
+					self.status = "Error"; self.reason = "Could not establish valid base paths";
+				}
 				if(config && !config.core) { self.status = "Error"; self.reason = "No core module section in config provided"; }
 				if(config && config.core && !config.core.modules) { self.status = "Error"; self.reason = "No modules listed in config"; }
 				if(config && config.core && !config.core.startupModules) { self.status = "Error"; self.reason = "No startup modules listed in config"; }
@@ -154,10 +213,10 @@
 						stdin.on('data', function(chunk) { if(chunk == "e") { self.shutdown(); } });
 					}
 					var fs = require("fs");
-					fs.readdirSync(self.getBasePath("two") + "/modules").forEach(function CoreLoadModulesReadDirCallback(file) { 
+					fs.readdirSync(basePaths.module + "/modules").forEach(function CoreLoadModulesReadDirCallback(file) { 
 						if(!modules[file]) { self.loadModule("module", file); } 
 					});
-					fs.readdirSync(self.getBasePath("two") + "/interfaces").forEach(function CoreLoadInterfacesReadDirCallback(file) { 
+					fs.readdirSync(basePaths.module + "/interfaces").forEach(function CoreLoadInterfacesReadDirCallback(file) { 
 						if(!modules.interfaces[file]) { self.loadModule("interface", file); } 
 					});
 					self.status = "Finalising";
@@ -176,16 +235,19 @@
 				}, 500);
 			});
 			if(initialConfig && initialConfig.return == "promise") { return myPromise; } 
-			else { return self; }
+			else { 
+				myPromise.then(function(pRes) { null; }).catch(function(pErr) { null; });
+				return self; 
+			}
 		},
 
 		pkg: function CoreGetPkg() { return package; },
 
 		cfg: function CoreGetCfg() { return config; },
 
-		getBasePath: function CoreGetBasePath(type) { 
-			if(type == "four" || !type) { return __dirname + "/../../../.."; }
-			else { return __dirname + "/../.."; }
+		fetchBasePath: function CoreFetchBasePath(type) { 
+			if(basePaths[type]) { return basePaths[type]; }
+			else { return ""; }
 		},
 
 		shutdown: function CoreShutdown() {
@@ -236,9 +298,9 @@
 			if(moduleName.startsWith(".")) { return; }
 			try {
 				if(type == "module")
-					modules[moduleName] = require(self.getBasePath("two") + "/" + type + "s/" + moduleName + "/main.js")(core);
+					modules[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
 				else if (type == "interface")
-					modules.interfaces[moduleName] = require(self.getBasePath("two") + "/" + type + "s/" + moduleName + "/main.js")(core);
+					modules.interfaces[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
 			} catch(err) {
 				var error = { success: false, message: "Error Loading '" + moduleName + "' Module (Type: " + type + ")", error: err };
 				log("debug", "Blackrock Core > " + error.message, error.error, "CORE_ERR_LOADING_MOD");
@@ -372,7 +434,7 @@
 		closeInterfaces: function CoreInterfaceCloseInterfaces(cb) {
 			var totalInterfaces = 0, interfacesClosed = 0;
 			for(var name in this.instances){ totalInterfaces ++; }
-			for(var name in this.instances){ this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } }); }
+			for(var name in this.instances){ if(this.instances[name].server && this.instances[name].server.close) { this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } }); } }
 			var counter = 0, timeout = 5000;
 			var interval = setInterval(function CoreISInterfaceCloseInterfacesTimeout(){
 				if(interfacesClosed >= totalInterfaces){ clearInterval(interval); cb(true); return; };

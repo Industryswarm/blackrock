@@ -174,8 +174,9 @@
 		if(core.cfg().farm) { var farm = core.cfg().farm; } else { var farm = {}; }
 		if(farm.server && farm.server.cache) { var cache = farm.server.cache; } else { var cache = null; }
 		if(cache) {
-			var file = core.getBasePath() + "/cache/" + cache;
+			var file = core.fetchBasePath("cache") + "/" + cache;
 			var fs = require('fs');
+			if(!fs.existsSync(file)) { fs.closeSync(fs.openSync(file, 'w')); }
 			fs.createReadStream(file).pipe(scuttleBucketInstance.createWriteStream());
 			scuttleBucketInstance.on('sync', function FarmPersistToDiskSyncCallback() {
 				scuttleBucketInstance.createReadStream().pipe(fs.createWriteStream(file));
