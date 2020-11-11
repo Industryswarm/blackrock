@@ -57,9 +57,9 @@
 
 
 
-	/* =================== *
-	 * Determine Path Set: *
-	 * =================== */
+	/* ======================== *
+	 * Determine Base Path Set: *
+	 * ======================== */
 
 	var dirName = __dirname;
 	dirName = dirName.split("/");
@@ -178,7 +178,16 @@
 						basePaths.config = "/etc/is-blackrock.json";
 						config = require("/etc/is-blackrock.json");
 					} else {
-						self.status = "Error"; self.reason = "No config provided";
+						config = require(basePaths.module + '/config/is-blackrock-default.json');
+						basePaths.config = "/config/is-blackrock-default.json";
+						function canWrite(path, callback) { fs.access(path, fs.W_OK, function(err) { callback(null, !err); }); }
+						canWrite('/etc', function(err, isWritable) {
+							if(!isWritable) {
+								console.log("(error) No config file available, Please run again with sudo to copy a default across\n");
+							} else {
+								fs.createReadStream(basePaths.module + '/config/is-blackrock-default.json').pipe(fs.createWriteStream('/etc/is-blackrock.json'));
+							}
+						});
 					}
 				}
 				if(config && (!basePaths.services || !basePaths.cache)) {

@@ -45,7 +45,7 @@
 		var timeout = 10000;
 		var intervalObject = setInterval(function WebSocketsStartInterfaceTimeoutHandler(){
 			timeoutCounter = timeoutCounter + 100;
-			var httpInterface = core.module("http", "interface").get(cfg.httpInterface);
+			if(core.module("http", "interface")) { var httpInterface = core.module("http", "interface").get(cfg.httpInterface); }
 			if(httpInterface && httpInterface.server && httpInterface.listening == true){
 				clearInterval(intervalObject);
 				var server = httpInterface.server;

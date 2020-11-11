@@ -52,7 +52,7 @@
 
 
 	/**
-	 * (Internal > Pipeline [1]) Setup Universe
+	 * (Internal > Pipeline [1]) Setup Swagger
 	 */
 	pipelines.setupSwagger = function SwaggerSetupPipeline(){
 		return new core.Base().extend({

@@ -191,7 +191,7 @@
 						executeNow(output);
 					});
 				} else {
-					log("debug", "Blackrock HTTP Interface > Hooks Executed", {"name": name, "type": type, "before": input, "after": newInput}, "HTTP_HOOK_EXECUTED");
+					log("debug", "Blackrock HTTP Interface > Hooks Executed", {"name": name, "type": type }, "HTTP_HOOK_EXECUTED");
 					resolve(newInput);
 				}		
 			}

@@ -1,0 +1,188 @@
+{
+
+
+  "cli": {},
+
+
+  "containers": {},
+
+
+  "core": {
+    "banner": "Blackrock Application Server (Default)",
+    "maxObjectListeners": 100,
+    "modules": ["cli", "core", "daemon", "errorhandler", ".farm", ".generator", "i18n", ".identity", 
+                ".installer", "jobs", "logger", "router", ".sandbox", "services", ".swagger", ".universe", "utilities"],
+    "interfaces": [".axon", "http", ".nanomsg", ".ssh", "websockets", ".zeromq"],
+    "startupModules": ["logger", "utilities", "daemon", "cli"],
+    "timeouts": {
+      "loadDependencies": 5000,
+      "closeModules": 5000
+    },
+    "locations": {
+      "services": "/opt/is-blackrock/services",
+      "cache": "/opt/is-blackrock/cache"
+    }
+  },
+
+
+  "daemon": {},
+
+
+  "errorhandler": {
+    "enabled": true,
+    "timeout": 5000
+  },
+
+
+  "farm": {
+    "server": {
+      "port": 8001,
+      "cache": "scuttlebutt.dat"
+    },
+    "seeds": ["127.0.0.1:8001"]
+  },
+
+
+  "generator": {},
+
+
+  "i18n": {},
+
+
+  "identity": {},
+
+
+  "installer": {},
+
+
+  "interfaces": {
+    "http": {
+      "http": {
+        "enabled": true,
+        "ssl": false,
+        "port": 8080,
+        "requestTimeout": 10000,
+        "log": false,
+        "fileUploadPath": "/tmp/blackrock/upload",
+        "maxUploadFileSizeMb": 50
+      }
+    },
+    "websockets": {
+      "websockets": {
+        "enabled": true,
+        "httpInterface": "http"
+      }
+    },
+    "axon": {},
+    "nanomsg": {},
+    "ssh": {},
+    "zeromq": {}
+  },
+
+
+  "jobs": {},
+
+
+  "logger": {
+    "enabled": true,
+    "levels": ["startup", "shutdown", "warning", "error", "fatal", "debug"],
+    "logMetadataObjects": false,
+    "sinks": {
+      "console": {
+        "enabled": true
+      },
+      "file": {
+        "enabled": true,
+        "location": "/var/log/is-blackrock-log.txt"
+      }
+    },
+    "heartbeat": {
+      "console": false,
+      "heartbeatFreq": 10000,
+      "cacheFreq": 10000
+    }
+  },
+
+
+  "router": {
+    "instances": {
+      "RouterOne": {
+        "interfaces": ["*"],
+        "services": ["*"]
+      }
+    }
+  },
+
+
+  "sandbox": {},
+
+
+  "services": {
+    "allow": {
+      "cfg": true,
+      "pkg": true,
+      "fetchBasePath": true,
+      "getCurrentService": true,
+      "shutdown": false,
+      "globals": true,
+      "modules": {
+        "cli": [],
+        "daemon": [],
+        "errorhandler": [],
+        "farm": [],
+        "generator": [],
+        "i18n": ["init", "t", "use", "exists", "getFixedT", "changeLanguage", "loadNamespaces", "loadLanguages",
+                 "reloadResources", "setDefaultNamespace", "dir", "format", "createInstance", "cloneInstance",
+                 "on", "off", "getResource", "addResource", "addResources", "addResourceBundle", "hasResourceBundle",
+                 "getDataByLanguage", "getResourceBundle", "removeResourceBundle", "createServiceInstances"],
+        "identity": [], 
+        "installer": [],
+        "jobs": ["add", "remove", "jobs.add", "jobs.remove"], 
+        "logger": ["log"],
+        "router": [],
+        "sandbox": [],
+        "services": ["service(serviceName)", "serviceStats"],
+        "swagger": [],
+        "universe": [], 
+        "utilities": ["randomString", "uuid4", "isJSON", "objectLength", "getCurrentDateInISO", "validateString",
+                      "cloneObject", "modules.loadModule", "csv.parse", "crypto.encrypt", "crypto.decrypt",
+                      "xml", "system.getMemoryUse", "system.getCpuLoad", "system.getStartTime", "system.getEndTime",
+                      "system.getObjectMemoryUsage", "isUndefined", "isNull", "isNil", "path", "prop", "assign"],
+        "http": ["client.request", "client.get", "client.post", "client.put", "client.delete",
+                 "get", "hook.add", "hook.remove"],
+        "websockets": [],
+        "axon": [],
+        "nanomsg": [],
+        "ssh": [],
+        "zeromq": []
+      }
+    },
+    "runtime": {
+      "services": {
+        "allowLoad": true,
+        "allowUnload": true,
+        "allowOverride": false
+      },
+      "controllers": {
+        "allowLoad": true,
+        "allowUnload": true,
+        "allowOverride": false
+      }
+    },
+    "sandbox": {
+      "default": false,
+      "allowOverride": false
+    }
+  },
+
+
+  "swagger": {},
+
+
+  "universe": {},
+
+
+  "utilities": {}
+
+
+}
