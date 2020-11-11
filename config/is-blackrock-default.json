@@ -4,13 +4,16 @@
   "cli": {},
 
 
+  "configure": {},
+
+
   "containers": {},
 
 
   "core": {
     "banner": "Blackrock Application Server (Default)",
     "maxObjectListeners": 100,
-    "modules": ["cli", "core", "daemon", "errorhandler", ".farm", ".generator", "i18n", ".identity", 
+    "modules": ["cli", "core", ".configure", ".containers", "daemon", "errorhandler", ".farm", ".generator", "i18n", ".identity", 
                 ".installer", "jobs", "logger", "router", ".sandbox", "services", ".swagger", ".universe", "utilities"],
     "interfaces": [".axon", "http", ".nanomsg", ".ssh", "websockets", ".zeromq"],
     "startupModules": ["logger", "utilities", "daemon", "cli"],
