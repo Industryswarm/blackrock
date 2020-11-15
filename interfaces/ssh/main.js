@@ -18,7 +18,7 @@
 		core = coreObj, interface = new core.Interface("SSH"), log = core.module("logger").log;
 		log("debug", "Blackrock SSH Interface > Initialising...", {}, "SSH_INIT");
 		interface.startInterface = startInterface;
-		interface.startInterfaces();
+		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 		return interface;
 	}
 

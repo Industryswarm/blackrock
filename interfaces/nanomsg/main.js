@@ -18,7 +18,7 @@
 		core = coreObj, interface = new core.Interface("NanoMSG"), log = core.module("logger").log;
 		log("debug", "Blackrock NanoMSG Interface > Initialising...", {}, "NANOMSG_INIT");
 		interface.startInterface = startInterface;
-		interface.startInterfaces();
+		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 		return interface;
 	}
 

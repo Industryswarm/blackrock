@@ -18,7 +18,7 @@
 		core = coreObj, interface = new core.Interface("ZeroMQ"), log = core.module("logger").log;
 		log("debug", "Blackrock ZeroMQ Interface > Initialising...", {}, "ZEROMQ_INIT");
 		interface.startInterface = startInterface;
-		interface.startInterfaces();
+		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 /*
 		console.log('testing zeromq');
 		const zmq = require("./support/zeromq/v5-compat");

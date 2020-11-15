@@ -276,12 +276,13 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
+					log("debug","Blackrock Router > Received Incoming Request:", evt.routerMsg, "ROUTER_RECEIVED_REQUEST");
 					evt.startTime = core.module("utilities").system.getStartTime();
 					evt.routerInternals = {};
 					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
 					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function RouterDetermineNewRequestRouteCallback(routeResult) {
+						console.log('test router route');
 						evt.routerInternals.route = routeResult;
-						log("debug","Blackrock Router > Received Incoming Request:", evt.routerMsg, "ROUTER_RECEIVED_REQUEST");
 						if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
 							evt.parentEvent.ReturnError(evt.routerMsg,"Page Not Found",404); 
 							log("warning","Blackrock Router > [1] Could not resolve endpoint - 404 - " + evt.routerMsg.msgId, {}, "ROUTER_404");
@@ -421,12 +422,12 @@
 		if(evt.routerMsg.request.verb && evt.routerInternals.controller && evt.routerInternals.controller[evt.routerInternals.verb] && verbs.includes(evt.routerInternals.verb)) {
 			var service = core.module("services").service(evt.routerInternals.route.match.service);
 			if(service.middleware.count() == 0) {
+				log("debug", "Blackrock Router > [6] Routing This Request To The Target Controller Without Middleware", {}, "ROUTER_ROUTED_TO_CTRL_NO_MW");
 				evt.routerInternals.controller[evt.routerInternals.verb](evt.routerInternals.req, evt.routerInternals.res);
-				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller Without Middleware", {}, "ROUTER_ROUTED_TO_CTRL_NO_MW");
 			} else {
+				log("debug", "Blackrock Router > [6] Routing This Request To The Target Controller With Middleware", {}, "ROUTER_ROUTED_TO_CTRL_MW");
 				service.middleware.handle(evt.routerInternals.controller[evt.routerInternals.verb]);
 				service.middleware(evt.routerInternals.req, evt.routerInternals.res);
-				log("debug", "Blackrock Router > [6] Routed This Request To The Target Controller With Middleware", {}, "ROUTER_ROUTED_TO_CTRL_MW");
 			}
 
 		} else {

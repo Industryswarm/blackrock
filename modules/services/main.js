@@ -110,6 +110,8 @@
 			constructor: function ServicesRunSearchPipelineConstructor(evt) { this.evt = evt; },
 			callback: function ServicesRunSearchPipelineCallback(cb) { return cb(this.evt); },
 			pipe: function ServicesRunSearchPipelinePipe(cb) {
+				var responseComplete = false;
+				this.evt.responseComplete = responseComplete;
 				log("debug", "Blackrock Services > Route Search Query Pipeline Created - Executing Now:", {}, "SERVICES_EXEC_ROUTE_SEARCH_PIPELINE");
 				const self = this; const stream = rx.bindCallback((cb) => {self.callback(cb);})();
 				const stream1 = stream.pipe(
@@ -120,10 +122,12 @@
 					streamFns.generateServiceEvents,
 					op.map(evt => { if(evt) return streamFns.initSearchForService(evt); }),
 					streamFns.iterateOverRoutes,
-					op.map(evt => { if(evt) return streamFns.checkAndMatch(evt); })
+					op.map(evt => { if(evt) return streamFns.checkAndMatch(evt); }),
 					
 				);
-				stream1.subscribe(function ServicesRunSearchPipelineSubscribe(evt) { cb(evt.result); });
+				stream1.subscribe(function ServicesRunSearchPipelineSubscribe(evt) {
+					if(!responseComplete) { responseComplete = true; cb(evt.result); }
+				});
 			}
 		});
 	};
@@ -827,6 +831,7 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
+					var respondedNext = false;
 					log("debug","Blackrock Services > [3] Generating Service Events...", {}, "SERVICES_GEN_SRV_EVTS");
 					var hostname = evt.hostname, url = evt.url, eServices = evt.services, hosts = evt.hosts;
 					for(var service in services) {
@@ -838,8 +843,8 @@
 						};
 						if(hostname == services[service].cfg.host) { evt2.srv = service; }
 						else if (services[service].cfg.host == "*" && !evt.hosts.includes(hostname)) { evt2.srv = service; }
-						if(evt2.srv) { observer.next(evt2); }
-						else { observer.next(evt); }
+						if(evt2.srv && !respondedNext) { observer.next(evt2); respondedNext = true; }
+						else if (!respondedNext) { observer.next(evt); respondedNext = true; }
 					}
 				},
 				error(error) { observer.error(error); }
@@ -924,7 +929,7 @@
 					}
 					if(evt && evt.routes && evt.routes[evt.host])
 						for(var index = 0, total = evt.routes[evt.host].length; index<total; index++){ processIteration(index); }
-				    if(!evt.match){
+				    if(evt && !evt.match){
 				    	evt.match = true;
 				    	if(evt.wildcardSet && evt.routes[evt.wildcardSet[evt.host]] && evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]]) {
 				    		evt.currentRoute = evt.routes[evt.wildcardSet[evt.host]][evt.wildcardSet[index]];

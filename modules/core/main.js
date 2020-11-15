@@ -121,12 +121,6 @@
 			var logger = core.module("logger");
 			if(logger && logger.log) { logger.log(level, logMsg, attrObj, evtName); }
 		}
-
-		// LOGGER MODULE (ENABLE CONSOLE METHOD):
-		enableConsole = function CoreEnableConsole() {
-			var logger = core.module("logger");
-			if(logger && logger.enableConsole) { logger.enableConsole(); }
-		}
 		
 	}
 
@@ -213,11 +207,10 @@
 				setupExternalModuleMethods(self);
 				if(config && config.core && config.core.startupModules && config.core.startupModules.length > 0) { for (var i = 0; i < config.core.startupModules.length; i++) { self.loadModule("module", config.core.startupModules[i]); } }
 				else { self.shutdown(); return; }
-				setTimeout(function CoreEnableConsoleTimeout(){ enableConsole(); }, 50);
-				self.on("loadDependencies", function CoreLoadDependenciesCallback(){
+				self.on("CORE_LOAD_DEPENDENCIES", function CoreLoadDependenciesCallback(){
 					if (process.stdin.isTTY) {
 						var stdin = process.openStdin();
-						stdin.setRawMode(true); 
+						stdin.setRawMode(true);
 						stdin.setEncoding('utf8');
 						stdin.on('data', function(chunk) { if(chunk == "e") { self.shutdown(); } });
 					}
@@ -229,11 +222,11 @@
 						if(!modules.interfaces[file]) { self.loadModule("interface", file); } 
 					});
 					self.status = "Finalising";
+					core.emit("CORE_FINALISING");
 				}); 
 				var counter = 0;
 				if(config.core.timeouts.loadDependencies) { var timeout = config.core.timeouts.loadDependencies; } else { var timeout = 5000; }
 				var interval = setInterval(function CoreDependencyLoadIntervalCallback(){
-					enableConsole();
 					if(self.status == "Finalising"){ clearInterval(interval); self.startEventLoop(function(){ resolvePromise(); }); }
 					if(counter >= timeout) { 
 						log("error", "Blackrock Core > Timed out initiating startup. Terminating application server.", {}, "CORE_STARTUP_TIMEOUT");
@@ -242,6 +235,7 @@
 					}
 					counter += 500;
 				}, 500);
+				core.emit("CORE_LOAD_DEPENDENCIES");
 			});
 			if(initialConfig && initialConfig.return == "promise") { return myPromise; } 
 			else { 

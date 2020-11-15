@@ -39,7 +39,7 @@
 		interface.hook = { add: addHook, remove: removeHook };
 		interface.cheerio = cheerio;
 		interface.formidable = formidable;
-		interface.startInterfaces();
+		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 		return interface;
 	}
 

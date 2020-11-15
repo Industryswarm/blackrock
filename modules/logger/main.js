@@ -47,8 +47,8 @@
 			return true;
 		}
 		var loadDependencies = false;
-		core.on("startDaemon", function LoggerOnStartDaemon(){ daemonInControl = true; });
-		core.on("loadDependencies", function LoggerOnLoadDependencies(){ loadDependencies = true; });
+		core.on("CORE_START_DAEMON", function LoggerOnStartDaemon(){ daemonInControl = true; });
+		core.on("CORE_LOAD_DEPENDENCIES", function LoggerOnLoadDependencies(){ loadDependencies = true; });
 		log("debug", "Blackrock Logger > Initialising...", {}, "LOGGER_INIT");
 		lib = core.lib, rx = lib.rxjs, op = lib.operators, Observable = rx.Observable;
 		var intervalCounter = 0;

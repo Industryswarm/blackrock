@@ -20,7 +20,7 @@
 		core = coreObj, interface = new core.Interface("Axon"), log = core.module("logger").log;
 		log("debug", "Blackrock Axon Interface > Initialising...", {}, "AXON_INIT");
 		interface.startInterface = startInterface;
-		interface.startInterfaces();
+		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 		return interface;
 	}
 

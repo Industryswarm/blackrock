@@ -115,7 +115,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("debug", "Blackrock Daemon > [1a] Listener created for 'startDaemon' event", {}, "DAEMON_LISTENER_CREATED");
-					core.on("startDaemon", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
+					core.on("CORE_START_DAEMON", function DaemonPipelineFns1ListenToStartStartDaemonCallback(){
 						log("debug", "Blackrock Daemon > [1b] 'startDaemon' Event Received", {}, "DAEMON_LISTENER_EVT_RECEIVED");
 						evt.name = core.pkg().name;
 						evt.isChildProcess = process.send;

@@ -12,7 +12,7 @@
 	 * ================================= */
 
 	String.prototype.endsWith = function CLIEndsWith(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var core, mod, log;
+	var core, mod, log, enableConsole;
 
 
 
@@ -32,9 +32,16 @@
 		core = coreObj, mod = new core.Mod("CLI");
 		setupExternalModuleMethods();
 		log("debug", "Blackrock CLI > Initialising...", {}, "CLI_INIT");
-		start(); 
+		core.on("CORE_FINALISING", function(evt) { start(); });
 		return mod; 
 	}
+
+
+
+
+
+
+
 
 
 
@@ -54,6 +61,12 @@
 		log = function CLILog(level, logMsg, attrObj, evtName) {
 			var logger = core.module("logger");
 			if(logger && logger.log) { logger.log(level, logMsg, attrObj, evtName); }
+		}
+
+		// LOGGER MODULE (ENABLE CONSOLE METHOD):
+		enableConsole = function CoreEnableConsole() {
+			var logger = core.module("logger");
+			if(logger && logger.enableConsole) { logger.enableConsole(); }
 		}
 		
 	}
@@ -131,11 +144,12 @@
  				subRec = true;
  				var daemonOptions = ["start", "start daemon", "stop", "stop daemon", "restart", "restart daemon", "status", "status daemon"];
 				if(((val && daemonOptions.includes(val) && core.module("daemon")) || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "daemon")) && !process.send) {
-					log("debug", "Blackrock CLI > [3] Event sent to 'Start Daemon'", {}, "CLI_EVTS_DAEMON_DEP");
-					core.emit("startDaemon");
+					log("debug", "Blackrock CLI > [3] Event sent to 'CORE_START_DAEMON'", {}, "CLI_EVTS_DAEMON_DEP");
+					core.emit("CORE_START_DAEMON");
 				} else if (process.send || val == "start console" || core.globals.get("test") || (core.cfg().cli && core.cfg().cli.mode && core.cfg().cli.mode == "console")) {
-					log("debug", "Blackrock CLI > [3] Event sent to 'Load Dependencies'", {}, "CLI_EVTS_DEP");
-					core.emit("loadDependencies");
+					log("debug", "Blackrock CLI > [3] Start Console Called - Enabling Console and emitting CORE_START_INTERFACES", {}, "CLI_ENABLE_CONSOLE");
+					setTimeout(function CLIEnableConsoleTimeout(){ enableConsole(); }, 50);
+					core.emit("CORE_START_INTERFACES");
 				} else {
 					showHelp();
 					log("debug", "Blackrock CLI > [3] No valid commands received - Displaying Command-Line Help", {}, "CLI_NO_ARGS_SHOWING_HELP");
