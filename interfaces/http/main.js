@@ -941,11 +941,12 @@
 
 		if(!req.url) { cb({ success: false, code: 1, message: "URL Not Defined"}, null); return; }
 		if(!req.method) { cb({ success: false, code: 2, message: "Method Not Defined"}, null); return; }
-		if(req.url.split("/") == "http:") { var protocol = "http"; }
-		else if (req.url.split("/") == "https:") { var protocol = "https"; } 
+		if(req.url.split("/")[0] == "http:") { var protocol = "http"; }
+		else if (req.url.split("/")[0] == "https:") { var protocol = "https"; } 
 		else { cb({ success: false, code: 3, message: "Unknown Protocol"}, null); return; }
+		var urlPieces = req.url.split("/");
 		var httpLib = require(protocol), hostname = urlPieces[2].split(":")[0];
-		if(domainPieces[1]) { var port = domainPieces[1]; }
+		var port = urlPieces[2].split(":")[1];
 		urlPieces.shift(); urlPieces.shift(); urlPieces.shift();
 		var path = "/" + urlPieces.join("/").split("?")[0], options = { "hostname": hostname, "method": req.method }
 
@@ -985,7 +986,7 @@
 			    } else { responseData = decodeURIComponent(responseData); }
 			    var resObj = {"statusCode": res.statusCode, "data": responseData};
 			    log("debug","Blackrock HTTP Interface > Received Incoming HTTP Response.", { "response": resObj }, "HTTP_RECEIVED_RESPONSE");
-			    executeHookFns(name, "onIncomingResponse", resObj).then(function(myResOutput) {
+			    executeHookFns("http", "onIncomingResponse", resObj).then(function(myResOutput) {
 			    	cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: myResOutput.statusCode, data: myResOutput.data });
 			    }).catch(function(err) {
 					cb(null, { success: true, code: 4, message: "Response Received Successfully", statusCode: res.statusCode, data: responseData });
@@ -997,7 +998,7 @@
 			reqObj.end();
 		}
 
-		executeHookFns(name, "onOutgoingRequest", options).then(function(theOptions) {
+		executeHookFns("http", "onOutgoingRequest", options).then(function(theOptions) {
 			log("debug","Blackrock HTTP Interface > Making Outgoing HTTP Request.", { "options": theOptions }, "HTTP_SENDING_REQUEST");
 			makeRequest(theOptions);
 		}).catch(function(err) {
