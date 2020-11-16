@@ -1,82 +1,74 @@
 const expect = require('chai').expect;
-require('is-blackrock').init({ silent: true, test: true, return: "promise" }).then(function(blackrock) {
+var blackrock = require('is-blackrock').init({ silent: true, test: true });
 
 
-    describe('Blackrock Core Module Tests', () => {
+describe('Blackrock Core Module Tests', () => {
 
-        describe('Set & Get Globals', () => {
-            it('return success after setting global', () => {
-                const result = blackrock.globals.set("test", "test");
-                expect(result).to.equal(true);
-            });
-            it('return previously set global', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
+    describe('Set & Get Globals', () => {
+        it('return success after setting global', () => {
+            const result = blackrock.globals.set("test", "test");
+            expect(result).to.equal(true);
         });
-
-        describe('Check on modules', () => {
-            it('ensure the correct number of modules are loaded', () => {
-                const result = blackrock.globals.set("test", "test");
-                expect(result).to.equal(true);
-            });
-            it('ensure the correct number of interfaces are loaded', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
+        it('return previously set global', () => {
+            const result = blackrock.globals.get("test");
+            expect(result).to.equal("test");
         });
-
-        describe('Check on config and package file', () => {
-            it('ensure the correct number of modules are loaded', () => {
-                const result = blackrock.globals.set("test", "test");
-                expect(result).to.equal(true);
-            });
-            it('ensure the correct number of interfaces are loaded', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
-        });
-
-        describe('Test the getBasePath method', () => {
-            it('ensure the correct number of modules are loaded', () => {
-                const result = blackrock.globals.set("test", "test");
-                expect(result).to.equal(true);
-            });
-            it('ensure the correct number of interfaces are loaded', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
-        });
-
-        describe('Test that the standard classes/prototypes have been made available', () => {
-            it('ensure Base class is present', () => {
-                const result = blackrock.globals.set("test", "test");
-                expect(result).to.equal(true);
-            });
-            it('ensure ISNode class is present', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
-            it('ensure ISMod class is present', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
-            it('ensure ISInterface class is present', () => {
-                const result = blackrock.globals.get("test");
-                expect(result).to.equal("test");
-            });
-        });
-
     });
 
-
-    after(async () => {  
-      await blackrock.shutdown();
+    describe('Check on config and package file', () => {
+        it('ensure the config file is loaded', () => {
+            const result = blackrock.cfg();
+            expect(result).to.have.property("core");
+        });
+        it('ensure the package file is loaded', () => {
+            const result = blackrock.pkg();
+            expect(result).to.have.property("name");
+        });
     });
 
+    describe('Test the fetchBasePath method', () => {
+        it('ensure the module base path is set', () => {
+            const result = blackrock.fetchBasePath("module")
+            expect(result).to.be.a("string");
+        });
+        it('ensure the root base path is set', () => {
+            const result = blackrock.fetchBasePath("root")
+            expect(result).to.be.a("string");
+        });
+        it('ensure the config base path is set', () => {
+            const result = blackrock.fetchBasePath("config")
+            expect(result).to.be.a("string");
+        });
+        it('ensure the services base path is set', () => {
+            const result = blackrock.fetchBasePath("services")
+            expect(result).to.be.a("string");
+        });
+        it('ensure the cache base path is set', () => {
+            const result = blackrock.fetchBasePath("cache")
+            expect(result).to.be.a("string");
+        });
+    });
 
-}).catch(function(blackrock) {
-    null;
+    describe('Test that the standard classes/prototypes have been made available', () => {
+        it('ensure Base class is present', () => {
+            expect(blackrock.Base).to.be.a("function");
+        });
+        it('ensure Core class is present', () => {
+            expect(blackrock.Core).to.be.a("function");
+        });
+        it('ensure Mod class is present', () => {
+            expect(blackrock.Mod).to.be.a("function");
+        });
+        it('ensure Interface class is present', () => {
+            expect(blackrock.Interface).to.be.a("function");
+        });
+    });
+
+});
+
+
+after(async () => {  
+  await blackrock.shutdown();
 });
 
 
