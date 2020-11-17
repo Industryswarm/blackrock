@@ -281,7 +281,6 @@
 					evt.routerInternals = {};
 					evt.routerInternals.verb = evt.routerMsg.request.verb.toLowerCase();
 					evt.parentEvent.Route(evt.routerMsg.request.host, evt.routerMsg.request.path, function RouterDetermineNewRequestRouteCallback(routeResult) {
-						console.log('test router route');
 						evt.routerInternals.route = routeResult;
 						if(!evt.routerInternals.route || !evt.routerInternals.route.match.controller) { 
 							evt.parentEvent.ReturnError(evt.routerMsg,"Page Not Found",404); 

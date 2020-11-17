@@ -137,4 +137,3 @@ Object.defineProperty(exports, "NEVER", { enumerable: true, get: function () { r
 __exportStar(require("./internal/types"), exports);
 var config_1 = require("./internal/config");
 Object.defineProperty(exports, "config", { enumerable: true, get: function () { return config_1.config; } });
-//# sourceMappingURL=index.js.map

@@ -70,6 +70,7 @@
 				if(cfg.ssl) { var httpLib = "https" } else { var httpLib = "http" };
 				instances[name] = inst = self.instances[name] = new core.Base().extend({});
 				inst.listening = false;
+				inst.port = port;
 				inst.hooks = { onIncomingRequest: {}, onOutgoingResponsePostRender: {}, onOutgoingRequest: {}, onIncomingResponse: {} }, inst.hookIdDirectory = {};
 				var serverLib = require('./support/' + httpLib);
 				if(cfg.ssl) { inst.server = serverLib(cfg.key, cfg.cert) } else { inst.server = serverLib() };

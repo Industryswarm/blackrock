@@ -149,9 +149,9 @@
 			var self = this;
 			var myPromise = new Promise(function(resolve, reject) {
 				var resolvePromise = function CoreResolvePromise(){
-					if(callbackFn) { callbackFn(self); } 
-					if(self.status == "Error") { reject(core) }
-					else if (self.status == "Active") { resolve(core) }
+					if(callbackFn && typeof callbackFn === "function") { callbackFn(self); } 
+					if(self.status == "Error") { reject(self) }
+					else if (self.status == "Active") { resolve(self) }
 					setTimeout(function(){
 						const welcomeMsg = { "welcome": "Blackrock Application Server", "name": package.name, "version": package.version, "status": self.status, "reason": self.reason };
 						core.emit("log", welcomeMsg);
@@ -159,6 +159,20 @@
 						core.emit("CORE_WELCOME", welcomeMsg);
 					}, 10);
 				}
+				if(self.status != "Inactive") {
+					if(callbackFn && typeof callbackFn === "function") { callbackFn(self); }
+					var interval = setInterval(function(){
+						if(self.status == "Error") { 
+							clearInterval(interval);
+							reject(self) 
+						} else if (self.status == "Active") {
+							clearInterval(interval);
+							resolve(self);
+						}
+					}, 10);
+					return;
+				}
+				self.status = "Preboot";
 				if(initialConfig && initialConfig.silent) { self.globals.set("silent", true); }
 				if(initialConfig && initialConfig.test) { self.globals.set("test", true); }
 				if(!initialConfig || !initialConfig.config) { try { config = require(basePaths.config); } catch(err) { self.status = "Error"; self.reason = "No config provided"; } }
@@ -202,7 +216,7 @@
 				modules.core = self;
 				if(!package) { package.name = "Unknown"; package.version = "Unknown"; }
 				if((initialConfig && !initialConfig.silent) || !initialConfig) { displayConsoleBanner(self); }
-				if(self.status != "Inactive" || self.status == "Error") { resolvePromise(); return; }
+				if(self.status != "Preboot" || self.status == "Error") { resolvePromise(); return; }
 				self.status = "Starting";
 				setupExternalModuleMethods(self);
 				if(config && config.core && config.core.startupModules && config.core.startupModules.length > 0) { for (var i = 0; i < config.core.startupModules.length; i++) { self.loadModule("module", config.core.startupModules[i]); } }
@@ -237,86 +251,14 @@
 				}, 500);
 				core.emit("CORE_LOAD_DEPENDENCIES");
 			});
-			if(initialConfig && initialConfig.return == "promise") { return myPromise; } 
+			if(!callbackFn) { return myPromise; } 
 			else { 
 				myPromise.then(function(pRes) { null; }).catch(function(pErr) { null; });
 				return self; 
 			}
 		},
 
-		pkg: function CoreGetPkg() { return package; },
-
 		cfg: function CoreGetCfg() { return config; },
-
-		fetchBasePath: function CoreFetchBasePath(type) { 
-			if(basePaths[type]) { return basePaths[type]; }
-			else { return ""; }
-		},
-
-		shutdown: function CoreShutdown() {
-			var self = this;
-			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
-			log("shutdown","Blackrock Core > Initiating System Shutdown.", {}, "CORE_INIT_SHUTDOWN");
-			self.status == "Shutting Down";
-			self.closeModules(function CoreCloseModulesCallback(){ self.exitProcess(); });
-			return;
-		},
-
-		module: function CoreGetModule(name, type) {
-			if(type && type == "interface") { if(modules.interfaces[name]){ return modules.interfaces[name]; } else { return; } }
-			else if (name != "interface") { if(modules[name]) { return modules[name]; } else { return; } } 
-			else { return; }
-		},
-
-		moduleCount: function CoreModuleCount(type) {
-			if(type && type == "interfaces") { return Object.keys(modules.interfaces).length; }
-			else if(type && type == "modules") { return Object.keys(modules).length - 1; } 
-			else { return 0; }
-		},
-
-		globals: {
-			set: function CoreSetGlobal(name, value) { if(!name) { return false; } globals[name] = value; return true; },
-			get: function CoreGetGlobal(name) { if(!globals[name]) { return; } return globals[name]; }
-		},
-
-		startEventLoop: function CoreStartEventLoop(cb) {
-			var self = this;
-			if(self.status == "Shutting Down" || self.status == "Terminated" || self.status == "Active"){ return; }
-			else {
-				setTimeout(function CoreStartLoopTimeout(){ 
-					if(!self.status == "Shutting Down" && !self.status == "Terminated" && !self.status == "Active") { 
-						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown.", {}, "CORE_SYSTEM_LOADED"); 
-					} 
-				}, 1000); 
-				self.status = "Active"; if(cb) { cb(); }
-				setInterval(function CoreStartLoopInterval(){}, 1000); 
-			} 
-		},
-
-		loadModule: function CoreLoadModule(type, moduleName, cb){
-			var self = this;
-			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
-			if(type == "module" && config.core.modules && config.core.modules.length > 0 && !config.core.modules.includes(moduleName)) { return; }
-			if(type == "interface" && config.core.interfaces && config.core.interfaces.length > 0 && !config.core.interfaces.includes(moduleName)) { return; }
-			if(moduleName.startsWith(".")) { return; }
-			try {
-				if(type == "module")
-					modules[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
-				else if (type == "interface")
-					modules.interfaces[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
-			} catch(err) {
-				var error = { success: false, message: "Error Loading '" + moduleName + "' Module (Type: " + type + ")", error: err };
-				log("debug", "Blackrock Core > " + error.message, error.error, "CORE_ERR_LOADING_MOD");
-				if(cb) { cb(error, null); }
-				return error;
-			}
-			var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully" };
-			if(type == "module") { output.module = modules[moduleName]; }
-			if(type == "interface") { output.module = modules.interfaces[moduleName] }
-			log("debug", "Blackrock Core > " + output.message, {}, "CORE_MOD_LOADED");
-			if(cb) { cb(null,output); }
-			return output;
-		},
 
 		closeModules: function CoreCloseModules(cb) {
 			var self = this;
@@ -354,6 +296,96 @@
 			var currentDate = new Date().toISOString(); 
 			if(!core.globals.get("silent")) { console.log(currentDate + " (shutdown) Blackrock Core > Shutdown Complete"); }
 			process.exit(); 
+		},
+
+		fetchBasePath: function CoreFetchBasePath(type) { 
+			if(basePaths[type]) { return basePaths[type]; }
+			else { return ""; }
+		},
+
+		globals: {
+			set: function CoreSetGlobal(name, value) { if(!name) { return false; } globals[name] = value; return true; },
+			get: function CoreGetGlobal(name) { if(!globals[name]) { return; } return globals[name]; }
+		},
+
+		loadModule: function CoreLoadModule(type, moduleName, cb){
+			var self = this;
+			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
+			if(type == "module" && config.core.modules && config.core.modules.length > 0 && !config.core.modules.includes(moduleName)) { return; }
+			if(type == "interface" && config.core.interfaces && config.core.interfaces.length > 0 && !config.core.interfaces.includes(moduleName)) { return; }
+			if(moduleName.startsWith(".")) { return; }
+			try {
+				if(type == "module")
+					modules[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
+				else if (type == "interface")
+					modules.interfaces[moduleName] = require(basePaths.module + "/" + type + "s/" + moduleName + "/main.js")(core);
+			} catch(err) {
+				var error = { success: false, message: "Error Loading '" + moduleName + "' Module (Type: " + type + ")", error: err };
+				log("debug", "Blackrock Core > " + error.message, error.error, "CORE_ERR_LOADING_MOD");
+				if(cb) { cb(error, null); }
+				return error;
+			}
+			var output = { success: true, message: "'" + moduleName + "' Module (Type: " + type + ") Loaded Successfully" };
+			if(type == "module") { output.module = modules[moduleName]; }
+			if(type == "interface") { output.module = modules.interfaces[moduleName] }
+			log("debug", "Blackrock Core > " + output.message, {}, "CORE_MOD_LOADED");
+			if(cb) { cb(null,output); }
+			return output;
+		},
+
+		module: function CoreGetModule(name, type) {
+			if(type && type == "interface") { if(modules.interfaces[name]){ return modules.interfaces[name]; } else { return; } }
+			else if (name != "interface") { if(modules[name]) { return modules[name]; } else { return; } } 
+			else { return; }
+		},
+
+		moduleCount: function CoreModuleCount(type) {
+			if(type && type == "interfaces") { return Object.keys(modules.interfaces).length; }
+			else if(type && type == "modules") { return Object.keys(modules).length - 1; } 
+			else { return 0; }
+		},
+
+		pkg: function CoreGetPkg() { return package; },
+
+		ready: function CoreReady(callbackFn) {
+			var self = this;
+			var myPromise = new Promise(function(resolve, reject) {
+				var interval = setInterval(function(){
+					if(self.status == "Active") {
+						clearInterval(interval);
+						if(callbackFn && typeof callbackFn === "function") { callbackFn(); }
+						resolve();
+					}
+				}, 10);
+			});
+			if(!callbackFn) { return myPromise; } 
+			else { 
+				myPromise.then(function(pRes) { null; }).catch(function(pErr) { null; });
+				return; 
+			}
+		},
+
+		shutdown: function CoreShutdown() {
+			var self = this;
+			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
+			log("shutdown","Blackrock Core > Initiating System Shutdown.", {}, "CORE_INIT_SHUTDOWN");
+			self.status == "Shutting Down";
+			self.closeModules(function CoreCloseModulesCallback(){ self.exitProcess(); });
+			return;
+		},
+
+		startEventLoop: function CoreStartEventLoop(cb) {
+			var self = this;
+			if(self.status == "Shutting Down" || self.status == "Terminated" || self.status == "Active"){ return; }
+			else {
+				setTimeout(function CoreStartLoopTimeout(){ 
+					if(!self.status == "Shutting Down" && !self.status == "Terminated" && !self.status == "Active") { 
+						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown.", {}, "CORE_SYSTEM_LOADED"); 
+					} 
+				}, 1000); 
+				self.status = "Active"; if(cb) { cb(); }
+				setInterval(function CoreStartLoopInterval(){}, 1000); 
+			} 
 		}
 
 	});
@@ -410,8 +442,31 @@
 				self.unload() 
 			}); 
 		},
+
+		closeInterfaces: function CoreInterfaceCloseInterfaces(cb) {
+			var totalInterfaces = 0, interfacesClosed = 0;
+			for(var name in this.instances){ totalInterfaces ++; }
+			for(var name in this.instances){ if(this.instances[name].server && this.instances[name].server.close) { this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } }); } }
+			var counter = 0, timeout = 5000;
+			var interval = setInterval(function CoreISInterfaceCloseInterfacesTimeout(){
+				if(interfacesClosed >= totalInterfaces){ clearInterval(interval); cb(true); return; };
+				if(counter >= timeout){ clearInterval(interval); cb(false); return; };
+				counter += 500;
+			},500);
+		},
+
+		get: function CoreInterfaceGetInstance(name) {
+			var self = this;
+			if(!self.instances[name]) { return false; }
+			else { return self.instances[name]; };
+		},
 		
 		instances: {},
+
+		list: function CoreInterfaceListInstances(){
+			var self = this;
+			return Object.keys(self.instances);
+		},
 
 		startInterfaces: function CoreInterfaceStartInterfaces(){
 			var self = this;
@@ -426,24 +481,6 @@
 					else { self.startInterface(interface); }
 				}
 			});
-		},
-
-		get: function CoreInterfaceGetInstance(name) {
-			var self = this;
-			if(!self.instances[name]) { return false; }
-			else { return self.instances[name]; };
-		},
-
-		closeInterfaces: function CoreInterfaceCloseInterfaces(cb) {
-			var totalInterfaces = 0, interfacesClosed = 0;
-			for(var name in this.instances){ totalInterfaces ++; }
-			for(var name in this.instances){ if(this.instances[name].server && this.instances[name].server.close) { this.instances[name].server.close(function(err, res){ if(!err){ interfacesClosed ++; } }); } }
-			var counter = 0, timeout = 5000;
-			var interval = setInterval(function CoreISInterfaceCloseInterfacesTimeout(){
-				if(interfacesClosed >= totalInterfaces){ clearInterval(interval); cb(true); return; };
-				if(counter >= timeout){ clearInterval(interval); cb(false); return; };
-				counter += 500;
-			},500);
 		},
 
 		unload: function CoreInterfaceUnload(){

@@ -1,6 +1,7 @@
 const expect = require('chai').expect;
-var blackrock = require('is-blackrock').init({ silent: true, test: true });
+var blackrock = require('is-blackrock').init({ silent: true, test: true }, true);
 
+before(function(done){ blackrock.ready(done); });
 
 describe('Blackrock Core Module Tests', () => {
 
@@ -28,23 +29,23 @@ describe('Blackrock Core Module Tests', () => {
 
     describe('Test the fetchBasePath method', () => {
         it('ensure the module base path is set', () => {
-            const result = blackrock.fetchBasePath("module")
+            const result = blackrock.fetchBasePath("module");
             expect(result).to.be.a("string");
         });
         it('ensure the root base path is set', () => {
-            const result = blackrock.fetchBasePath("root")
+            const result = blackrock.fetchBasePath("root");
             expect(result).to.be.a("string");
         });
         it('ensure the config base path is set', () => {
-            const result = blackrock.fetchBasePath("config")
+            const result = blackrock.fetchBasePath("config");
             expect(result).to.be.a("string");
         });
         it('ensure the services base path is set', () => {
-            const result = blackrock.fetchBasePath("services")
+            const result = blackrock.fetchBasePath("services");
             expect(result).to.be.a("string");
         });
         it('ensure the cache base path is set', () => {
-            const result = blackrock.fetchBasePath("cache")
+            const result = blackrock.fetchBasePath("cache");
             expect(result).to.be.a("string");
         });
     });
@@ -64,12 +65,20 @@ describe('Blackrock Core Module Tests', () => {
         });
     });
 
+    describe('Test module count', () => {
+        it('ensure there are one or more standard modules loaded', () => {
+            const result = blackrock.moduleCount("modules");
+            expect(result).to.be.above(1);
+        });
+        it('ensure there are one or more interface modules loaded', () => {
+            const result = blackrock.moduleCount("interfaces");
+            expect(result).to.be.above(1);
+        });
+    });
+
 });
 
-
-after(async () => {  
-  await blackrock.shutdown();
-});
+after(async () => { await blackrock.shutdown(); });
 
 
 
