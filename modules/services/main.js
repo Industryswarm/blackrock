@@ -255,8 +255,8 @@
 				})();
 				self.myRouter.stack = [];
 				self.myRouter.handler = null;
-				self.myRouter.use = function ServicesMiddlewareRouterUse(fn) { self.myRouter.stack.push(fn) };
-				self.myRouter.handle = function ServicesMiddlewareRouterHandle(fn) { self.myRouter.handler = fn }
+				self.myRouter.use = function ServicesMiddlewareRouterUse(fn) { self.myRouter.stack.push(fn); return true; };
+				self.myRouter.handle = function ServicesMiddlewareRouterHandle(fn) { self.myRouter.handler = fn; return true; }
 				self.myRouter.count = function ServicesMiddlewareRouterCount() { return self.myRouter.stack.length }
 			}
 		});

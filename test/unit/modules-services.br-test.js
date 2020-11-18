@@ -16,6 +16,72 @@ describe('Blackrock Services Module Tests', () => {
         });
     });
 
+    describe('Validate Service Endpoint Methods', () => {
+        it('ensure that a service variable can be set', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.vars.set("test", "test");
+            expect(result).to.be.true;
+        });
+        it('ensure that previously set service variable can be fetched', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.vars.get("test");
+            expect(result).to.equal("test");
+        });
+        it('ensure that middleware can be added to a service', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.use(function(req, res, next) { next(); });
+            expect(result).to.be.true;
+        });
+        it('ensure that middleware count can be retrieved', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.middleware.count();
+            expect(result).to.be.above(0);
+        });
+        it('ensure that service config is present', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.cfg();
+            expect(result).to.have.property("name");
+        });
+        it('ensure that model can be added to service', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const result = service.models.add("test", function(param) { return (param + 1); });
+            expect(result).to.be.true;
+        });
+        it('ensure that previously defined model can be fetched from service', () => {
+            const serviceList = blackrock.module("services").serviceList();
+            const service = blackrock.module("services").service(serviceList[0]);
+            const model = service.models.get("test");
+            const result = model(1);
+            expect(result).to.equal(2);
+        });
+    });
+
+    describe('Validate Service Search', () => {
+        it('ensure that the search method returns a false result for an invalid host', (done) => {
+            var evtReceived = false;
+            const servicesMod = blackrock.module("services");
+            servicesMod.search({"services": "*", "hostname": "testdsiadsouah.com", "url": "/"}, function(res) {
+                evtReceived = true;
+                expect(res).to.be.false;
+                done();
+            });
+            var timer = 0;
+            var interval = setInterval(function(){
+                if(evtReceived) { clearInterval(interval); }
+                if(timer > 1000) {
+                    clearInterval(interval);
+                    done({"error": "timed out"});
+                }
+                timer ++;
+            }, 10);
+        });
+    });
 });
 
 after(async () => { await blackrock.shutdown(); });

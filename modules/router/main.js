@@ -123,6 +123,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.attachExternalMethods = function RouterAttachExternalMethods(evt) {
+		mod.list = function RouterGetInstanceList(){ return Object.keys(routers); }
 		mod.get = function RouterGetInstance(name){ if(routers[name]){ return routers[name]; } else { return; } }
 		mod.count = function RouterCountInstances(){ return routerCount; }
 		evt.mod = mod;

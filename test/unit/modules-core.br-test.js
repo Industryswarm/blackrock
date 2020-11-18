@@ -68,11 +68,11 @@ describe('Blackrock Core Module Tests', () => {
     describe('Test module count', () => {
         it('ensure there are one or more standard modules loaded', () => {
             const result = blackrock.moduleCount("modules");
-            expect(result).to.be.above(1);
+            expect(result).to.be.above(0);
         });
         it('ensure there are one or more interface modules loaded', () => {
             const result = blackrock.moduleCount("interfaces");
-            expect(result).to.be.above(1);
+            expect(result).to.be.above(0);
         });
     });
 

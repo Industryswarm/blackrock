@@ -8,11 +8,22 @@ describe('Blackrock Logger Module Tests', () => {
 
     describe('Test logging functionality', () => {
         it('ensure that log message can be published successfully to core object', (done) => {
+            var evtReceived = false;
             blackrock.on("TESTS_LOG_MSG", function(evt) {
+                evtReceived = true;
                 expect(evt.level).to.equal("test");
                 done();
             });
             const result = blackrock.module("logger").log("test", "Test Log Message", {"testAttr": "testVal"}, "TESTS_LOG_MSG");
+            var timer = 0;
+            var interval = setInterval(function(){
+                if(evtReceived) { clearInterval(interval); }
+                if(timer > 1000) {
+                    clearInterval(interval);
+                    done({"error": "timed out"});
+                }
+                timer ++;
+            }, 10);
         });
     });
 
