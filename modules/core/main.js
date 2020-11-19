@@ -90,7 +90,7 @@
 	 * ================== */
 
 	try { 
-		var Base = require('./support/base');
+		var Base = require('./support/index.js');
 	} catch (err) {
 		console.log(err);
 		var currentDate = new Date();

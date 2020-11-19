@@ -1,6 +1,6 @@
 var Scuttlebutt = require('./index')
 var inherits = require('util').inherits
-var each = require('../iterate').each
+var each = require('../iterate.js').each
 var u = require('./util')
 var EventEmitter = require('events').EventEmitter
 

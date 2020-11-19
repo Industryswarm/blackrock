@@ -107,7 +107,7 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.importLibraries = function SandboxImportLibraries(evt){
-		const { NodeVM } = require('./support/lib/main.js');
+		const { NodeVM } = require('./support/main.js');
 		evt.NodeVM = NodeVM;
 		log("debug_deep", "Blackrock Sandbox > [1] Libraries Imported.", {}, "SANDBOX_LIBS_IMPORTED");
 		return evt;

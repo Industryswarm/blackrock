@@ -1,10 +1,10 @@
 var EventEmitter = require('events').EventEmitter
-var i = require('../iterate')
-var duplex = require('../duplex')
+var i = require('../iterate.js')
+var duplex = require('../duplex.js')
 var inherits = require('util').inherits
-var serializer = require('../stream-serializer')
+var serializer = require('../stream-serializer.js')
 var u = require('./util')
-var timestamp = require('../monotonic-timestamp')
+var timestamp = require('../monotonic-timestamp.js')
 
 exports = 
 module.exports = Scuttlebutt

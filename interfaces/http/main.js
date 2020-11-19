@@ -12,7 +12,7 @@
 
 	/** Initialise Variables & Create String Prototype Method */
 	String.prototype.endsWith = function(suffix) {return this.indexOf(suffix, this.length - suffix.length) !== -1;};
-	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable'), cheerio = require('./support/cheerio/cheerio');
+	var mustache = require('./support/mustache.js'), formidable = require('./support/formidable'), cheerio = require('./support/cheerio.js');
 	var core, interface, log, config, instances = [], client = {}, utils = {}, streamFns = {}, pipelines = {}, viewCache = {};
 
 
