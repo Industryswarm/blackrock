@@ -68,7 +68,7 @@
 					
 				);
 				stream1.subscribe(function UniverseSetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

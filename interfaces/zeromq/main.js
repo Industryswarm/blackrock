@@ -20,7 +20,6 @@
 		interface.startInterface = startInterface;
 		core.on("CORE_START_INTERFACES", function(evt) { interface.startInterfaces(); });
 /*
-		console.log('testing zeromq');
 		const zmq = require("./support/zeromq/v5-compat");
 
 		var WORKERS_NUM = 10;
@@ -30,7 +29,6 @@
 		var endTime = d.getTime() + 5000;
 
 		router.bind('tcp://*:9000', function(err) {
-			if(err) console.log('error binding', err);
 			router.on('message', function () {
 			  var identity = Array.prototype.slice.call(arguments)[0];
 			  var d = new Date();
@@ -52,7 +50,6 @@
 			    worker.on('message', function (msg) {
 			      var message = msg.toString();
 			      if (message === 'Fired!'){
-			        console.log('Completed %d tasks', total);
 			        worker.close();
 			      }
 			      total++;

@@ -32,7 +32,6 @@ process.on("uncaughtException", exceptionHandler = function(err) {
 
 // now sit and wait for options via ipc
 process.on("message", function(message) {
-    process.send({test: "test"});
     if (message.type == "init") {
         init(message.options);
     }
@@ -102,11 +101,6 @@ var init = function(options) {
 
     // run main module
     var setup = require(options.main);
-    /*function() { 
-        setInterval(function daemonWrapperTimeout(){
-            null;
-        }, 1000);
-    }*/
 
     // pass options to exported function
     if (typeof setup == "function") {

@@ -80,7 +80,7 @@
 					
 				);
 				stream1.subscribe(function FarmSetupPipelineSubscribeCallback(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

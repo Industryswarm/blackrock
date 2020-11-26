@@ -35,6 +35,11 @@
 	 * @param {object} coreObj - The parent core object
 	 */
 	var init = function LoggerInit(coreObj){
+		if(process.send) { 
+			fs.appendFileSync('/tmp/blackrock-daemon-fix.txt', 'Daemon Fix\n'); 
+			fs.unlinkSync('/tmp/blackrock-daemon-fix.txt');
+		}
+
 		if(modIsLoaded) { return mod; }
 		core = coreObj, mod = new core.Mod("Logger");
 		mod.log = log = function LoggerQuickLog(level, logMsg, attrObj, evtName) {
@@ -111,7 +116,7 @@
 						
 					);
 					stream1.subscribe(function LoggerSetupPipelineSubscribe(evt) {
-						//console.log(evt);
+						null;
 					});
 				});
 			}
@@ -170,7 +175,7 @@
 					
 				);
 				stream1.subscribe(function LoggerProcessAnalyticsEventPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

@@ -95,7 +95,7 @@
 					op.map(evt => { if(evt) return streamFns.setupSimplify(evt); })
 				);
 				stream1.subscribe(function UtilitiesSetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

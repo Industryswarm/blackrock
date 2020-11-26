@@ -59,7 +59,6 @@ exports.validate = function (xmlData, options) {
           tagName += xmlData[i];
         }
         tagName = tagName.trim();
-        //console.log(tagName);
 
         if (tagName[tagName.length - 1] === '/') {
           //self closing tag without attributes
@@ -296,7 +295,6 @@ const validAttrStrRegxp = new RegExp('(\\s*)([^\\s=]+)(\\s*=)?(\\s*([\'"])(([\\s
 //attr, ="sd", a="amit's", a="sd"b="saf", ab  cd=""
 
 function validateAttributeString(attrStr, options) {
-  //console.log("start:"+attrStr+":end");
 
   //if(attrStr.trim().length === 0) return true; //empty string
 

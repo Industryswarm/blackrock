@@ -78,7 +78,7 @@
 					
 				);
 				stream1.subscribe(function JobsSetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

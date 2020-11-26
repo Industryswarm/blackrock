@@ -68,7 +68,7 @@
 					
 				);
 				stream1.subscribe(function ContainersSetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

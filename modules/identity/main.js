@@ -73,7 +73,7 @@
 					
 				);
 				stream1.subscribe(function IdentitySetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

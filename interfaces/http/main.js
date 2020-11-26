@@ -244,7 +244,7 @@
 					op.map(evt => { if(evt) return streamFns.routeRequest(evt); })
 				);
 				stream2.subscribe(function HTTPProcessRequestStreamSubscribeHandler(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});
@@ -282,7 +282,7 @@
 					op.map(evt => { if(evt) return streamFns.afterResPromise(evt); })
 				);
 				stream2.subscribe(function HTTPProcessResponseStreamSubscribeHandler(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});
@@ -344,7 +344,7 @@
 			else { form.uploadDir = core.fetchBasePath("root") + "./upload/"; }
 			if(config.interfaces.http[evt.req.interface].maxUploadFileSizeMb) { form.maxFileSize = config.interfaces.http[evt.req.interface].maxUploadFileSizeMb * 1024 * 1024; }
 			else { form.maxFileSize = 50 * 1024 * 1024; }
-			try { form.parse(evt.req, function HTTPParseMultiPartFormParser(err, fields, files) { console.log("err", err); console.log("fields", fields); console.log("files", files); var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
+			try { form.parse(evt.req, function HTTPParseMultiPartFormParser(err, fields, files) { var body = fields; body.files = files; body.error = err; evt.data = body; resolve(evt); }); }
 			catch (err) { evt.data = {error: "File Upload Size Was Too Large"}; resolve(evt); }
 			log("debug", "Blackrock HTTP Interface > [3] Parsed Multi-Part Request Message", {}, "HTTP_REQ_PARSED_MULTI_PART");
 		});

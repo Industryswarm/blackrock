@@ -9,7 +9,7 @@
 
 
 
-
+	
 
 
 	/* ===================================================== *
@@ -143,6 +143,7 @@
 			this.name = specName; 
 			this.status = "Inactive"; 
 			this.reason = "";
+			this.stopActivation = true;
 		},
 
 		init: function CoreInit(initialConfig, callbackFn) {
@@ -308,6 +309,38 @@
 			get: function CoreGetGlobal(name) { if(!globals[name]) { return; } return globals[name]; }
 		},
 
+		isLoaded: function CoreIsModuleLoaded(module, callbackFn) {
+			var self = this;
+			var myPromise = new Promise(function(resolve, reject) {
+				if(self.module(module)) {
+					if(callbackFn) { callbackFn(null, self.module(module)); }
+					resolve(self.module(module));
+					return;
+				}
+				const timeout = 1;
+				var timer = 0;
+				var interval = setInterval(function() {
+					if(self.module(module)) {
+						clearInterval(interval);
+						if(callbackFn) { callbackFn(null, self.module(module)); }
+						resolve(self.module(module));
+						return;
+					} else if (timer >= timeout) {
+						clearInterval(interval);
+						if(callbackFn) { callbackFn({"error": "Timed Out"}, null); }
+						reject({"error": "Timed Out"});
+						return;
+					}
+					timer += 1;
+				}, 1);
+			});
+			if(!callbackFn) { return myPromise; } 
+			else { 
+				myPromise.then(function(pRes) { null; }).catch(function(pErr) { null; });
+				return; 
+			}
+		},
+
 		loadModule: function CoreLoadModule(type, moduleName, cb){
 			var self = this;
 			if(self.status == "Shutting Down" || self.status == "Terminated") { return; }
@@ -350,12 +383,19 @@
 		ready: function CoreReady(callbackFn) {
 			var self = this;
 			var myPromise = new Promise(function(resolve, reject) {
+				var timeout = 1000, timer = 0;
 				var interval = setInterval(function(){
 					if(self.status == "Active") {
 						clearInterval(interval);
-						if(callbackFn && typeof callbackFn === "function") { callbackFn(); }
-						resolve();
+						if(callbackFn && typeof callbackFn === "function") { callbackFn(null, self); }
+						resolve(self);
 					}
+					if(timer >= timeout) {
+						clearInterval(interval);
+						if(callbackFn && typeof callbackFn === "function") { callbackFn(self, null); }
+						reject(self);						
+					}
+					timer += 10;
 				}, 10);
 			});
 			if(!callbackFn) { return myPromise; } 
@@ -376,16 +416,26 @@
 
 		startEventLoop: function CoreStartEventLoop(cb) {
 			var self = this;
-			if(self.status == "Shutting Down" || self.status == "Terminated" || self.status == "Active"){ return; }
+			if(self.status == "Shutting Down" || self.status == "Terminated" || self.status == "Active"){ 
+				if(cb) { cb({"error": "Invalid State", "state": self.status}, null); }
+				return; 
+			}
 			else {
 				setTimeout(function CoreStartLoopTimeout(){ 
 					if(!self.status == "Shutting Down" && !self.status == "Terminated" && !self.status == "Active") { 
 						log("startup","Blackrock Core > System Loaded, Event Loop Executing. Press 'e' key to shutdown.", {}, "CORE_SYSTEM_LOADED"); 
 					} 
 				}, 1000); 
-				self.status = "Active"; if(cb) { cb(); }
-				setInterval(function CoreStartLoopInterval(){}, 1000); 
+				if(!self.stopActivation) { self.status = "Active"; }
+				if(cb) { cb(null, {"success": true}); }
+				setInterval(function CoreStartLoopInterval(){}, 1000);
 			} 
+		},
+
+		updateConfig: function CoreUpdateConfig(cfg) {
+			if(!cfg) { return false; }
+			config = cfg;
+			return true;
 		}
 
 	});
@@ -402,7 +452,7 @@
 	 * Define Mod (Module) Prototype: *
 	 * ================================ */
 
-	var Mod = new Core().extend({
+	var Mod = new Core("Blackrock").extend({
 
 		constructor: function CoreModConstructor(specName) { 
 			var self = this; 

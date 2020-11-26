@@ -77,7 +77,7 @@
 					
 				);
 				stream1.subscribe(function i18nSetupPipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

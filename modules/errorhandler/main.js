@@ -71,7 +71,7 @@
 					
 				);
 				stream1.subscribe(function ErrorHandlerSetupPipelineSubscribeCallback(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});

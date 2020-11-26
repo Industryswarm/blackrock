@@ -23,7 +23,6 @@ exports.json = function (stream, _JSON) {
     } catch (err) { 
       err.line = line
       return stream.emit('error', err)
-      //return console.error('invalid JSON', line)
     }
     if(js !== undefined)
       write.call(stream, js)

@@ -5,6 +5,51 @@ before(function(done){ blackrock.ready(done); });
 
 describe('Blackrock Services Module Tests', () => {
 
+    describe('Validate Manual Service Management Methods', () => {
+        it('ensure that a non-filesystem service can be manually loaded', () => {
+            const result = blackrock.module("services").loadService("test-service", {
+                "name": "test-service",
+                "host": "localhost",
+                "basePath": "",
+                "active": true
+            });
+            if(typeof result === 'object' && result !== null) { var res = true; } 
+            else { var res = false; }
+            expect(res).to.be.true;
+        });
+        it('ensure that a controller can be manually added to a service', () => {
+            const service = blackrock.module("services").service("test-service");
+            const result = service.loadController("/test", {
+                "init": function(coreObj) {
+                    return;
+                },
+                "get": function(req, res) {
+                    res.send({"message": "test"});
+                }
+            });
+            expect(result).to.be.true;
+        });
+        it('ensure that a manually added controller can be requested via HTTP', (done) => {
+            const instances = blackrock.module("http", "interface").list();
+            const instance = blackrock.module("http", "interface").get(instances[0]);
+            const port = instance.port;
+            const httpClient = blackrock.module("http", "interface").client;
+            httpClient.request({
+                "url": "http://localhost:" + port + "/test",
+                "method": "GET",
+                "headers": {
+                    "Host": "localhost"
+                },
+                "encoding": "utf8"
+            }, function(err, res) {
+                if(err) { done(err); }
+                if(!res.data) { data({"error": "no data returned"}); }
+                expect(res.data.message).to.equal("test");
+                done();
+            });
+        });
+    });
+
     describe('Validate Service Information', () => {
         it('ensure that one or more services are loaded', () => {
             const result = blackrock.module("services").serviceList();

@@ -70,7 +70,6 @@ S.applyUpdate = function (update) {
 
   var value = update.shift().slice()
   if(value.length != 2) {
-    console.log('INVALID', update)
     return false
   }
   var name = value.shift()

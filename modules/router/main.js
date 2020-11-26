@@ -68,7 +68,7 @@
 					streamFns.createRouters,
 
 					// Fires once per router on server initialisation:
-					op.map(evt => { if(evt) return streamFns.initRouter(evt); }),
+					streamFns.initRouter,
 					op.map(evt => { if(evt) return streamFns.setupReturnErrorMethod(evt); }),
 					op.map(evt => { if(evt) return streamFns.setupRouteMethod(evt); }),
 					streamFns.setupListenerMethod,
@@ -83,7 +83,7 @@
 					
 				);
 				stream1.subscribe(function RouterCreatePipelineSubscribe(res) {
-					//console.log(res);
+					null;
 				});
 			}
 		});
@@ -179,13 +179,27 @@
 	 * (Internal > Stream Methods [4]) Initialise Router
 	 * @param {object} evt - The Request Event
 	 */
-	streamFns.initRouter = function RouterInitRouter(evt) {
-		var name = evt.instanceName;
-		var routerCfg = core.cfg().router.instances[name];
-		routers[name] = new evt.Router();
-		evt.routers = routers;
-		log("debug", "Blackrock Router > [3a] New Router (" + name + ") Instantiated", {}, "ROUTER_NEW_ROUTER_INIT");		
-	    return evt;
+	streamFns.initRouter = function RouterInitRouter(source){
+		return new Observable(observer => {
+			const subscription = source.subscribe({
+				next(evt) {
+					if(!mod.new) {
+						mod.new = function RouterNewRouter(name, cfg) {
+							routers[name] = new evt.Router();
+							evt.routers = routers;
+							observer.next(evt);
+							log("debug", "Blackrock Router > [4] New Router (" + name + ") Instantiated", {}, "ROUTER_NEW_ROUTER_INIT");
+							return;				
+						}
+					}
+					var name = evt.instanceName;
+					var routerCfg = core.cfg().router.instances[name];
+					mod.new(name, routerCfg);
+				},
+				error(error) { observer.error(error); }
+			});
+			return () => subscription.unsubscribe();
+		});
 	}
 
 	/**
@@ -220,14 +234,13 @@
 	 * @param {object} evt - The Request Event
 	 */
 	streamFns.setupRouteMethod = function RouterSetupRouteMethod(evt) {
-		evt.Route = function RouterRoute(hostname, url, cb){
+		routers[evt.instanceName].route = evt.Route = function RouterRoute(hostname, url, cb){
 			core.module("services").search({
 				hostname: hostname,
 				url: url,
 				services: core.cfg().router.instances[evt.instanceName].services
 			}, cb);
 		}
-		routers[evt.instanceName].route = evt.Route;
 		log("debug", "Blackrock Router > [3c] 'Route' Method Attached To This Router", {}, "ROUTER_ROUTE_BOUND");
 	    return evt;
 	}
@@ -239,13 +252,12 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					evt.Listener = function RouterListener(msg) { 
+					routers[evt.instanceName].incoming = evt.Listener = function RouterListener(msg) { 
 						var message = {};
 						message.parentEvent = evt; 
 						message.routerMsg = msg;
 						observer.next(message); 
 					}
-					routers[evt.instanceName].incoming = evt.Listener;
 					log("debug", "Blackrock Router > [3d] 'Listener' Method Attached To This Router (Accessible via 'get')", {}, "ROUTER_LISTENER_BOUND");
 				},
 				error(error) { observer.error(error); }

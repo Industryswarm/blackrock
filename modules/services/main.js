@@ -307,6 +307,31 @@
 			}			
 			service.middleware = services[name].middleware;
 			service.use = service.middleware.use;
+			if(config.services.runtime.controllers.allowLoad == true){
+				service.loadController = function ServicesServiceLoadCtrl(path, ctrl) {
+					if(!path || !(typeof path === 'string' || path instanceof String)) { return false; }
+					if((typeof ctrl !== 'object' && ctrl === null) || !ctrl) { return false; }
+					if(!services[name]) { return false; }
+					map[path] = services[name].routes.push({
+						path: "",
+						pattern: path,
+						controller: ctrl,
+						service: name
+					}) - 1;
+					return true;
+				}
+			}
+			if(config.services.runtime.controllers.allowUnload == true){
+				service.unloadController = function ServicesServiceUnloadCtrl(path) {
+					if(services[name].routes[map[path]]) {
+						delete services[name].routes[map[path]];
+						delete map[path];
+						return true;
+					} else {
+						return false;
+					}
+				}
+			}
 			return service;
 		}
 		log("debug", "Blackrock Services > [3] Setup & Attached 'service' Method To This Module (incl. Setting Up Middleware)", {}, "SERVICES_SERVICE_BOUND");
@@ -354,6 +379,27 @@
 					mod.serviceList = function ServicesServiceList() {
 						return Object.keys(services);
 					}
+					if(config.services.runtime.services.allowUnload == true){
+						mod.unloadService = function ServicesUnloadService(name) {
+							if(services[name]) {
+								delete services[name];
+								return true;
+							} else {
+								return false;
+							}
+						}
+					}
+					if(config.services.runtime.services.allowLoad == true){
+						mod.reloadService = function ServicesReloadService(name) {
+							if(services[name]) {
+								delete services[name];
+								mod.loadService(name);
+								return true;
+							} else {
+								return false;
+							}
+						}
+					}
 					observer.next(evt);
 				},
 				error(error) { observer.error(error); }
@@ -371,19 +417,29 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("startup","Blackrock Services > [5] Enumerating and loading services...", {}, "SERVICES_ENUM_SERVICES");
-					var loadService = function ServicesLoadService(serviceName) {
+					var loadService = function ServicesLoadService(serviceName, serviceCfg) {
+						var serviceExistsInFilesystem = false;
 			        	if(fs.existsSync(core.fetchBasePath("services") + "/" + serviceName + "/service.json") === true) {
-			        		var cfg = require(core.fetchBasePath("services") + "/" + serviceName + "/service.json");
-			        		if(cfg.active) {
-				        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...", {}, "SERVICES_LOADING_SERVICE");
-				            	services[serviceName] = new Service();
-				            	services[serviceName].cfg = require(core.fetchBasePath("services") + "/" + serviceName + "/service.json");
-				            	var middlewareRouter = new evt.MiddlewareRouter();
-				            	services[serviceName].middleware = middlewareRouter.myRouter;
-				            	evt.service = serviceName;
-				            	process.nextTick(function ServicesLoadServicesNextTickCallback(){ observer.next({ service: serviceName }); });
-				            }
+			        		serviceExistsInFilesystem = true;
 			        	}
+			        	if(!serviceExistsInFilesystem && !serviceCfg) { return false; }
+			        	if(!serviceCfg) { var cfg = require(core.fetchBasePath("services") + "/" + serviceName + "/service.json"); }
+		        		else { var cfg = serviceCfg; }
+		        		if(cfg.active) {
+			        		log("startup","Blackrock Services > [5a] Loading " + serviceName + " service...", {}, "SERVICES_LOADING_SERVICE");
+			            	services[serviceName] = new Service();
+			            	services[serviceName].cfg = cfg;
+			            	services[serviceName].routes = [];
+			            	services[serviceName].vars = {};
+			            	var middlewareRouter = new evt.MiddlewareRouter();
+			            	services[serviceName].middleware = middlewareRouter.myRouter;
+			            	evt.service = serviceName;
+			            	if(serviceExistsInFilesystem)
+			            		process.nextTick(function ServicesLoadServicesNextTickCallback(){ observer.next({ service: serviceName }); });
+			            	return mod.service(serviceName);
+			            } else {
+			            	return false;
+			            }
 			        }
 					if(config.services.runtime.services.allowLoad == true){ mod.loadService = loadService; }
 					var fs = require('fs');
@@ -423,7 +479,7 @@
 			const subscription = source.subscribe({
 				next(evt) {
 					log("startup","Blackrock Services > [6] Building routes for " + evt.service + " service.", {}, "SERVICES_BUILDING_ROUTES");
-					if(services[evt.service].routes) {
+					if(services[evt.service].routes[0]) {
 						log("startup","Blackrock Services > [6a] Service Routes for " + evt.service + " Have Already Been Built", {}, "SERVICES_ROUTES_ALREADY_BUILT");
 						return;
 					}
@@ -504,8 +560,6 @@
 		return new Observable(observer => {
 			const subscription = source.subscribe({
 				next(evt) {
-					services[evt.service].routes = [];
-					services[evt.service].vars = {};
 					if(services[evt.service].cfg.basePath){
 						var pathBits = services[evt.service].cfg.basePath.split("/");
 						var pathBitsCount = pathBits.length;
@@ -525,12 +579,12 @@
 									res.redirect(services[evt.service].cfg.basePath);
 								}
 							}
-							services[evt.service].routes.push({
+							map[urls_piece] = services[evt.service].routes.push({
 								path: "",
 								pattern: urls_piece,
 								controller: ctrl,
 								service: evt.service
-							});
+							}) - 1;
 						}
 					}
 					log("debug","Blackrock Services > [9] Have Set Base Path Controller & Service Routes", {}, "SERVICES_BASE_PATH_CTRL_SET");
@@ -616,7 +670,7 @@
 											if(cfg.cfg) { self.cfg = core.cfg; }
 											if(cfg.pkg) { self.pkg = core.pkg; }
 											if(cfg.fetchBasePath) { self.fetchBasePath = core.fetchBasePath; }
-											if(cfg.getCurrentService) { self.pkg = function() { return srv; } }
+											if(cfg.getCurrentService) { self.getCurrentService = function() { return srv; } }
 											return self;
 										},
 
@@ -647,7 +701,13 @@
 		    										if(fnNames[methodName] == "serviceName") {
 		    											var newService = {}, myService = core.module(name, interface)[methodName](srv);
 		    											for(var subMethod in myService) { newService[subMethod] = myService[subMethod]; };
-		    											filteredMethods[methodName] = function ServicesGetModuleAutoExecHandler(args) { return newService; }
+		    											filteredMethods[methodName] = function ServicesGetModuleAutoExecHandler(srvName) {
+		    												if(util.prop(config, "services.runtime.services.allowExternalServiceAccess")) {
+		    													return mod.service(srvName);
+		    												} else {
+		    													return newService;
+		    												}
+		    											}
 		    										} else {
 		    											filteredMethods[methodName] = loadedMethods[methodName];
 		    										}
@@ -835,17 +895,14 @@
 					log("debug","Blackrock Services > [3] Generating Service Events...", {}, "SERVICES_GEN_SRV_EVTS");
 					var hostname = evt.hostname, url = evt.url, eServices = evt.services, hosts = evt.hosts;
 					for(var service in services) {
-						var evt2 = {
-							hostname: hostname,
-							url: url,
-							services: eServices,
-							hosts: hosts
-						};
-						if(hostname == services[service].cfg.host) { evt2.srv = service; }
-						else if (services[service].cfg.host == "*" && !evt.hosts.includes(hostname)) { evt2.srv = service; }
-						if(evt2.srv && !respondedNext) { observer.next(evt2); respondedNext = true; }
-						else if (!respondedNext) { observer.next(evt); respondedNext = true; }
+						var evt2 = { hostname: hostname, url: url, services: eServices, hosts: hosts };
+						if(hostname == services[service].cfg.host) { evt2.srv = service; break; }
+						else if (services[service].cfg.host == "*" && !evt.hosts.includes(hostname)) { 
+							evt2.srv = service; break;
+						}
 					}
+					if(evt2.srv && !respondedNext) { observer.next(evt2); respondedNext = true; }
+					else if (!respondedNext) { observer.next(evt); respondedNext = true; }
 				},
 				error(error) { observer.error(error); }
 			});
