@@ -1,0 +1,8 @@
+/**
+ * {{verbUpperCase}} ({{summary}})
+ * @param {object} req - Request object
+ * @param {object} res - Response object
+ */
+ctrl.{{verbLowerCase}} = function(req, res){
+  {{methodCodeBlock}}
+}

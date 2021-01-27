@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Blackrock Application Server Source: modules/cli/main.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Blackrock Application Server</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.html">Server</a></li><li><a href="Server.Interfaces.html">Server.Interfaces</a></li><li><a href="Server.Modules.html">Server.Modules</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Interfaces.Axon.html">Server.Interfaces.Axon</a></li><li><a href="Server.Interfaces.HTTP.html">Server.Interfaces.HTTP</a></li><li><a href="Server.Interfaces.HTTP.Client.html">Server.Interfaces.HTTP.Client</a></li><li><a href="Server.Interfaces.HTTP.Hook.html">Server.Interfaces.HTTP.Hook</a></li><li><a href="Server.Interfaces.NanoMSG.html">Server.Interfaces.NanoMSG</a></li><li><a href="Server.Interfaces.SSH.html">Server.Interfaces.SSH</a></li><li><a href="Server.Interfaces.WebSockets.html">Server.Interfaces.WebSockets</a></li><li><a href="Server.Interfaces.ZeroMQ.html">Server.Interfaces.ZeroMQ</a></li><li><a href="Server.Modules.CLI.html">Server.Modules.CLI</a></li><li><a href="Server.Modules.Configure.html">Server.Modules.Configure</a></li><li><a href="Server.Modules.Core.html">Server.Modules.Core</a></li><li><a href="Server.Modules.Core.Globals.html">Server.Modules.Core.Globals</a></li><li><a href="Server.Modules.Core.Interface.html">Server.Modules.Core.Interface</a></li><li><a href="Server.Modules.Core.Module.html">Server.Modules.Core.Module</a></li><li><a href="Server.Modules.Daemon.html">Server.Modules.Daemon</a></li><li><a href="Server.Modules.Data.html">Server.Modules.Data</a></li><li><a href="Server.Modules.ErrorHandler.html">Server.Modules.ErrorHandler</a></li><li><a href="Server.Modules.Farm.html">Server.Modules.Farm</a></li><li><a href="Server.Modules.Generator.html">Server.Modules.Generator</a></li><li><a href="Server.Modules.i18n.html">Server.Modules.i18n</a></li><li><a href="Server.Modules.Installer.html">Server.Modules.Installer</a></li><li><a href="Server.Modules.Jobs.html">Server.Modules.Jobs</a></li><li><a href="Server.Modules.Logger.html">Server.Modules.Logger</a></li><li><a href="Server.Modules.Router.html">Server.Modules.Router</a></li><li><a href="Server.Modules.Sandbox.html">Server.Modules.Sandbox</a></li><li><a href="Server.Modules.Services.html">Server.Modules.Services</a></li><li><a href="Server.Modules.Universe.html">Server.Modules.Universe</a></li><li><a href="Server.Modules.Utilities.html">Server.Modules.Utilities</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Modules.ErrorHandler.html#event:errorthrown">Server.Modules.ErrorHandler#event:errorthrown</a></li><li><a href="Server.Modules.ErrorHandler.html#~event:event:errorhandled">Server.Modules.ErrorHandler~event:errorhandled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-advanced-routing.html">Advanced Routing</a></li><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-server-configuration.html">Server Configuration</a></li><li><a href="tutorial-service-filesystem-structure.html">Service Filesystem Structure</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			
+
+		<h1 class="page-title">Source: modules/cli/main.js</h1>
+    
+<section>
+    <article>
+        <pre
+            class="sunlight-highlight-javascript linenums">!function CLIModuleWrapper() {
+  let core; let mod; let log; let enableConsole; const cliCommands = {};
+
+  /**
+   * Blackrock CLI Module
+   *
+   * @class Server.Modules.CLI
+   * @augments Server.Modules.Core.Module
+   * @param {Server.Modules.Core} coreObj - The Parent Core Object
+   * @return {Server.Modules.CLI} module - The CLI Module
+   *
+   * @description This is the CLI Module of the Blackrock Application Server.
+   * It is responsible for parsing command-line arguments passed to the application
+   * server at startup, and then executing methods from within other modules that have
+   * registered with the CLI module for those specific command-line arguments.
+   *
+   * @author Darren Smith
+   * @copyright Copyright (c) 2021 Darren Smith
+   * @license Licensed under the LGPL license.
+   */
+  module.exports = function CLIModuleConstructor(coreObj) {
+    core = coreObj; mod = new core.Mod('CLI');
+    setupExternalModuleMethods();
+    mod.register = register;
+    log('debug', 'Blackrock CLI Module > Initialising...', {}, 'CLI_INIT');
+    core.on('CORE_FINALISING', function() {
+      start();
+    });
+    return mod;
+  };
+
+
+  /**
+   * Setup External Methods (log &amp; enableConsole)
+   * @private
+   * @ignore
+   * @function
+   */
+  const setupExternalModuleMethods = function CLIModuleSetupExternalModuleMethods() {
+    // LOGGER MODULE (LOG METHOD):
+    log = function CLILog(level, logMsg, attrObj, evtName) {
+      const logger = core.module('logger');
+      if (logger &amp;&amp; logger.log) {
+        logger.log(level, logMsg, attrObj, evtName);
+      }
+    };
+
+    // LOGGER MODULE (ENABLE CONSOLE METHOD):
+    enableConsole = function CoreEnableConsole() {
+      const logger = core.module('logger');
+      if (logger &amp;&amp; logger.enableConsole) {
+        logger.enableConsole();
+      }
+    };
+  };
+
+
+  /**
+   * (External) Register CLI Commands
+   * @memberof Server.Modules.CLI
+   * @function
+   * @param {object} commands - The Commands Object
+   * @return {bool} result - Method Result
+   *
+   * @example
+   * core.isLoaded('cli').then(function(cliMod) {
+   *    cliMod.register([
+   *      {'cmd': 'install', 'params': '[service]', 'info': 'Installs a new service', 'fn': function(params) {
+   *        core.emit('INSTALLER_INIT_INSTALLER', {'command': 'install', 'params': params});
+   *      }},
+   *      {'cmd': 'remove', 'params': '[service]', 'info': 'Removes an installed service', 'fn': function(params) {
+   *        core.emit('INSTALLER_INIT_INSTALLER', {'command': 'remove', 'params': params});
+   *      }},
+   *    ]);
+   *  }).catch(function(err) {
+   *    log('error',
+   *        'Blackrock Installer Module > Failed to register with CLI - CLI module not loaded',
+   *        err, 'INSTALLER_CLI_MOD_NOT_LOADED');
+   *  });
+   */
+  const register = function CLIModuleRegisterCommands(commands) {
+    if (typeof commands === 'object' &amp;&amp; commands !== null &amp;&amp; !Array.isArray(commands)) {
+      cliCommands[commands.cmd] = commands;
+    } else if (Array.isArray(commands) &amp;&amp; commands !== null) {
+      for (let i = 0; i &lt; commands.length; i++) {
+        cliCommands[commands[i].cmd] = commands[i];
+      }
+    }
+    return true;
+  };
+
+
+  /**
+   * Initialises CLI Module
+   * @private
+   * @ignore
+   * @function
+   */
+  const start = function CLIModuleStart() {
+    process.nextTick(function CLIModuleStartNextTickCallback() {
+      process.argv.push('terminator');
+      // eslint-disable-next-line new-cap
+      const lib = core.lib; const rx = lib.rxjs; const op = lib.operators; const stream = new rx.from(process.argv);
+      const showHelp = function CLIModuleShowHelp() {
+        core.stopActivation = true;
+        console.log('\n');
+        console.log('Usage: ' + core.pkg().name + ' [options]\n');
+        console.log('Options: ');
+        console.log('start console\t\t\t\tStarts the server in console mode');
+        // eslint-disable-next-line guard-for-in
+        for (const cmd in cliCommands) {
+          console.log(cmd + ' ' + cliCommands[cmd].params + '\t\t\t' + cliCommands[cmd].info);
+        }
+        console.log('\n');
+        process.exit();
+      };
+      log('debug',
+          'Blackrock CLI Module > Server Initialisation Pipeline Created - Executing Now:',
+          {}, 'CLI_EXEC_INIT_PIPELINE'
+      );
+      stream.pipe(
+          op.filter(function CLIModuleStreamFn1Filter(evt) {
+            // eslint-disable-next-line no-extend-native
+            String.prototype.endsWith = function CLIEndsWith(suffix) {
+              return this.indexOf(suffix, this.length - suffix.length) !== -1;
+            };
+            const endsWithAny = function CLIModuleEndsWithAny(suffixes, string) {
+              for (const suffix of suffixes) {
+                if (string.endsWith(suffix)) return true;
+              } return false;
+            };
+            return !endsWithAny([
+              'sudo', 'node', 'nodemon', 'forever', 'blackrock', 'index.js',
+              'npm', 'pm2', 'server.js', Object.keys(core.pkg().bin)[0],
+            ], evt);
+          }),
+          op.map(function CLIModuleStreamFn2Map(evt) {
+            log('debug', 'Blackrock CLI Module > [1] Command-Line Arguments Filtered', {}, 'CLI_ARGS_FILTERED');
+            return evt;
+          }),
+          op.reduce(function CLIModuleStreamFn3Reduce(acc, one) {
+            return acc + ' ' + one;
+          }),
+          op.map(function CLIModuleStreamFn4Map(evt) {
+            log('debug', 'Blackrock CLI Module > [2] Remaining Arguments Reduced', {}, 'CLI_ARGS_REDUCED');
+            return evt;
+          })
+      ).subscribe(function CLIModuleSubscribeCallback(val) {
+        val = val.replace('terminator', '').trim();
+        setTimeout(function() {
+          let command;
+          for (const cmd in cliCommands) {
+            if (val.startsWith(cmd)) {
+              command = cmd;
+            }
+          }
+          if (val === 'start console' || core.globals.get('test') || process.send) {
+            core.stopActivation = false;
+            log('debug',
+                'Blackrock CLI Module > [3] Start Console Called - Enabling Console and emitting CORE_START_INTERFACES',
+                {}, 'CLI_ENABLE_CONSOLE');
+            setTimeout(function CLIModuleEnableConsoleTimeout() {
+              enableConsole();
+            }, 50);
+            core.emit('CORE_START_INTERFACES');
+          } else if (cliCommands[command] &amp;&amp; cliCommands[command].fn) {
+            log('debug',
+                'Blackrock CLI Module > [3] Registered CLI command being executed',
+                {'cmd': val}, 'CLI_EXECUTING_CLI_COMMAND');
+            cliCommands[command].fn(val.slice(command.length));
+          } else {
+            showHelp();
+            log('debug',
+                'Blackrock CLI Module > [3] No valid commands received - Displaying Command-Line Help',
+                {}, 'CLI_NO_ARGS_SHOWING_HELP');
+          }
+        }, 5);
+      }).unsubscribe();
+    });
+  };
+}();
+</pre>
+    </article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2020, Darren Smith
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a>
+	
+		on 2021 01 27
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+
+</body>
+</html>

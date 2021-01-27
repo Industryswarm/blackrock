@@ -1,0 +1,28 @@
+{
+  "header": {
+    "format": {
+      "type": "jsonschema.blackrock.industryswarm.com/doc-types/db.document",
+      "version": "{{format.version}}"
+    },
+    "id": "{{docHeaderId}}",
+    "name": "{{docHeaderName}}",
+    "type": "{{docHeaderType}}",
+    "status": "{{docHeaderStatus}}",
+    "owner":  {
+      "{{docHeaderOwnerIdType}}": "{{docHeaderOwnerIdValue}}"
+    },
+    "created": {
+      "date": "{{docHeaderCreatedDate}}",
+      "author": {
+        "{{docHeaderAuthorIdType}}": "{{docHeaderAuthorIdValue}}"
+      }
+    },
+    "modified": {
+      "date": "{{docHeaderModifiedDate}}",
+      "editor": {
+        "{{docHeaderEditorIdType}}": "{{docHeaderEditorIdValue}}"
+      }
+    }
+  },
+  "content": {{headerDocumentContent}}
+}

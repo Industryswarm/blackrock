@@ -1,0 +1,12 @@
+/**
+* controllers/{{ctrlPath}}/controller.js
+*
+* Copyright (c) {{dateYear}} {{copyrightOwner}}
+* {{license}}
+*/
+
+!function() {
+  const ctrl = module.exports = {};
+
+  {{methods}}
+}();

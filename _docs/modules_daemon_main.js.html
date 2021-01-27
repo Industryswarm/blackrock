@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Blackrock Application Server Source: modules/daemon/main.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Blackrock Application Server</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.html">Server</a></li><li><a href="Server.Interfaces.html">Server.Interfaces</a></li><li><a href="Server.Modules.html">Server.Modules</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Interfaces.Axon.html">Server.Interfaces.Axon</a></li><li><a href="Server.Interfaces.HTTP.html">Server.Interfaces.HTTP</a></li><li><a href="Server.Interfaces.HTTP.Client.html">Server.Interfaces.HTTP.Client</a></li><li><a href="Server.Interfaces.HTTP.Hook.html">Server.Interfaces.HTTP.Hook</a></li><li><a href="Server.Interfaces.NanoMSG.html">Server.Interfaces.NanoMSG</a></li><li><a href="Server.Interfaces.SSH.html">Server.Interfaces.SSH</a></li><li><a href="Server.Interfaces.WebSockets.html">Server.Interfaces.WebSockets</a></li><li><a href="Server.Interfaces.ZeroMQ.html">Server.Interfaces.ZeroMQ</a></li><li><a href="Server.Modules.CLI.html">Server.Modules.CLI</a></li><li><a href="Server.Modules.Configure.html">Server.Modules.Configure</a></li><li><a href="Server.Modules.Core.html">Server.Modules.Core</a></li><li><a href="Server.Modules.Core.Globals.html">Server.Modules.Core.Globals</a></li><li><a href="Server.Modules.Core.Interface.html">Server.Modules.Core.Interface</a></li><li><a href="Server.Modules.Core.Module.html">Server.Modules.Core.Module</a></li><li><a href="Server.Modules.Daemon.html">Server.Modules.Daemon</a></li><li><a href="Server.Modules.Data.html">Server.Modules.Data</a></li><li><a href="Server.Modules.ErrorHandler.html">Server.Modules.ErrorHandler</a></li><li><a href="Server.Modules.Farm.html">Server.Modules.Farm</a></li><li><a href="Server.Modules.Generator.html">Server.Modules.Generator</a></li><li><a href="Server.Modules.i18n.html">Server.Modules.i18n</a></li><li><a href="Server.Modules.Installer.html">Server.Modules.Installer</a></li><li><a href="Server.Modules.Jobs.html">Server.Modules.Jobs</a></li><li><a href="Server.Modules.Logger.html">Server.Modules.Logger</a></li><li><a href="Server.Modules.Router.html">Server.Modules.Router</a></li><li><a href="Server.Modules.Sandbox.html">Server.Modules.Sandbox</a></li><li><a href="Server.Modules.Services.html">Server.Modules.Services</a></li><li><a href="Server.Modules.Universe.html">Server.Modules.Universe</a></li><li><a href="Server.Modules.Utilities.html">Server.Modules.Utilities</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Modules.ErrorHandler.html#event:errorthrown">Server.Modules.ErrorHandler#event:errorthrown</a></li><li><a href="Server.Modules.ErrorHandler.html#~event:event:errorhandled">Server.Modules.ErrorHandler~event:errorhandled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-advanced-routing.html">Advanced Routing</a></li><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-server-configuration.html">Server Configuration</a></li><li><a href="tutorial-service-filesystem-structure.html">Service Filesystem Structure</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			
+
+		<h1 class="page-title">Source: modules/daemon/main.js</h1>
+    
+<section>
+    <article>
+        <pre
+            class="sunlight-highlight-javascript linenums">!function DaemonModuleWrapper() {
+  // eslint-disable-next-line no-extend-native
+  String.prototype.endsWith = function DaemonEndsWith(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+  };
+  let core; let mod; let log; let daemonize;
+  const pipelines = {}; const streamFns = {}; let lib; let rx;
+
+
+  /**
+   * Blackrock Daemon Module
+   *
+   * @class Server.Modules.Daemon
+   * @augments Server.Modules.Core.Module
+   * @param {Server.Modules.Core} coreObj - The Parent Core Object
+   * @return {Server.Modules.Daemon} module - The Daemon Module
+   *
+   * @description This is the Daemon Module of the Blackrock Application Server.
+   * It allows the user to run the application server as a system daemon, as
+   * opposed to being tied to the current console session. There are currently
+   * no accessible methods exposed on this module.
+   *
+   * @author Darren Smith
+   * @copyright Copyright (c) 2021 Darren Smith
+   * @license Licensed under the LGPL license.
+   */
+  module.exports = function DaemonModuleConstructor(coreObj) {
+    core = coreObj; mod = new core.Mod('Daemon'); log = core.module('logger').log;
+    core.on('updateLogFn', function() {
+      log = core.module('logger').log;
+    });
+    log('debug', 'Blackrock Daemon Module > Initialising...', {}, 'DAEMON_INIT');
+    lib = core.lib; rx = lib.rxjs;
+    process.nextTick(function() {
+      const Pipeline = pipelines.setupDaemonModule();
+      new Pipeline({}).pipe();
+    });
+    return mod;
+  };
+
+
+  /**
+   * Event Stream Pipeline...
+   */
+
+  /**
+   * (Internal > Pipeline [1]) Setup Daemon
+   * @private
+   * @return {object} pipeline - The Pipeline Object
+   */
+  pipelines.setupDaemonModule = function DaemonModuleSetupPipeline() {
+    return new core.Base().extend({
+      constructor: function DaemonModuleSetupPipelineConstructor(evt) {
+        this.evt = evt;
+      },
+      callback: function DaemonModuleSetupPipelineCallback(cb) {
+        return cb(this.evt);
+      },
+      pipe: function DaemonModuleSetupPipelinePipe() {
+        log('debug',
+            'Blackrock Daemon Module > Server Initialisation Pipeline Created - Executing Now:',
+            {}, 'DAEMON_EXEC_INIT_PIPELINE');
+        const self = this; const stream = rx.bindCallback((cb) => {
+          self.callback(cb);
+        })();
+        stream.pipe(
+
+            // Fires once on server initialisation:
+            streamFns.registerWithCLI,
+            streamFns.listenToStart,
+
+            // Fires on provision of daemon command from CLI:
+            streamFns.checkNameAndInit,
+            streamFns.setupCallbacks,
+            streamFns.checkRoot,
+            streamFns.startDaemon,
+            streamFns.stopDaemon,
+            streamFns.restartDaemon,
+            streamFns.statusDaemon
+
+        ).subscribe();
+      },
+    });
+  };
+
+
+  /**
+   * Daemon Stream Processing Functions...
+   * (Fires Once on Server Initialisation)
+   */
+
+  /**
+   * (Internal > Stream Methods [0]) Register With CLI
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.registerWithCLI = function DaemonModuleRegisterWithCLI(source) {
+    return lib.rxOperator(function(observer, evt) {
+      log('debug', 'Blackrock Daemon Module > [0] Daemon registering with CLI...', {}, 'DAEMON_REGISTER_WITH_CLI');
+      core.isLoaded('cli').then(function(cliMod) {
+        cliMod.register([
+          {'cmd': 'start', 'params': '\t\t', 'info': 'Starts the daemon server', 'fn': function(params) {
+            core.emit('DAEMON_INIT_DAEMON', {'command': 'start', 'params': params});
+          }},
+          {'cmd': 'stop', 'params': '\t\t', 'info': 'Stops the daemon server', 'fn': function(params) {
+            core.emit('DAEMON_INIT_DAEMON', {'command': 'stop', 'params': params});
+          }},
+          {'cmd': 'status', 'params': '\t\t', 'info': 'Gets the status of the daemon server', 'fn': function(params) {
+            core.emit('DAEMON_INIT_DAEMON', {'command': 'status', 'params': params});
+          }},
+          {'cmd': 'restart', 'params': '\t', 'info': 'Restarts the daemon server', 'fn': function(params) {
+            core.emit('DAEMON_INIT_DAEMON', {'command': 'restart', 'params': params});
+          }},
+        ]);
+      }).catch(function(err) {
+        log('error',
+            'Blackrock Daemon Module > Failed to register with CLI - CLI module not loaded',
+            err, 'DAEMON_CLI_MOD_NOT_LOADED');
+      });
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [1]) Listen to Start Endpoint
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.listenToStart = function DaemonModulePipelineFnsListenToStart(source) {
+    return lib.rxOperator(function(observer, evt) {
+      log('debug',
+          'Blackrock Daemon Module > [1a] Listener created for \'DAEMON_INIT_DAEMON\' event',
+          {}, 'DAEMON_LISTENER_CREATED');
+      core.on('DAEMON_INIT_DAEMON', function DaemonModuleListenToStartStartDaemonCb(daemonParams) {
+        core.stopActivation = true;
+        log('debug',
+            'Blackrock Daemon Module > [1b] \'DAEMON_INIT_DAEMON\' Event Received',
+            {}, 'DAEMON_LISTENER_EVT_RECEIVED');
+        evt.name = core.pkg().name;
+        evt.isChildProcess = process.send;
+        evt.command = daemonParams.command;
+        if (!process.send) {
+          observer.next(evt);
+        } else {
+          log('fatal',
+              'Blackrock Daemon Module > Initiated, but running in daemon mode. Terminating...',
+              {}, 'DAEMON_RUNNING_IN_DAEMON_MODE_TERM');
+        }
+      });
+    }, source);
+  };
+
+
+  /**
+   * Daemon Stream Processing Functions...
+   * (Fires on provision of daemon command from CLI)
+   */
+
+  /**
+   * (Internal > Stream Methods [2]) Check Daemon Name And Init Daemon
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.checkNameAndInit = function DaemonModulePipelineFnsCheckNameAndInit(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if (!evt.name) {
+        log('error',
+            'Blackrock Daemon Module > Name not passed correctly to daemon module',
+            {}, 'DAEMON_INCORRECT_NAME');
+        process.exit();
+      }
+      daemonize = require('./_support/daemonize');
+      const strippedName = evt.name.replace(/-/g, '');
+      evt.daemon = daemonize.setup({
+        main: '../../../' + core.pkg().main,
+        name: strippedName,
+        pidfile: '/var/run/' + strippedName + '.pid',
+        cwd: process.cwd(),
+        silent: true,
+      });
+      log('debug',
+          'Blackrock Daemon Module > [2] Daemon Name Checked &amp; Daemon Initialised',
+          {}, 'DAEMON_NAME_CHECKED_AND_INIT');
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [3]) Setup Daemon Callbacks
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.setupCallbacks = function DaemonModulePipelineFnsSetupCallbacks(source) {
+    return lib.rxOperator(function(observer, evt) {
+      evt.daemon
+          .on('starting', function DaemonModulePipelineFnsSetupCallbacksOnStarting() {
+            console.log('Blackrock Daemon Module > Starting...\n');
+          })
+          .on('started', function DaemonModulePipelineFnsSetupCallbacksOnStarted(pid) {
+            console.log('Blackrock Daemon Module > Started. PID: ' + pid + '\n');
+            process.exit();
+          })
+          .on('stopping', function DaemonModulePipelineFnsSetupCallbacksOnStopping() {
+            console.log('Blackrock Daemon Module > Stopping...\n');
+          })
+          .on('running', function DaemonModulePipelineFnsSetupCallbacksOnRunning(pid) {
+            console.log('Blackrock Daemon Module > Already running. PID: ' + pid + '\n');
+            process.exit();
+          })
+          .on('notrunning', function DaemonModulePipelineFnsSetupCallbacksOnNotRunning() {
+            console.log('Blackrock Daemon Module > Not running\n');
+            process.exit();
+          })
+          .on('error', function DaemonModulePipelineFnsSetupCallbacksOnError(err) {
+            console.log('Blackrock Daemon Module > Failed to start:  ' + err.message + '\n');
+            process.exit();
+          });
+      if (evt.command === 'restart') {
+        evt.daemon.on('stopped', function DaemonModulePipelineFnsSetupCallbacksOnStoppedForRestart(pid) {
+          console.log('Blackrock Daemon Module > Stopped (' + pid + ')\n');
+          evt.daemon.start();
+        });
+      } else {
+        evt.daemon.on('stopped', function DaemonModulePipelineFnsSetupCallbacksOnStopped(pid) {
+          console.log('Blackrock Daemon Module > Stopped(' + pid + ')\n');
+          process.exit();
+        });
+      }
+      log('debug',
+          'Blackrock Daemon Module > [3] Setup callbacks for daemon',
+          {}, 'DAEMON_CALLBACKS_SETUP');
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [4]) Check Root
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.checkRoot = function DaemonModulePipelineFnsCheckRoot(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if ((evt.command === 'start' || evt.command === 'stop' || evt.command === 'restart') &amp;&amp; process.getuid() !== 0) {
+        console.log('Blackrock Daemon Module > Expected to run as root\n');
+        process.exit();
+      } else {
+        observer.next(evt);
+      }
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [5]) Start Daemon
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.startDaemon = function DaemonModulePipelineFnsStartDaemon(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if (evt.command === 'start') {
+        evt.daemon.start();
+      }
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [6]) Stop Daemon
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.stopDaemon = function DaemonModulePipelineFnsStopDaemon(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if (evt.command === 'stop') {
+        evt.daemon.stop();
+      }
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [7]) Restart Daemon
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.restartDaemon = function DaemonModulePipelineFnsRestartDaemon(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if (evt.command === 'restart') {
+        const status = evt.daemon.status();
+        if (status) {
+          evt.daemon.stop();
+        } else {
+          evt.daemon.start();
+        }
+      }
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [8]) Status of Daemon
+   * @private
+   * @param {observable} source - The Source Observable
+   * @return {observable} destination - The Destination Observable
+   */
+  streamFns.statusDaemon = function DaemonModulePipelineFnsStatusDaemon(source) {
+    return lib.rxOperator(function(observer, evt) {
+      if (evt.command === 'status') {
+        if (evt.daemon.status()) {
+          console.log('Blackrock Daemon Module > Daemon is running\n');
+          process.exit();
+        } else {
+          console.log('Blackrock Daemon Module > Daemon is not running\n');
+          process.exit();
+        }
+      }
+      observer.next(evt);
+    }, source);
+  };
+}();
+</pre>
+    </article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2020, Darren Smith
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a>
+	
+		on 2021 01 27
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+
+</body>
+</html>

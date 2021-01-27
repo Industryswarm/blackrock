@@ -1,0 +1,14 @@
+{
+  "getting-started": {
+    "title": "Getting Started"
+  },
+  "server-configuration": {
+    "title": "Server Configuration"
+  },
+  "service-filesystem-structure": {
+    "title": "Service Filesystem Structure"
+  },
+  "advanced-routing": {
+    "title": "Advanced Routing"
+  }
+}

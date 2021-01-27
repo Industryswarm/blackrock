@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Blackrock Application Server Index</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Blackrock Application Server</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.html">Server</a></li><li><a href="Server.Interfaces.html">Server.Interfaces</a></li><li><a href="Server.Modules.html">Server.Modules</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Interfaces.Axon.html">Server.Interfaces.Axon</a></li><li><a href="Server.Interfaces.HTTP.html">Server.Interfaces.HTTP</a></li><li><a href="Server.Interfaces.HTTP.Client.html">Server.Interfaces.HTTP.Client</a></li><li><a href="Server.Interfaces.HTTP.Hook.html">Server.Interfaces.HTTP.Hook</a></li><li><a href="Server.Interfaces.NanoMSG.html">Server.Interfaces.NanoMSG</a></li><li><a href="Server.Interfaces.SSH.html">Server.Interfaces.SSH</a></li><li><a href="Server.Interfaces.WebSockets.html">Server.Interfaces.WebSockets</a></li><li><a href="Server.Interfaces.ZeroMQ.html">Server.Interfaces.ZeroMQ</a></li><li><a href="Server.Modules.CLI.html">Server.Modules.CLI</a></li><li><a href="Server.Modules.Configure.html">Server.Modules.Configure</a></li><li><a href="Server.Modules.Core.html">Server.Modules.Core</a></li><li><a href="Server.Modules.Core.Globals.html">Server.Modules.Core.Globals</a></li><li><a href="Server.Modules.Core.Interface.html">Server.Modules.Core.Interface</a></li><li><a href="Server.Modules.Core.Module.html">Server.Modules.Core.Module</a></li><li><a href="Server.Modules.Daemon.html">Server.Modules.Daemon</a></li><li><a href="Server.Modules.Data.html">Server.Modules.Data</a></li><li><a href="Server.Modules.ErrorHandler.html">Server.Modules.ErrorHandler</a></li><li><a href="Server.Modules.Farm.html">Server.Modules.Farm</a></li><li><a href="Server.Modules.Generator.html">Server.Modules.Generator</a></li><li><a href="Server.Modules.i18n.html">Server.Modules.i18n</a></li><li><a href="Server.Modules.Installer.html">Server.Modules.Installer</a></li><li><a href="Server.Modules.Jobs.html">Server.Modules.Jobs</a></li><li><a href="Server.Modules.Logger.html">Server.Modules.Logger</a></li><li><a href="Server.Modules.Router.html">Server.Modules.Router</a></li><li><a href="Server.Modules.Sandbox.html">Server.Modules.Sandbox</a></li><li><a href="Server.Modules.Services.html">Server.Modules.Services</a></li><li><a href="Server.Modules.Universe.html">Server.Modules.Universe</a></li><li><a href="Server.Modules.Utilities.html">Server.Modules.Utilities</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Modules.ErrorHandler.html#event:errorthrown">Server.Modules.ErrorHandler#event:errorthrown</a></li><li><a href="Server.Modules.ErrorHandler.html#~event:event:errorhandled">Server.Modules.ErrorHandler~event:errorhandled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-advanced-routing.html">Advanced Routing</a></li><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-server-configuration.html">Server Configuration</a></li><li><a href="tutorial-service-filesystem-structure.html">Service Filesystem Structure</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	
+	
+
+
+
+    <h3>is-blackrock 0.4.0</h3>
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+    <section class="readme-section">
+        <article><h1>Blackrock Application Server and Web Framework</h1>
+<h6><br/></h6>
+<h3>Introduction</h3>
+<p>Welcome to the Blackrock Application Server &amp; Framework. Blackrock has a Reactive / Event-Driven Architecture, and contains all the functionality you need to build your next Node.JS application, whether it be a web application, web service or something else.</p>
+<br/>
+<h3>Installing Blackrock</h3>
+<h4>As a Stand-Alone Application Server</h4>
+<p>Blackrock can be installed as a stand-alone application server on your system. All you need to do is to <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm" title="Install Node.JS and NPM">Install Node.JS and NPM</a> and then open up a command-line prompt and type:</p>
+<pre><code>&gt; npm install -g is-blackrock
+</code></pre>
+<h4>As a Dependency For Your Own Application</h4>
+<p>Blackrock can be installed as a dependency within your own Node.JS application. All you need to do is to <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm" title="Install Node.JS and NPM">Install Node.JS and NPM</a>, make sure you have a new or existing Node.JS application and then open up a command-line prompt and type:</p>
+<pre><code>&gt; cd /path/to/your/node.js/application
+
+&gt; npm install --save is-blackrock
+</code></pre>
+<p>And then open up your project in your favourite IDE and (most likely in the Javascript file you launch with) include a reference to this dependency:</p>
+<pre><code>const blackrock = require('is-blackrock').init();
+</code></pre>
+<p>Note: If the application isn't new (more than just a scaffold) then you have to realise the Blackrock takes over the process and instantiates its own HTTP interface (and so on). As such you may very well have to re-engineer much of your application to work with Blackrock. Also - you may need to alter the server's configuration. See <a href="tutorial-server-configuration.html">Server Configuration</a> for more information.</p>
+<p>Also: the is-blackrock node module has ZERO dependencies. So your risk of losing access to any of your packages is minimised.</p>
+<p><br/><br/></p>
+<h3>Getting Started</h3>
+<p>See <a href="tutorial-getting-started.html">Getting Started</a> for a quick and easy guide to help you get started building with Blackrock.</p>
+<br/>
+<h3>Modules Specifications</h3>
+<p><em>Below you can find the specifications for each Blackrock module:</em></p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.CLI.html" title="CLI Specification">CLI Module</a></td>
+<td>Manages execution of server actions based on command-line arguments provided at startup</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Configure.html" title="Configure Specification">Configure Module</a></td>
+<td>Provides methods and command line tools to manage server and service configuration</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Core.html" title="Core Specification">Core Module</a></td>
+<td>Primary dependency (application server instance) that is exported to service routes and linked applications. Loads and provides access to all other modules and interfaces</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Daemon.html" title="Daemon Specification">Daemon Module</a></td>
+<td>Provides tools to instantiate the application server as a daemon and to manage the daemon</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Data.html" title="Data Specification">Data Module</a></td>
+<td>Provides a standard abstraction to third-party databases, and has a built-in filesystem JSON-based database that you can use to quickly build and prototype applications and services</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.ErrorHandler.html" title="ErrorHandler Specification">ErrorHandler Module</a></td>
+<td>Provides the tools to intercept and handle application server exceptions and prevent the server from crashing</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Farm.html" title="Farm Specification">Farm Module</a></td>
+<td>Provides the tools to share state within a distributed compute cluster or farm. And to manage job processing without duplication of effort</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Generator.html" title="Generator Specification">Generator Module</a></td>
+<td>Provides methods and command line tools to generate your own services for use within Blackrock</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.i18n.html" title="i18n Specification">i18n Module</a></td>
+<td>Provides support for internationalisation and localisation within your Blackrock services</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Installer.html" title="Installer Specification">Installer Module</a></td>
+<td>Allows you to install additional services in to your application server from the Blackrock marketplace</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Jobs.html" title="Jobs Specification">Jobs Module</a></td>
+<td>Allows you to create, manage and execute asynchronous jobs (from your services) - recurring and scheduled</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Logger.html" title="Logger Specification">Logger Module</a></td>
+<td>Provides a method (log) to log your service (or intra app server) events and distribute these to any one of a number of log sinks</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Router.html" title="Router Specification">Router Module</a></td>
+<td>Routes requests and responses between interfaces and service routes</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Sandbox.html" title="Sandbox Specification">Sandbox Module</a></td>
+<td>Provides a sandbox environment to execute un-trusted Javascript code within your application server</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Services.html" title="Services Specification">Services Module</a></td>
+<td>Loads, manages and provides access to and between all services running on your application server</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Universe.html" title="Universe Specification">Universe Module</a></td>
+<td>Provides the Universe object to your services, giving you access to a world of real-time data. Make your service environmentally reactive!</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Modules.Utilities.html" title="Utilities Specification">Utilities Module</a></td>
+<td>Provides a collection of popular Utility methods that you can access within the application server (modules) or from your services</td>
+</tr>
+</tbody>
+</table>
+<br/>
+<h3>Interface Specifications</h3>
+<p><em>Below you can find the specifications for each Blackrock interface:</em></p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.Axon.html" title="Axon Specification">Axon Interface</a></td>
+<td>Provides an interface for the Axon protocol</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.HTTP.html" title="HTTP Specification">HTTP Interface</a></td>
+<td>Provides an interface for the HTTP and HTTPS protocol</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.NanoMSG.html" title="NanoMSG Specification">NanoMSG Interface</a></td>
+<td>Provides an interface for the NanoMSG protocol</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.SSH.html" title="SSH Specification">SSH Interface</a></td>
+<td>Provides an interface for the SSH protocol</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.WebSockets.html" title="WebSockets Specification">WebSockets Interface</a></td>
+<td>Provides an interface for the WebSockets protocol</td>
+</tr>
+<tr>
+<td><a href="https://blackrock.industryswarm.com/docs/Server.Interfaces.ZeroMQ.html" title="ZeroMQ Specification">ZeroMQ Interface</a></td>
+<td>Provides an interface for the ZeroMQ protocol</td>
+</tr>
+</tbody>
+</table>
+<p><br/><br/></p>
+<h3>Gratitude</h3>
+<p>Thanks for downloading the Blackrock Framework. We look forward to seeing what you build with it.</p>
+<br/></article>
+    </section>
+
+
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
+</div>
+
+
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2020, Darren Smith
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a>
+	
+		on 2021 01 27
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+
+</body>
+</html>

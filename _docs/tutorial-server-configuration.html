@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Blackrock Application Server Tutorial: Server Configuration</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Blackrock Application Server</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.html">Server</a></li><li><a href="Server.Interfaces.html">Server.Interfaces</a></li><li><a href="Server.Modules.html">Server.Modules</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Interfaces.Axon.html">Server.Interfaces.Axon</a></li><li><a href="Server.Interfaces.HTTP.html">Server.Interfaces.HTTP</a></li><li><a href="Server.Interfaces.HTTP.Client.html">Server.Interfaces.HTTP.Client</a></li><li><a href="Server.Interfaces.HTTP.Hook.html">Server.Interfaces.HTTP.Hook</a></li><li><a href="Server.Interfaces.NanoMSG.html">Server.Interfaces.NanoMSG</a></li><li><a href="Server.Interfaces.SSH.html">Server.Interfaces.SSH</a></li><li><a href="Server.Interfaces.WebSockets.html">Server.Interfaces.WebSockets</a></li><li><a href="Server.Interfaces.ZeroMQ.html">Server.Interfaces.ZeroMQ</a></li><li><a href="Server.Modules.CLI.html">Server.Modules.CLI</a></li><li><a href="Server.Modules.Configure.html">Server.Modules.Configure</a></li><li><a href="Server.Modules.Core.html">Server.Modules.Core</a></li><li><a href="Server.Modules.Core.Globals.html">Server.Modules.Core.Globals</a></li><li><a href="Server.Modules.Core.Interface.html">Server.Modules.Core.Interface</a></li><li><a href="Server.Modules.Core.Module.html">Server.Modules.Core.Module</a></li><li><a href="Server.Modules.Daemon.html">Server.Modules.Daemon</a></li><li><a href="Server.Modules.Data.html">Server.Modules.Data</a></li><li><a href="Server.Modules.ErrorHandler.html">Server.Modules.ErrorHandler</a></li><li><a href="Server.Modules.Farm.html">Server.Modules.Farm</a></li><li><a href="Server.Modules.Generator.html">Server.Modules.Generator</a></li><li><a href="Server.Modules.i18n.html">Server.Modules.i18n</a></li><li><a href="Server.Modules.Installer.html">Server.Modules.Installer</a></li><li><a href="Server.Modules.Jobs.html">Server.Modules.Jobs</a></li><li><a href="Server.Modules.Logger.html">Server.Modules.Logger</a></li><li><a href="Server.Modules.Router.html">Server.Modules.Router</a></li><li><a href="Server.Modules.Sandbox.html">Server.Modules.Sandbox</a></li><li><a href="Server.Modules.Services.html">Server.Modules.Services</a></li><li><a href="Server.Modules.Universe.html">Server.Modules.Universe</a></li><li><a href="Server.Modules.Utilities.html">Server.Modules.Utilities</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Modules.ErrorHandler.html#event:errorthrown">Server.Modules.ErrorHandler#event:errorthrown</a></li><li><a href="Server.Modules.ErrorHandler.html#~event:event:errorhandled">Server.Modules.ErrorHandler~event:errorhandled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-advanced-routing.html">Advanced Routing</a></li><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-server-configuration.html">Server Configuration</a></li><li><a href="tutorial-service-filesystem-structure.html">Service Filesystem Structure</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			<section class="tutorial-section">
+
+<header>
+    
+
+    <h2>Server Configuration</h2>
+</header>
+
+<article>
+    <h1>Blackrock Server Configuration</h1>
+<h6><br/></h6>
+<h2>Specification</h2>
+<p>This guide has been written to give you a comprehensive overview on the different aspects of the application
+server that can be configured, and how to do it. To start with, let's have a look at the configuration file
+specification:
+<br/><br/></p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>{mod}</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{mod}</td>
+<td>N/A</td>
+<td>The first JSON key is the module name</td>
+</tr>
+<tr>
+<td>{mod}.banner</td>
+<td>core</td>
+<td>The text banner that is rendered on the console on server startup</td>
+</tr>
+<tr>
+<td>{mod}.maxObjectListeners</td>
+<td>core</td>
+<td>The max number of listeners on any module or interface (they are all event emitters)</td>
+</tr>
+<tr>
+<td>{mod}.modules[]</td>
+<td>core</td>
+<td>An array of all modules that are available. Each array item is a string (containing module name). Precede the module name by a full stop (.) to disable it</td>
+</tr>
+<tr>
+<td>{mod}.interfaces[]</td>
+<td>core</td>
+<td>An array of all interfaces that are available. Each array item is a string (containing interface name). Precede the interface name by a full stop (.) to disable it</td>
+</tr>
+<tr>
+<td>{mod}.startupModules[]</td>
+<td>core</td>
+<td>An array of all modules that should be loaded on startup (in order of load)</td>
+</tr>
+<tr>
+<td>{mod}.timeouts</td>
+<td>core</td>
+<td>An object that describes the various server timeouts</td>
+</tr>
+<tr>
+<td>{mod}.timeouts.loadDependencies</td>
+<td>core</td>
+<td>The timeout period (in milliseconds) when loading dependencies (modules and interfaces)</td>
+</tr>
+<tr>
+<td>{mod}.timeouts.closeModules</td>
+<td>core</td>
+<td>The timeout period (in milliseconds) when closing modules (and interfaces)</td>
+</tr>
+<tr>
+<td>{mod}.locations</td>
+<td>core</td>
+<td>An object that describes the locations of key folders for when the server is operating in stand-alone mode</td>
+</tr>
+<tr>
+<td>{mod}.locations.services</td>
+<td>core</td>
+<td>The path to the services folder</td>
+</tr>
+<tr>
+<td>{mod}.locations.cache</td>
+<td>core</td>
+<td>The path to the cache folder</td>
+</tr>
+<tr>
+<td>{mod}.enabled</td>
+<td>errorhandler</td>
+<td>(Boolean) true or false - Whether the ErrorHandler module is enabled or not</td>
+</tr>
+<tr>
+<td>{mod}.timeout</td>
+<td>errorhandler</td>
+<td>The timeout in milliseconds between when an error is thrown and when it must be handled by</td>
+</tr>
+<tr>
+<td>{mod}.server</td>
+<td>farm</td>
+<td>An object describing the current server within a server farm (or cluster)</td>
+</tr>
+<tr>
+<td>{mod}.server.port</td>
+<td>farm</td>
+<td>The port that the local farm node is listening on for cluster services</td>
+</tr>
+<tr>
+<td>{mod}.server.cache</td>
+<td>farm</td>
+<td>The path to the cache file for the cluster/farm</td>
+</tr>
+<tr>
+<td>{mod}.server.seeds[]</td>
+<td>farm</td>
+<td>An array of strings - each an IP address for another cluster/farm node (or server) that the current node can connect to</td>
+</tr>
+</tbody>
+</table>
+<p><br/><br/><br/></p>
+<h2>Example</h2>
+<p>Now, let's have a look at the an example - the default configuration file (is-blackrock-default.json):</p>
+<br/>
+<pre><code>{
+    &quot;cli&quot;: {},
+
+    &quot;configure&quot;: {},
+
+    &quot;core&quot;: {
+        &quot;banner&quot;: &quot;Blackrock Application Server (Default)&quot;,
+        &quot;maxObjectListeners&quot;: 100,
+        &quot;modules&quot;: [&quot;cli&quot;, &quot;core&quot;, &quot;.configure&quot;, &quot;daemon&quot;, &quot;errorhandler&quot;, &quot;.farm&quot;, &quot;.generator&quot;, &quot;i18n&quot;,
+            &quot;.installer&quot;, &quot;jobs&quot;, &quot;logger&quot;, &quot;router&quot;, &quot;.sandbox&quot;, &quot;services&quot;, &quot;.swagger&quot;, &quot;.universe&quot;, &quot;utilities&quot;],
+        &quot;interfaces&quot;: [&quot;.axon&quot;, &quot;http&quot;, &quot;.nanomsg&quot;, &quot;.ssh&quot;, &quot;websockets&quot;, &quot;.zeromq&quot;],
+        &quot;startupModules&quot;: [&quot;logger&quot;, &quot;utilities&quot;, &quot;daemon&quot;, &quot;cli&quot;],
+        &quot;timeouts&quot;: {
+            &quot;loadDependencies&quot;: 5000,
+            &quot;closeModules&quot;: 5000
+        },
+        &quot;locations&quot;: {
+            &quot;services&quot;: &quot;/opt/is-blackrock/services&quot;,
+            &quot;cache&quot;: &quot;/opt/is-blackrock/cache&quot;
+        }
+    },
+
+    &quot;daemon&quot;: {},
+
+    &quot;errorhandler&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;timeout&quot;: 5000
+    },
+
+    &quot;farm&quot;: {
+        &quot;server&quot;: {
+            &quot;port&quot;: 8001,
+            &quot;cache&quot;: &quot;scuttlebutt.dat&quot;
+        },
+        &quot;seeds&quot;: [&quot;127.0.0.1:8001&quot;]
+    },
+
+    &quot;generator&quot;: {},
+
+    &quot;i18n&quot;: {},
+
+    &quot;installer&quot;: {},
+
+    &quot;interfaces&quot;: {
+        &quot;http&quot;: {
+            &quot;http&quot;: {
+                &quot;enabled&quot;: true,
+                &quot;ssl&quot;: false,
+                &quot;port&quot;: 8080,
+                &quot;requestTimeout&quot;: 10000,
+                &quot;log&quot;: false,
+                &quot;fileUploadPath&quot;: &quot;/tmp/blackrock/upload&quot;,
+                &quot;maxUploadFileSizeMb&quot;: 50
+            }
+        },
+        &quot;websockets&quot;: {
+            &quot;websockets&quot;: {
+                &quot;enabled&quot;: true,
+                &quot;httpInterface&quot;: &quot;http&quot;
+            }
+        },
+        &quot;axon&quot;: {},
+        &quot;nanomsg&quot;: {},
+        &quot;ssh&quot;: {},
+        &quot;zeromq&quot;: {}
+    },
+
+    &quot;jobs&quot;: {},
+
+    &quot;logger&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;levels&quot;: [&quot;startup&quot;, &quot;shutdown&quot;, &quot;warning&quot;, &quot;error&quot;, &quot;fatal&quot;, &quot;debug&quot;],
+        &quot;logMetadataObjects&quot;: false,
+        &quot;sinks&quot;: {
+            &quot;console&quot;: {
+                &quot;enabled&quot;: true
+            },
+            &quot;file&quot;: {
+                &quot;enabled&quot;: true,
+                &quot;location&quot;: &quot;/var/log/is-blackrock-log.txt&quot;
+            }
+        },
+        &quot;heartbeat&quot;: {
+            &quot;console&quot;: false,
+            &quot;heartbeatFreq&quot;: 10000,
+            &quot;cacheFreq&quot;: 10000
+        }
+    },
+
+    &quot;router&quot;: {
+        &quot;instances&quot;: {
+            &quot;RouterOne&quot;: {
+                &quot;interfaces&quot;: [&quot;*&quot;],
+                &quot;services&quot;: [&quot;*&quot;]
+            }
+        }
+    },
+
+    &quot;sandbox&quot;: {},
+
+    &quot;services&quot;: {
+        &quot;allow&quot;: {
+            &quot;cfg&quot;: true,
+            &quot;pkg&quot;: true,
+            &quot;fetchBasePath&quot;: true,
+            &quot;getCurrentService&quot;: true,
+            &quot;shutdown&quot;: false,
+            &quot;globals&quot;: true,
+            &quot;modules&quot;: {
+                &quot;cli&quot;: [],
+                &quot;daemon&quot;: [],
+                &quot;errorhandler&quot;: [],
+                &quot;farm&quot;: [],
+                &quot;generator&quot;: [],
+                &quot;i18n&quot;: [
+                    &quot;init&quot;, &quot;t&quot;, &quot;use&quot;, &quot;exists&quot;, &quot;getFixedT&quot;, &quot;changeLanguage&quot;, &quot;loadNamespaces&quot;, &quot;loadLanguages&quot;,
+                    &quot;reloadResources&quot;, &quot;setDefaultNamespace&quot;, &quot;dir&quot;, &quot;format&quot;, &quot;createInstance&quot;, &quot;cloneInstance&quot;,
+                    &quot;on&quot;, &quot;off&quot;, &quot;getResource&quot;, &quot;addResource&quot;, &quot;addResources&quot;, &quot;addResourceBundle&quot;, &quot;hasResourceBundle&quot;,
+                    &quot;getDataByLanguage&quot;, &quot;getResourceBundle&quot;, &quot;removeResourceBundle&quot;, &quot;createServiceInstances&quot;
+                ],
+                &quot;identity&quot;: [],
+                &quot;installer&quot;: [],
+                &quot;jobs&quot;: [&quot;add&quot;, &quot;remove&quot;, &quot;jobs.add&quot;, &quot;jobs.remove&quot;],
+                &quot;logger&quot;: [&quot;log&quot;],
+                &quot;router&quot;: [],
+                &quot;sandbox&quot;: [],
+                &quot;services&quot;: [&quot;service(serviceName)&quot;, &quot;serviceStats&quot;],
+                &quot;universe&quot;: [],
+                &quot;utilities&quot;: [
+                    &quot;randomString&quot;, &quot;uuid4&quot;, &quot;isJSON&quot;, &quot;objectLength&quot;, &quot;getCurrentDateInISO&quot;, &quot;validateString&quot;,
+                    &quot;cloneObject&quot;, &quot;modules.loadModule&quot;, &quot;csv.parse&quot;, &quot;crypto.encrypt&quot;, &quot;crypto.decrypt&quot;,
+                    &quot;xml&quot;, &quot;system.getMemoryUse&quot;, &quot;system.getCpuLoad&quot;, &quot;system.getStartTime&quot;, &quot;system.getEndTime&quot;,
+                    &quot;system.getObjectMemoryUsage&quot;, &quot;isUndefined&quot;, &quot;isNull&quot;, &quot;isNil&quot;, &quot;path&quot;, &quot;prop&quot;, &quot;assign&quot;
+                ],
+                &quot;http&quot;: [
+                    &quot;client.request&quot;, &quot;client.get&quot;, &quot;client.post&quot;, &quot;client.put&quot;, &quot;client.delete&quot;,
+                    &quot;get&quot;, &quot;hook.add&quot;, &quot;hook.remove&quot;
+                ],
+                &quot;websockets&quot;: [],
+                &quot;axon&quot;: [],
+                &quot;nanomsg&quot;: [],
+                &quot;ssh&quot;: [],
+                &quot;zeromq&quot;: []
+            }
+        },
+        &quot;runtime&quot;: {
+            &quot;services&quot;: {
+                &quot;allowLoad&quot;: true,
+                &quot;allowUnload&quot;: true,
+                &quot;allowOverride&quot;: false
+            },
+            &quot;controllers&quot;: {
+                &quot;allowLoad&quot;: true,
+                &quot;allowUnload&quot;: true,
+                &quot;allowOverride&quot;: false
+            }
+        },
+        &quot;sandbox&quot;: {
+            &quot;default&quot;: false,
+            &quot;allowOverride&quot;: false
+        }
+    },
+
+    &quot;universe&quot;: {},
+
+    &quot;utilities&quot;: {}
+}
+</code></pre>
+</article>
+
+</section>
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2020, Darren Smith
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a>
+	
+		on 2021 01 27
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+
+</body>
+</html>

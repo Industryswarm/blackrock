@@ -1,0 +1,62 @@
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+    "include": [
+      "./index.js",
+      "./package.json",
+      "./README.md",
+      "./_definitions/jsdoc-namespaces",
+      "./modules/cli",
+      "./modules/configure",
+      "./modules/core",
+      "./modules/daemon",
+      "./modules/data",
+      "./modules/errorhandler",
+      "./modules/farm",
+      "./modules/generator",
+      "./modules/i18n",
+      "./modules/installer",
+      "./modules/jobs",
+      "./modules/logger",
+      "./modules/router",
+      "./modules/sandbox",
+      "./modules/services",
+      "./modules/universe",
+      "./modules/utilities",
+      "./interfaces/axon",
+      "./interfaces/http",
+      "./interfaces/nanomsg",
+      "./interfaces/ssh",
+      "./interfaces/websockets",
+      "./interfaces/zeromq"
+    ],
+    "includePattern": ".+\\.js(doc)?$",
+    "excludePattern": "(^|\\\\/|\\\\\\\\)_"
+  },
+  "sourceType": "script",
+  "plugins": [],
+  "templates": {
+    "systemName": "Blackrock Application Server",
+    "copyright": "Copyright 2020, Darren Smith",
+    "includeDate": true,
+    "navType": "vertical",
+    "theme": "lumen",
+    "linenums": true,
+    "collapseSymbols": false,
+    "inverseNav": false,
+    "outputSourceFiles": true,
+    "dateFormat": "YYYY MM DD",
+    "syntaxTheme": "default",
+    "sort": true,
+    "search": false
+  },
+  "opts": {
+    "template": "/usr/local/lib/node_modules/jsdoc/templates/docstrap/template",
+    "encoding": "utf8",
+    "destination": "_docs",
+    "recurse": true,
+    "private": true
+  }
+}

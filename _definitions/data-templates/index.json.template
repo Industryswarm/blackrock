@@ -1,0 +1,14 @@
+{
+  "header": {
+    "format": {
+      "type": "jsonschema.blackrock.industryswarm.com/doc-types/db.index",
+      "version": "{{format.version}}"
+    },
+    "id": "{{indexCommonId}}",
+    "type": "{{indexHeaderType}}",
+    "indexedAttribute": "{{indexHeaderIndexedAttribute}}",
+    "destinationAttribute": "{{indexHeaderDestinationAttribute}}",
+    "lastIndexed": "{{indexHeaderLastIndexed}}"
+  },
+  "content": {{indexDocumentContent}}
+}

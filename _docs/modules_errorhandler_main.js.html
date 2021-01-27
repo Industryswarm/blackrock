@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Blackrock Application Server Source: modules/errorhandler/main.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Blackrock Application Server</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.html">Server</a></li><li><a href="Server.Interfaces.html">Server.Interfaces</a></li><li><a href="Server.Modules.html">Server.Modules</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Interfaces.Axon.html">Server.Interfaces.Axon</a></li><li><a href="Server.Interfaces.HTTP.html">Server.Interfaces.HTTP</a></li><li><a href="Server.Interfaces.HTTP.Client.html">Server.Interfaces.HTTP.Client</a></li><li><a href="Server.Interfaces.HTTP.Hook.html">Server.Interfaces.HTTP.Hook</a></li><li><a href="Server.Interfaces.NanoMSG.html">Server.Interfaces.NanoMSG</a></li><li><a href="Server.Interfaces.SSH.html">Server.Interfaces.SSH</a></li><li><a href="Server.Interfaces.WebSockets.html">Server.Interfaces.WebSockets</a></li><li><a href="Server.Interfaces.ZeroMQ.html">Server.Interfaces.ZeroMQ</a></li><li><a href="Server.Modules.CLI.html">Server.Modules.CLI</a></li><li><a href="Server.Modules.Configure.html">Server.Modules.Configure</a></li><li><a href="Server.Modules.Core.html">Server.Modules.Core</a></li><li><a href="Server.Modules.Core.Globals.html">Server.Modules.Core.Globals</a></li><li><a href="Server.Modules.Core.Interface.html">Server.Modules.Core.Interface</a></li><li><a href="Server.Modules.Core.Module.html">Server.Modules.Core.Module</a></li><li><a href="Server.Modules.Daemon.html">Server.Modules.Daemon</a></li><li><a href="Server.Modules.Data.html">Server.Modules.Data</a></li><li><a href="Server.Modules.ErrorHandler.html">Server.Modules.ErrorHandler</a></li><li><a href="Server.Modules.Farm.html">Server.Modules.Farm</a></li><li><a href="Server.Modules.Generator.html">Server.Modules.Generator</a></li><li><a href="Server.Modules.i18n.html">Server.Modules.i18n</a></li><li><a href="Server.Modules.Installer.html">Server.Modules.Installer</a></li><li><a href="Server.Modules.Jobs.html">Server.Modules.Jobs</a></li><li><a href="Server.Modules.Logger.html">Server.Modules.Logger</a></li><li><a href="Server.Modules.Router.html">Server.Modules.Router</a></li><li><a href="Server.Modules.Sandbox.html">Server.Modules.Sandbox</a></li><li><a href="Server.Modules.Services.html">Server.Modules.Services</a></li><li><a href="Server.Modules.Universe.html">Server.Modules.Universe</a></li><li><a href="Server.Modules.Utilities.html">Server.Modules.Utilities</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Server.Modules.ErrorHandler.html#event:errorthrown">Server.Modules.ErrorHandler#event:errorthrown</a></li><li><a href="Server.Modules.ErrorHandler.html#~event:event:errorhandled">Server.Modules.ErrorHandler~event:errorhandled</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-advanced-routing.html">Advanced Routing</a></li><li><a href="tutorial-getting-started.html">Getting Started</a></li><li><a href="tutorial-server-configuration.html">Server Configuration</a></li><li><a href="tutorial-service-filesystem-structure.html">Service Filesystem Structure</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			
+
+		<h1 class="page-title">Source: modules/errorhandler/main.js</h1>
+    
+<section>
+    <article>
+        <pre
+            class="sunlight-highlight-javascript linenums">!function ErrorHandlerModuleWrapper() {
+  let core; let mod; let log; let errorCount = 0; const errorMessages = {}; const pipelines = {};
+  const streamFns = {}; let lib; let rx;
+
+
+  /**
+   * Blackrock ErrorHandler Module
+   *
+   * @class Server.Modules.ErrorHandler
+   * @augments Server.Modules.Core.Module
+   * @param {Server.Modules.Core} coreObj - The Parent Core Object
+   * @return {Server.Modules.ErrorHandler} module - The ErrorHandler Module
+   *
+   * @description This is the ErrorHandler Module of the Blackrock Application Server.
+   * It provides tools to listen for and catch exceptions server-wide and to handle
+   * these exceptions, as opposed to letting the server crash.
+   *
+   * @author Darren Smith
+   * @copyright Copyright (c) 2021 Darren Smith
+   * @license Licensed under the LGPL license.
+   */
+  module.exports = function ErrorHandlerModuleConstructor(coreObj) {
+    core = coreObj; mod = new core.Mod('ErrorHandler'); mod.log = log = core.module('logger').log;
+    log('debug', 'Blackrock Error Handler > Initialising...', {}, 'ERRORHANDLER_INIT');
+    lib = core.lib; rx = lib.rxjs;
+    if (core.cfg().errorHandler &amp;&amp; core.cfg().errorHandler.enabled === true) {
+      process.nextTick(function() {
+        const Pipeline = pipelines.setupErrorHandlerModule();
+        new Pipeline({}).pipe();
+      });
+    }
+    return mod;
+  };
+
+
+  /**
+   * Event Stream Pipeline...
+   */
+
+  /**
+   * (Internal > Pipeline [1]) Setup Error Handler Module
+   * @private
+   * @return {object} pipeline - The Pipeline Object
+   */
+  pipelines.setupErrorHandlerModule = function ErrorHandlerModuleSetupPipeline() {
+    return new core.Base().extend({
+      constructor: function ErrorHandlerModuleSetupPipelineConstructor(evt) {
+        this.evt = evt;
+      },
+      callback: function ErrorHandlerModuleSetupPipelineCallback(cb) {
+        return cb(this.evt);
+      },
+      pipe: function ErrorHandlerModuleSetupPipelinePipe() {
+        log('debug',
+            'Blackrock Error Handler > Server Initialisation Pipeline Created - Executing Now:',
+            {}, 'ERRORHANDLER_EXEC_INIT_PIPELINE');
+        const self = this; const stream = rx.bindCallback((cb) => {
+          self.callback(cb);
+        })();
+        stream.pipe(
+
+            // Fires once on server initialisation:
+            streamFns.setupErrorHandled,
+            streamFns.setupUncaughtException
+
+        ).subscribe();
+      },
+    });
+  };
+
+
+  /**
+   * Error Handler Stream Processing Functions...
+   * (Fires Once on Server Initialisation)
+   */
+
+  /**
+   * (Internal > Stream Methods [1]) Setup Error Handled
+   * @private
+   * @param {observable} source - Source Observable
+   * @return {observable} destination - Destination Observable
+   */
+  streamFns.setupErrorHandled = function ErrorHandlerModuleSetupErrorHandled(source) {
+    return lib.rxOperator(function(observer, evt) {
+      /**
+       * Listen For ErrorHandled Event
+       *
+       * @event Server.Modules.ErrorHandler~event:errorhandled
+       *
+       * @description
+       * If you listen to the ErrorHandler module instance and detect an ErrorThrown
+       * event, you can handle it and then fire/emit an ErrorHandled event back to
+       * the ErrorHandler module instance to tell the application server that the
+       * error has been handled. This should prevent the server from crashing.
+       */
+      mod.on('errorhandled', function ErrorHandlerModuleErrorHandledCallback(err) {
+        if (errorMessages[err] &amp;&amp; errorMessages[err] === true) {
+          errorCount --;
+          errorMessages[err] = false;
+          delete errorMessages[err];
+        }
+      });
+      log('debug',
+          'Blackrock Error Handler > [1] Setup Listener Method for the \'errorhandled\' event',
+          {}, 'ERRORHANDLER_SETUP_HANDLED_LISTENER');
+      observer.next(evt);
+    }, source);
+  };
+
+  /**
+   * (Internal > Stream Methods [2]) Setup Uncaught Exception
+   * @private
+   * @param {observable} source - Source Observable
+   * @return {observable} destination - Destination Observable
+   */
+  streamFns.setupUncaughtException = function ErrorHandlerModuleSetupUncaughtException(source) {
+    return lib.rxOperator(function(observer, evt) {
+      process.on('uncaughtException', function ErrorHandlerModuleUncaughtExceptionCallback(err) {
+        errorMessages[err.message] = true;
+        errorCount ++;
+        let counter = 0;
+        let timeout;
+        if (core.cfg().errorhandler &amp;&amp; core.cfg().errorhandler.timeout) {
+          timeout = core.cfg().errorhandler.timeout;
+        } else {
+          timeout = 5000;
+        }
+        /**
+         * ErrorThrown Event
+         *
+         * @event Server.Modules.ErrorHandler#errorthrown
+         * @type {string}
+         *
+         * @description
+         * The ErrorThrown event is fired on the ErrorHandler module instance
+         * whenever an unhandled exception occurs within the application
+         * server.
+         */
+        mod.emit('errorthrown', err.message);
+        const interval = setInterval(function ErrorHandlerModuleUncaughtExceptionTimeout() {
+          if (errorCount &lt;= 0) {
+            clearInterval(interval);
+            log('debug',
+                'Blackrock Error Handler > Thrown exception(s) handled by a listening module or service - ' +
+                err.message, err, 'ERRORHANDLER_EXCEPT_HANDLED');
+            return;
+          }
+          if (counter >= timeout) {
+            clearInterval(interval);
+            log('fatal',
+                'Blackrock Error Handler > Caught unhandled exception(s). Terminating application server. Error - ' +
+                err.message, err, 'ERRORHANDLER_EXCEPT_UNHANDLED');
+            core.shutdown();
+            return;
+          }
+          counter += 10;
+        }, 10);
+      });
+      log('debug',
+          'Blackrock Error Handler > [2] Setup Listener Method for the \'uncaughtexception\' event',
+          {}, 'ERRORHANDLER_SETUP_UNCAUGHT_LISTENER');
+      observer.next(evt);
+    }, source);
+  };
+}();
+</pre>
+    </article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+
+<footer>
+
+
+	<span class="copyright">
+	Copyright 2020, Darren Smith
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a>
+	
+		on 2021 01 27
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+
+</body>
+</html>

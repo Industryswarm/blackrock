@@ -1,6 +1,6 @@
 {
   "name": "is-blackrock",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "description": "Blackrock Application Server (Stand-Alone and/or Module)",
   "author": {
     "name": "Darren Smith",
@@ -13,7 +13,7 @@
     "start": "node index.js start console"
   },
   "bin": {
-    "blackrock": "./index.js"
+    "blackrock": "index.js"
   },
   "maintainers": [
     {
