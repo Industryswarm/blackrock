@@ -1,104 +1,101 @@
 !function GeneratorModuleWrapper() {
-  let core; let mod; let log; const pipelines = {}; const streamFns = {}; let lib;
-  let rx; const fs = require('fs');
-
+  let core; let mod; let o = {}; const pipelines = function() {};
 
   /**
    * Blackrock Generator Module
    *
+   * @public
    * @class Server.Modules.Generator
    * @augments Server.Modules.Core.Module
    * @param {Server.Modules.Core} coreObj - The Parent Core Object
    * @return {Server.Modules.Generator} module - The Generator Module
    *
    * @description This is the Generator Module of the Blackrock Application Server.
-   * It provides tools to generate new services - providing the foundations for almost
-   * any idea for an application or service. There are currently no accessible methods
+   * It provides tools to generate new apps - providing the foundations for almost
+   * any idea for an application or app. There are currently no accessible methods
    * exposed on this module.
+   *
+   * @example
+   * const generatorModule = core.module('generator');
    *
    * @author Darren Smith
    * @copyright Copyright (c) 2021 Darren Smith
    * @license Licensed under the LGPL license.
    */
-  module.exports = function GeneratorModuleConstructor(coreObj) {
-    core = coreObj; mod = new core.Mod('Generator'); mod.log = log = core.module('logger').log;
-    log('debug', 'Blackrock Generator Module > Initialising...', {}, 'GENERATOR_INIT');
-    lib = core.lib; rx = lib.rxjs;
+  module.exports = function GeneratorModule(coreObj) {
+    if (mod) return mod;
+    core = coreObj; mod = new core.Mod('Generator'); o.log = core.module('logger').log;
+    o.log('debug', 'Generator > Initialising...', {module: mod.name}, 'MODULE_INIT');
     process.nextTick(function() {
-      const Pipeline = pipelines.setupGeneratorModule();
-      new Pipeline({}).pipe();
+      pipelines.init();
     });
     return mod;
   };
 
 
   /**
-   * Event Stream Pipeline...
-   */
-
-  /**
-   * (Internal > Pipeline [1]) Setup Generator Module
+   * (Internal > Pipeline [1]) Init Pipeline
+   *
    * @private
-   * @return {object} pipeline - The Pipeline Object
+   * @memberof Server.Modules.Generator
+   * @name init
+   * @function
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * pipelines.init();
    */
-  pipelines.setupGeneratorModule = function GeneratorModuleSetupPipeline() {
-    return new core.Base().extend({
-      constructor: function GeneratorModuleSetupPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function GeneratorModuleSetupPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function GeneratorModuleSetupPipelinePipe() {
-        log('debug',
-            'Blackrock Generator Module > Server Initialisation Pipeline Created - Executing Now:',
-            {}, 'GENERATOR_EXEC_INIT_PIPELINE');
-        const self = this; const stream = rx.bindCallback((cb) => {
-          self.callback(cb);
-        })();
-        stream.pipe(
+  pipelines.init = function GeneratorInitPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}).pipe(
 
-            // Fires once on server initialisation:
-            streamFns.registerWithCLI,
-            streamFns.listenToStart,
+      // Fires once on server initialisation:
+      pipelines.init.registerWithCLI,
+      pipelines.init.listenToStart,
 
-            // Fires once on each CLI command:
-            streamFns.parseParamsAndCheckForService,
-            streamFns.createNewServiceWithoutFile,
-            streamFns.createNewServiceWithFile
+      // Fires once on each CLI command:
+      pipelines.init.parseParamsAndCheckForApp,
+      pipelines.init.createNewAppWithoutFile,
+      pipelines.init.createNewAppWithFile
 
-        ).subscribe();
-      },
-    });
+    ).subscribe();
   };
-
-
-  /**
-   * Generator Stream Processing Functions...
-   * (Fires Once on Server Initialisation)
-   */
 
   /**
    * (Internal > Stream Methods [1]) Register With CLI
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @function registerWithCLI
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.registerWithCLI = function GeneratorModuleRegisterWithCLI(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Generator Module > [1] Generator registering with CLI...',
-          {}, 'GENERATOR_REGISTER_WITH_CLI');
-      core.isLoaded('cli').then(function(cliMod) {
+  pipelines.init.registerWithCLI = function GeneratorRegisterWithCLI(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      o.log('debug',
+          'Generator > [1] Generator registering with CLI...',
+          {module: mod.name}, 'MODULE_REGISTER_WITH_CLI');
+      core.module.isLoaded('cli').then(function(cliMod) {
         cliMod.register([
-          {'cmd': 'create', 'params': '[name] [file]', 'info': 'Create a new service', 'fn': function(params) {
+          {'cmd': 'create', 'params': '[name] [file]', 'info': 'Create a new app', 'fn': function(params) {
             core.emit('GENERATOR_INIT_GENERATOR', {'command': 'create', 'params': params});
           }},
         ]);
       }).catch(function(err) {
-        log('error',
-            'Blackrock Generator Module > Failed to register with CLI - CLI module not loaded',
-            err, 'GENERATOR_CLI_MOD_NOT_LOADED');
+        o.log('error',
+            'Generator > Failed to register with CLI - CLI module not loaded',
+            {module: mod.name, error: err}, 'CLI_MOD_NOT_LOADED');
       });
       observer.next(evt);
     }, source);
@@ -106,20 +103,32 @@
 
   /**
    * (Internal > Stream Methods [2]) Listen to Start Endpoint
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name listenToStart
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.listenToStart = function GeneratorModuleListenToStart(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Generator Module > [2a] Listener created for \'GENERATOR_INIT_GENERATOR\' event',
-          {}, 'GENERATOR_LISTENER_CREATED');
+  pipelines.init.listenToStart = function GeneratorListenToStart(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      o.log('debug',
+          'Generator > [2a] Listener created for \'GENERATOR_INIT_GENERATOR\' event',
+          {module: mod.name}, 'GENERATOR_LISTENER_CREATED');
       core.on('GENERATOR_INIT_GENERATOR', function GeneratorModuleStartGeneratorCallback(genParams) {
         core.stopActivation = true;
-        log('debug',
-            'Blackrock Generator > [2b] \'GENERATOR_INIT_GENERATOR\' Event Received',
-            {}, 'GENERATOR_LISTENER_EVT_RECEIVED');
+        o.log('debug',
+            'Generator > [2b] \'GENERATOR_INIT_GENERATOR\' Event Received',
+            {module: mod.name}, 'GENERATOR_LISTENER_EVT_RECEIVED');
         evt.command = genParams.command;
         evt.params = genParams.params;
         observer.next(evt);
@@ -128,90 +137,114 @@
   };
 
   /**
-   * (Internal > Stream Methods [3]) Parse Params And Check For Service
+   * (Internal > Stream Methods [3]) Parse Params And Check For App
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name parseParamsAndCheckForApp
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.parseParamsAndCheckForService = function GeneratorModuleParseParamsAndCheckForService(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.parseParamsAndCheckForApp = function GeneratorParseParamsAndCheckForApp(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
       if (evt.command === 'create') {
-        log('debug',
-            'Blackrock Generator Module > [3] Parsing parameters and checking for service...',
-            {}, 'GENERATOR_PARSE_PARAMS');
+        o.log('debug',
+            'Generator > [3] Parsing parameters and checking for app...',
+            {module: mod.name}, 'GENERATOR_PARSE_PARAMS');
         const params = evt.params.trim().split(' ');
-        let serviceName = ''; let serviceFile = '';
-        const servicePath = core.fetchBasePath('services');
+        let appName = ''; let appFile = '';
+        const appPath = core.fetchBasePath('apps');
         if (params[0]) {
-          serviceName = params[0];
+          appName = params[0];
         }
         if (params[1]) {
-          serviceFile = params[1];
+          appFile = params[1];
         }
-        if (!serviceName) {
-          console.log('You must specify a service name (and optionally a definition file)');
+        if (!appName) {
+          console.log('You must specify a app name (and optionally a definition file)');
           process.exit();
         }
-        if (fs.existsSync(servicePath + '/' + serviceName)) {
-          console.log('Service (' + serviceName + ') Already Exists');
+        if (require('fs').existsSync(appPath + '/' + appName)) {
+          console.log('App (' + appName + ') Already Exists');
           process.exit();
         }
-        evt.servicePath = servicePath;
-        evt.serviceName = serviceName;
-        evt.serviceFile = serviceFile;
+        evt.appPath = appPath;
+        evt.appName = appName;
+        evt.appFile = appFile;
         observer.next(evt);
       }
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [4]) Create New Service Without File
+   * (Internal > Stream Methods [4]) Create New App Without File
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name createNewAppWithoutFile
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.createNewServiceWithoutFile = function GeneratorModuleCreateNewServiceWithoutFile(source) {
-    return lib.rxOperator(function(observer, evt) {
-      if (evt.serviceFile) {
+  pipelines.init.createNewAppWithoutFile = function GeneratorCreateNewAppWithoutFile(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      if (evt.appFile) {
         observer.next(evt);
         return;
       }
       let filesWritten = 0;
-      log('debug',
-          'Blackrock Generator Module > [4] Creating new service without definition file...',
-          {}, 'GENERATOR_CREATING_SERVICE_NO_FILE');
-      fs.mkdirSync(evt.servicePath + '/' + evt.serviceName);
+      o.log('debug',
+          'Generator > [4] Creating new app without definition file...',
+          {module: mod.name}, 'GENERATOR_CREATING_APP_NO_FILE');
+      require('fs').mkdirSync(evt.appPath + '/' + evt.appName);
       const rootFolders = ['controllers', 'html', 'lib', 'locale', 'models', 'test', 'views'];
       for (let i = 0; i < rootFolders.length; i++) {
-        fs.mkdirSync(evt.servicePath + '/' + evt.serviceName + '/' + rootFolders[i]);
+        require('fs').mkdirSync(evt.appPath + '/' + evt.appName + '/' + rootFolders[i]);
         if (rootFolders[i] !== 'controllers' && rootFolders[i] !== 'views') {
-          fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' +
+          require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' +
                       rootFolders[i] + '/stub.txt', 'Insert your ' + rootFolders[i] + ' into this folder', (err) => {
             if (err) throw err;
             filesWritten ++;
           });
         }
       }
-      const serviceDefinition = {
-        'name': evt.serviceName,
-        'host': 'www.' + evt.serviceName + '.local',
+      const appDefinition = {
+        'name': evt.appName,
+        'host': 'www.' + evt.appName + '.local',
         'basePath': '',
         'active': true,
       };
-      const def = JSON.stringify(serviceDefinition);
-      fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'service.json', def, function(err) {
+      const def = JSON.stringify(appDefinition);
+      require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + 'app.json', def, function(err) {
         if (err) throw err;
         filesWritten ++;
       });
-      const ctrlFile = createControllerFile('controllers', '[Author]', {'get': {'viewFile': 'home.mustache'}});
-      fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'controllers/controller.js',
+      const ctrlFile = o.createControllerFile('controllers', '[Author]', {'get': {'viewFile': 'home.mustache'}});
+      require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + 'controllers/controller.js',
           ctrlFile, function(err) {
             if (err) throw err;
             filesWritten ++;
           });
       // eslint-disable-next-line max-len
-      const viewFile = `<h1>Welcome to Your Sample Site</h1>\n<p>This is your new Blackrock Service. Customise it as you see fit.</p>\n         `;
-      fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'views/home.mustache', viewFile, function(err) {
+      const viewFile = `<h1>Welcome to Your Sample Site</h1>\n<p>This is your new Blackrock App. Customise it as you see fit.</p>\n         `;
+      require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + 'views/home.mustache', viewFile, function(err) {
         if (err) throw err;
         filesWritten ++;
       });
@@ -221,11 +254,11 @@
       const interval = setInterval(function() {
         if (filesWritten >= 8) {
           clearInterval(interval);
-          console.log('Service (' + evt.serviceName + ') Created Successfully');
+          console.log('App (' + evt.appName + ') Created Successfully');
           process.exit();
         } else if (timer >= timeout) {
           clearInterval(interval);
-          console.log('Timed Out Creating Service (' + evt.serviceName + ')');
+          console.log('Timed Out Creating App (' + evt.appName + ')');
           process.exit();
         }
         timer += 10;
@@ -234,60 +267,73 @@
   };
 
   /**
-   * (Internal > Stream Methods [5]) Create New Service With File
+   * (Internal > Stream Methods [5]) Create New App With File
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name createNewAppWithFile
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.createNewServiceWithFile = function GeneratorModuleCreateNewServiceWithFile(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.createNewAppWithFile = function GeneratorCreateNewAppWithFile(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
       // Setup:
       let totalFiles = 0;
       let filesWritten = 0;
-      log('debug',
-          'Blackrock Generator Module > [5] Creating new service with definition file...',
-          {}, 'GENERATOR_CREATING_SERVICE_WITH_FILE');
-      let serviceFile;
+      o.log('debug',
+          'Generator > [5] Creating new app with definition file...',
+          {module: mod.name}, 'GENERATOR_CREATING_APP_WITH_FILE');
+      let appFile;
       try {
-        serviceFile = require(evt.serviceFile);
+        appFile = require(evt.appFile);
       } catch (err) {
-        console.log('Invalid service definition file provided');
+        console.log('Invalid app definition file provided');
         process.exit();
       }
 
       // Create Root and First-Level Folder Set:
-      fs.mkdirSync(evt.servicePath + '/' + evt.serviceName);
+      require('fs').mkdirSync(evt.appPath + '/' + evt.appName);
       totalFiles += 5;
       const rootFolders = ['controllers', 'html', 'lib', 'locale', 'models', 'test', 'views'];
       for (let i = 0; i < rootFolders.length; i++) {
-        fs.mkdirSync(evt.servicePath + '/' + evt.serviceName + '/' + rootFolders[i]);
+        require('fs').mkdirSync(evt.appPath + '/' + evt.appName + '/' + rootFolders[i]);
         if (rootFolders[i] !== 'controllers' && rootFolders[i] !== 'views') {
-          fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + rootFolders[i] + '/stub.txt',
+          require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + rootFolders[i] + '/stub.txt',
               'Insert your ' + rootFolders[i] + ' into this folder', function(err) {
                 if (err) throw err;
                 filesWritten ++;
               });
         }
       }
-      const serviceDefinition = {'name': evt.serviceName};
-      if (serviceFile.host) {
-        serviceDefinition.host = serviceFile.host;
+      const appDefinition = {'name': evt.appName};
+      if (appFile.host) {
+        appDefinition.host = appFile.host;
       } else {
-        serviceDefinition.host = 'www.' + evt.serviceName + '.local';
+        appDefinition.host = 'www.' + evt.appName + '.local';
       }
-      if (serviceFile.basePath) {
-        serviceDefinition.basePath = serviceFile.basePath;
+      if (appFile.basePath) {
+        appDefinition.basePath = appFile.basePath;
       } else {
-        serviceDefinition.basePath = '';
+        appDefinition.basePath = '';
       }
-      if (serviceFile.active) {
-        serviceDefinition.active = serviceFile.active;
+      if (appFile.active) {
+        appDefinition.active = appFile.active;
       } else {
-        serviceDefinition.active = true;
+        appDefinition.active = true;
       }
       totalFiles += 1;
-      const def = JSON.stringify(serviceDefinition);
-      fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'service.json', def, function(err) {
+      const def = JSON.stringify(appDefinition);
+      require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + 'app.json',
+          def, function(err) {
         if (err) throw err;
         filesWritten ++;
       });
@@ -296,46 +342,50 @@
         const interval = setInterval(function() {
           if (filesWritten >= totalFiles) {
             clearInterval(interval);
-            console.log('Service (' + evt.serviceName + ') Created Successfully');
+            console.log('App (' + evt.appName + ') Created Successfully');
             process.exit();
           } else if (timer >= timeout) {
             clearInterval(interval);
-            console.log('Timed Out Creating Service (' + evt.serviceName + ')');
+            console.log('Timed Out Creating App (' + evt.appName + ')');
             process.exit();
           }
           timer += 10;
         }, 10);
       };
-      if (!serviceFile.routes) {
+      if (!appFile.routes) {
         // Create Root Controller File:
         totalFiles += 1;
-        const ctrlFile = createControllerFile('controllers', '[Author]', {'get': {'viewFile': 'home.mustache'}});
-        fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'controllers/controller.js',
+        const ctrlFile = o.createControllerFile('controllers', '[Author]',
+            {'get': {'viewFile': 'home.mustache'}});
+        require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' +
+            'controllers/controller.js',
             ctrlFile, function(err) {
               if (err) throw err;
               filesWritten ++;
             });
         // eslint-disable-next-line max-len
-        const viewFile = `<h1>Welcome to Your Sample Site</h1>\n<p>This is your new Blackrock Service. Customise it as you see fit.</p>\n             `;
+        const viewFile = `<h1>Welcome to Your Sample Site</h1>\n<p>This is your new Blackrock App. Customise it as you see fit.</p>\n             `;
         totalFiles += 1;
-        fs.writeFile(evt.servicePath + '/' + evt.serviceName + '/' + 'views/home.mustache', viewFile, function(err) {
+        require('fs').writeFile(evt.appPath + '/' + evt.appName + '/' + 'views/home.mustache', viewFile, function(err) {
           if (err) throw err;
           filesWritten ++;
         });
         timerFn();
       }
-      if (serviceFile.route) {
-        countRouteFiles(serviceFile.route, function(err1, res1) {
+      if (appFile.route) {
+        o.countRouteFiles(appFile.route, function(err1, res1) {
           if (err1) {
-            console.log('Error Counting Route Files For Service (' + evt.serviceName + ') - ' + err1.message);
+            console.log('Error Counting Route Files For App (' + evt.appName + ') - ' + err1.message);
             process.exit();
           }
+          // noinspection JSUnresolvedVariable
           totalFiles += res1.fileCount;
-          generateRouteLevel(serviceFile.route, function(err2, res2) {
+          o.generateRouteLevel(appFile.route, function(err2, res2) {
             if (err2) {
-              console.log('Error Generating Routes For Service (' + evt.serviceName + ') - ' + res2.err);
+              console.log('Error Generating Routes For App (' + evt.appName + ') - ' + res2.err);
               process.exit();
             }
+            // noinspection JSUnresolvedVariable
             filesWritten += res2.fileCount;
           });
           timerFn();
@@ -350,15 +400,26 @@
    */
 
   /**
-   * (Internal > Utility Methods) Create New Service With File
+   * (Internal > Utility Methods) Create New App With File
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name createControllerFile
+   * @ignore
+   * @function
    * @param {string} path - The Path
    * @param {string} author - The Author's Name
    * @param {object} verbs - Verbs Object
    * @return {string} ctrlFile - The Controller File (Text Format)
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  const createControllerFile = function GeneratorModuleCreateCtrlFile(path, author, verbs) {
-    const addVerb = function GeneratorModuleCreateCtrlFileAddVerb(verb, viewFile) {
+  o.createControllerFile = function GeneratorCreateCtrlFile(path, author, verbs) {
+    const addVerb = function GeneratorCreateCtrlFileAddVerb(verb, viewFile) {
       return `
     /**
      * ` + verb.toUpperCase() + `
@@ -396,17 +457,39 @@
 
   /**
    * (Internal > Utility Methods) Count Route Files
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name countRouteFiles
+   * @ignore
+   * @function
    * @param {number} routeLevel - The Route Level
    * @param {function} callbackFn - Callback Function
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  const countRouteFiles = function GeneratorModuleCountRouteFiles(routeLevel, callbackFn) {};
+  o.countRouteFiles = function GeneratorCountRouteFiles(routeLevel, callbackFn) {};
 
   /**
    * (Internal > Utility Methods) Parse & Generate Route Level
+   *
    * @private
+   * @memberof Server.Modules.Generator
+   * @name generateRouteLevel
+   * @ignore
+   * @function
    * @param {number} routeLevel - The Route Level
    * @param {function} callbackFn - Callback Function
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  const generateRouteLevel = function GeneratorModuleParseGenRouteLevel(routeLevel, callbackFn) {};
+  o.generateRouteLevel = function GeneratorParseGenRouteLevel(routeLevel, callbackFn) {};
 }();

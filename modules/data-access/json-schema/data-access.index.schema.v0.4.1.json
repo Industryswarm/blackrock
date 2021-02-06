@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackrock.industryswarm.com/schemas/data.index.schema.v0.4.1.json",
+  "description": "Blackrock Data Module Index Definition File",
+  "type": "object",
+  "required": [ "header", "content" ],
+  "properties": {
+    "header": {
+      "description": "File Header",
+      "allOf": [
+        { "$ref":  "validate.header.schema.v0.4.1.json" },
+        {
+          "type": "object",
+          "required": [ "format", "index" ],
+          "properties":  {
+            "format": {
+              "description": "File Format",
+              "type": "string",
+              "enum": [
+                "https://blackrock.industryswarm.com/schemas/data.index.schema.v0.4.1.json"
+              ]
+            },
+            "index": {
+              "description": "Index Schema Header Extension Object",
+              "type": "object",
+              "required": [ "primary", "target", "lastIndexed" ],
+              "properties": {
+                "primary": {
+                  "description": "Attribute Being Indexed",
+                  "type": "string"
+                },
+                "target": {
+                  "description": "Target Attribute",
+                  "type": "string"
+                },
+                "lastIndexed": {
+                  "description": "Index Schema Header Extension Object",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "content": {
+      "description": "File Content",
+      "type": "object"
+    }
+  }
+}

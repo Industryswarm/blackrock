@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackrock.industryswarm.com/schemas/validate.base.schema.v0.4.1.json",
+  "description": "Base Schema for Blackrock Application Server Definition Files",
+  "type": "object",
+  "required": [ "header", "content" ],
+  "properties": {
+    "header": {
+      "description": "File Header",
+      "type": "object",
+      "required": [ "format" ],
+      "properties":  {
+        "format": {
+          "description": "File Format",
+          "type": "string"
+        }
+      }
+    },
+    "content": {
+      "description": "File Content",
+      "type": "object"
+    }
+  }
+}

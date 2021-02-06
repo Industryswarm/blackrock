@@ -1,10 +1,10 @@
-# Blackrock Application Server and Web Framework
+# Blackrock Application Server
 
 ###### <br/>
 
 ### Introduction
 
-Welcome to the Blackrock Application Server & Framework. Blackrock has a Reactive / Event-Driven Architecture, and contains all the functionality you need to build your next Node.JS application, whether it be a web application, web service or something else.
+Welcome to the Blackrock Application Server. Blackrock has a Reactive / Event-Driven Architecture, and contains all the functionality you need to build your next Node.JS application, whether it be a web app, web service or something else.
 
 <br/>
 
@@ -40,7 +40,7 @@ Also: the is-blackrock node module has ZERO dependencies. So your risk of losing
 
 ### Getting Started
 
-See {@tutorial getting-started} for a quick and easy guide to help you get started building with Blackrock.
+See the [Getting Started Tutorial](https://blackrock.industryswarm.com/docs/tutorial-getting-started.html "Getting Started Tutorial") for a quick and easy guide to help you get started building with Blackrock.
 
 <br/>
 
@@ -48,10 +48,10 @@ See {@tutorial getting-started} for a quick and easy guide to help you get start
 
 *Below you can find the specifications for each Blackrock module:*
 
-| Module                                                                                                                                    | Description                                                                                                                                                                              |
-| -----------                                                                                                                               | -----------------------------------------------------------------------------------------------------                                                                                    |
+| Module                                                                                                                                   | Description                                                                                                                                                                              |
+| -----------                                                                                                                              | -----------------------------------------------------------------------------------------------------                                                                                    |
 | [CLI Module](https://blackrock.industryswarm.com/docs/Server.Modules.CLI.html "CLI Specification")                                        | Manages execution of server actions based on command-line arguments provided at startup                                                                                                  |
-| [Configure Module](https://blackrock.industryswarm.com/docs/Server.Modules.Configure.html "Configure Specification")                      | Provides methods and command line tools to manage server and service configuration                                                                                                       |
+| [Configure Module](https://blackrock.industryswarm.com/docs/Server.Modules.Configure.html "Configure Specification")                         | Provides methods and command line tools to manage server and service configuration                                                                                                       |
 | [Core Module](https://blackrock.industryswarm.com/docs/Server.Modules.Core.html "Core Specification")                                     | Primary dependency (application server instance) that is exported to service routes and linked applications. Loads and provides access to all other modules and interfaces               |
 | [Daemon Module](https://blackrock.industryswarm.com/docs/Server.Modules.Daemon.html "Daemon Specification")                               | Provides tools to instantiate the application server as a daemon and to manage the daemon                                                                                                |
 | [Data Module](https://blackrock.industryswarm.com/docs/Server.Modules.Data.html "Data Specification")                                     | Provides a standard abstraction to third-party databases, and has a built-in filesystem JSON-based database that you can use to quickly build and prototype applications and services    |
@@ -76,8 +76,8 @@ See {@tutorial getting-started} for a quick and easy guide to help you get start
 
 *Below you can find the specifications for each Blackrock interface:*
 
-| Module                                                                                                                            | Description                                                                                          |
-| -----------                                                                                                                       | -----------------------------------------------------------------------------------------------------|
+| Module                                                                                                                           | Description                                                                                          |
+| -----------                                                                                                                      | -----------------------------------------------------------------------------------------------------|
 | [Axon Interface](https://blackrock.industryswarm.com/docs/Server.Interfaces.Axon.html "Axon Specification")                       | Provides an interface for the Axon protocol                                                          |
 | [HTTP Interface](https://blackrock.industryswarm.com/docs/Server.Interfaces.HTTP.html "HTTP Specification")                       | Provides an interface for the HTTP and HTTPS protocol                                                |
 | [NanoMSG Interface](https://blackrock.industryswarm.com/docs/Server.Interfaces.NanoMSG.html "NanoMSG Specification")              | Provides an interface for the NanoMSG protocol                                                       |

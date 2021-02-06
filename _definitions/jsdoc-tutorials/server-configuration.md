@@ -1,6 +1,4 @@
-# Blackrock Server Configuration
-
-###### <br/>
+<br/>
 
 ## Specification
 
@@ -47,8 +45,8 @@ Now, let's have a look at the an example - the default configuration file (is-bl
         "core": {
             "banner": "Blackrock Application Server (Default)",
             "maxObjectListeners": 100,
-            "modules": ["cli", "core", ".configure", "daemon", "errorhandler", ".farm", ".generator", "i18n",
-                ".installer", "jobs", "logger", "router", ".sandbox", "services", ".swagger", ".universe", "utilities"],
+            "modules": ["cli", "core", ".configure", "daemon", "errorhandler", ".farm", ".generator", ".i18n",
+                ".installer", "jobs", "logger", "router", ".sandbox", "app-engine", "utilities"],
             "interfaces": [".axon", "http", ".nanomsg", ".ssh", "websockets", ".zeromq"],
             "startupModules": ["logger", "utilities", "daemon", "cli"],
             "timeouts": {
@@ -63,7 +61,7 @@ Now, let's have a look at the an example - the default configuration file (is-bl
 
         "daemon": {},
 
-        "errorhandler": {
+        "error-handler": {
             "enabled": true,
             "timeout": 5000
         },
@@ -139,12 +137,11 @@ Now, let's have a look at the an example - the default configuration file (is-bl
 
         "sandbox": {},
     
-        "services": {
+        "app-engine": {
             "allow": {
                 "cfg": true,
                 "pkg": true,
                 "fetchBasePath": true,
-                "getCurrentService": true,
                 "shutdown": false,
                 "globals": true,
                 "modules": {
@@ -157,15 +154,15 @@ Now, let's have a look at the an example - the default configuration file (is-bl
                         "init", "t", "use", "exists", "getFixedT", "changeLanguage", "loadNamespaces", "loadLanguages",
                         "reloadResources", "setDefaultNamespace", "dir", "format", "createInstance", "cloneInstance",
                         "on", "off", "getResource", "addResource", "addResources", "addResourceBundle", "hasResourceBundle",
-                        "getDataByLanguage", "getResourceBundle", "removeResourceBundle", "createServiceInstances"
+                        "getDataByLanguage", "getResourceBundle", "removeResourceBundle", "createAppInstances"
                     ],
                     "identity": [],
                     "installer": [],
-                    "jobs": ["add", "remove", "jobs.add", "jobs.remove"],
+                    "jobs": ["add", "remove"],
                     "logger": ["log"],
                     "router": [],
                     "sandbox": [],
-                    "services": ["service(serviceName)", "serviceStats"],
+                    "app-engine": ["app(appName)", "appStats"],
                     "universe": [],
                     "utilities": [
                         "randomString", "uuid4", "isJSON", "objectLength", "getCurrentDateInISO", "validateString",
@@ -185,7 +182,7 @@ Now, let's have a look at the an example - the default configuration file (is-bl
                 }
             },
             "runtime": {
-                "services": {
+                "apps": {
                     "allowLoad": true,
                     "allowUnload": true,
                     "allowOverride": false

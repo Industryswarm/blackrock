@@ -2,6 +2,7 @@
 
 /**
  * Blackrock Application Server
+ *
  * @namespace Server
  *
  * @description
@@ -46,23 +47,24 @@
  */
 
 !function BlackrockWrapper() {
-  const Server = function Server() {
-    let core;
-    if (!module.parent) core = require('./modules/core/main.js').init();
-    else module.exports = core = require('./modules/core/main.js');
-    this.core = core;
-  };
-
   /**
-   * Blackrock Application Server Instance
-   * @memberof Server
+   * Detect Server Mode
+   *
    * @type Server.Modules.Core
-   * @instance
    *
    * @description
-   * This is the application server instance that is exported to the application
-   * that includes this module (is-blackrock) as a dependency.
+   * This block of code detects the mode of the server (whether that be 'Blackrock as a Dependency' or a
+   * 'Stand-Alone Application Server). If the former, it does not call the init() method. If the latter, it does.
    */
-  const instance = new Server();
-  instance.core.void();
+  try {
+    const core = require('./modules/core/main.js');
+    if (require.main === module) {
+      // noinspection JSUnresolvedFunction
+      core.init().then(function(blackrock) {}).catch(function(err) {});
+    } else {
+      module.exports = core;
+    }
+  } catch(err) {
+    console.log('Blackrock > Unable To Initialise (Cannot Find or Load Core Module)', err)
+  }
 }();

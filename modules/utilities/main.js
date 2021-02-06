@@ -1,191 +1,202 @@
 !function UtilitiesModuleWrapper() {
-  // eslint-disable-next-line no-extend-native
-  String.prototype.endsWith = function UtilitiesEndsWith(suffix) {
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
-  };
-  let core; let mod; let log; const pipelines = {}; const streamFns = {}; let lib; let rx;
-  const modules = {}; const csv = {}; const crypto = {};
-
+  let core; let mod; let o = {}; const pipelines = function() {};
 
   /**
    * Blackrock Utilities Module
    *
+   * @public
    * @class Server.Modules.Utilities
    * @augments Server.Modules.Core.Module
-   * @param {Server.Modules.Core} coreObj - The Parent Core Object
-   * @return {Server.Modules.Utilities} module - The Utilities Module
+   * @param {Server.Modules.Core} coreObj - The Core Module Singleton
+   * @return {Server.Modules.Utilities} module - The Utilities Module Singleton
    *
    * @description This is the Utilities Module of the Blackrock Application Server.
    * It provides a large selection of utilities to help fast-track development of
    * your next app or web service.
    *
+   * @example
+   * Tbc...
+   *
    * @author Darren Smith
    * @copyright Copyright (c) 2021 Darren Smith
    * @license Licensed under the LGPL license.
    */
-  module.exports = function UtilitiesModuleConstructor(coreObj) {
-    core = coreObj; mod = new core.Mod('Utilities'); log = core.module('logger').log;
+  module.exports = function UtilitiesModule(coreObj) {
+    if (mod) return mod;
+    // eslint-disable-next-line no-extend-native
+    String.prototype.endsWith = function UtilitiesEndsWith(suffix) {
+      return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+    core = coreObj; mod = new core.Mod('Utilities'); o.log = core.module('logger').log;
+    o.log('debug', 'Utilities > Initialising...', {module: mod.name}, 'MODULE_INIT');
+    mod.system = {};
     core.on('updateLogFn', function() {
-      log = core.module('logger').log;
+      o.log = core.module('logger').log;
     });
-    log('debug', 'Blackrock Utilities > Initialising...', {}, 'UTILITIES_INIT');
-    lib = core.lib; rx = lib.rxjs; mod.crypto = {}; mod.system = {};
     process.nextTick(function() {
-      const Pipeline = pipelines.setupUtilitiesModule();
-      new Pipeline({}).pipe();
+      pipelines.init();
     });
     return mod;
   };
 
 
-  /*
-   * =====================
-   * Event Stream Pipeline
-   * =====================
-   */
-
   /**
    * (Internal > Pipeline [1]) Setup Utilities Module
+   *
    * @private
-   * @return {object} pipeline - The Pipeline Module
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  pipelines.setupUtilitiesModule = function UtilitiesModuleSetupPipeline() {
-    return new core.Base().extend({
-      constructor: function UtilitiesModuleSetupPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function UtilitiesModuleSetupPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function UtilitiesModuleSetupPipelinePipe() {
-        log('debug',
-            'Blackrock Utilities Module > Server Initialisation Pipeline Created - Executing Now:',
-            {}, 'UTILITIES_EXEC_INIT_PIPELINE');
-        const self = this; const Stream = rx.bindCallback((cb) => {
-          self.callback(cb);
-        })();
-        Stream.pipe(
+  pipelines.init = function UtilitiesSetupInitPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}).pipe(
 
-            // Fires once on server initialisation:
-            streamFns.setupBase,
-            streamFns.setupUuid4,
-            streamFns.setupIsJSON,
-            streamFns.setupRandomString,
-            streamFns.setupObjectLength,
-            streamFns.setupGetCurrentDateInISO,
-            streamFns.setupValidateString,
-            streamFns.setupCloneObject,
-            streamFns.setupLoadModule,
-            streamFns.setupCsvParse,
-            streamFns.setupEncrypt,
-            streamFns.setupDecrypt,
-            streamFns.setupXML,
-            streamFns.setupGetMemoryUse,
-            streamFns.setupGetCpuLoad,
-            streamFns.setupGetStartTime,
-            streamFns.setupGetEndTime,
-            streamFns.setupGetObjectMemoryUsage,
-            streamFns.setupSimplify
+        // Fires once on server initialisation:
+        pipelines.init.setupBase,
+        pipelines.init.setupUuid4,
+        pipelines.init.setupIsJSON,
+        pipelines.init.setupRandomString,
+        pipelines.init.setupObjectLength,
+        pipelines.init.setupGetCurrentDateInISO,
+        pipelines.init.setupValidateString,
+        pipelines.init.setupCloneObject,
+        pipelines.init.setupLoadModule,
+        pipelines.init.setupCsvParse,
+        pipelines.init.setupEncrypt,
+        pipelines.init.setupDecrypt,
+        pipelines.init.setupXML,
+        pipelines.init.setupGetMemoryUse,
+        pipelines.init.setupGetCpuLoad,
+        pipelines.init.setupGetStartTime,
+        pipelines.init.setupGetEndTime,
+        pipelines.init.setupGetObjectMemoryUsage,
+        pipelines.init.setupSimplify
 
-        ).subscribe();
-      },
-    });
+    ).subscribe();
   };
 
 
-  /*
-   * =====================================
-   * Utilities Stream Processing Functions
-   * (Fires Once on Server Initialisation)
-   * =====================================
-   */
-
   /**
    * (Internal > Stream Methods [1]) Setup Base
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupBase
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupBase = function UtilitiesSetupBase(source) {
-    return lib.rxOperator(function(observer) {
-      mod.crypto = crypto;
-      mod.modules = modules;
-      mod.csv = csv;
-      log('debug', 'Blackrock Utilities > [1] Base Object Schema Initialised', {}, 'UTILITIES_BASE_OBJ_SCHEMA_INIT');
-      observer.next({
-        methods: {
-          crypto: crypto,
-          modules: modules,
-          csv: csv,
-        },
-      });
+  pipelines.init.setupBase = function UtilitiesIPLSetupBase(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupBaseOp(observer) {
+      o.log('debug', 'Utilities > [1] Base Object Schema Initialised',
+          {module: mod.name}, 'UTILITIES_BASE_OBJ_SCHEMA_INIT');
+      observer.next({methods: {}});
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [2]) Setup UUID4 Utility Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupUuid4
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupUuid4 = function UtilitiesModuleSetupUUID(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupUuid4 = function UtilitiesIPLSetupUUID(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupUUIDOp(observer, evt) {
       /**
        * Generate UUID4 String
-       * @name uuid4
-       * @function
+       *
+       * @public
+       * @function uuid4
        * @memberof Server.Modules.Utilities
        * @return {string} uuid - Generated UUID4 String
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
       // eslint-disable-next-line no-unused-vars
-      mod.uuid4 = evt.methods.uuid4 = function UtilitiesModuleUUID() {
+      mod.uuid4 = evt.methods.uuid4 = function UtilitiesUUID() {
         let uuid = ''; let ii;
         for (ii = 0; ii < 32; ii += 1) {
           switch (ii) {
             case 8:
-            case 20:
-              uuid += '-';
-              uuid += (Math.random() * 16 | 0).toString(16);
-              break;
-            case 12:
-              uuid += '-';
-              uuid += '4';
-              break;
-            case 16:
-              uuid += '-';
-              uuid += (Math.random() * 4 | 8).toString(16);
-              break;
-            default:
-              uuid += (Math.random() * 16 | 0).toString(16);
+            case 20: uuid += '-'; uuid += (Math.random() * 16 | 0).toString(16); break;
+            case 12: uuid += '-'; uuid += '4'; break;
+            case 16: uuid += '-'; uuid += (Math.random() * 4 | 8).toString(16); break;
+            default: uuid += (Math.random() * 16 | 0).toString(16);
           }
         }
         return uuid;
       };
-      log('debug', 'Blackrock Utilities > [2] \'uuid4\' Method Attached To This Module', {}, 'UTILITIES_BOUND_UUID4');
+      o.log('debug', 'Utilities > [2] \'uuid4\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_UUID4');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [3]) Setup Is JSON Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupIsJSON
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupIsJSON = function UtilitiesModuleSetupIsJSON(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupIsJSON = function UtilitiesIPLSetupIsJSON(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupIsJSONOp(observer, evt) {
       /**
        * Is JSON?
+       *
+       * @public
        * @memberof Server.Modules.Utilities
-       * @name isJSON
-       * @function
-       * @param {string|object} input - JSON Data (in String or Object Form)
+       * @function isJSON
+       * @param {*} input - JSON Data (in String or Object Form)
        * @return {string} result - Result of Query (json_string | json_object | string)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
-      mod.isJSON = evt.methods.isJSON = function UtilitiesModuleIsJSON(input) {
-        if (input !== null && typeof input === 'object') {
-          return 'json_object';
-        }
+      mod.isJSON = evt.methods.isJSON = function UtilitiesIsJSON(input) {
+        if (input !== null && typeof input === 'object') return 'json_object';
         try {
           JSON.parse(input);
           return 'json_string';
@@ -193,30 +204,48 @@
           return 'string';
         }
       };
-      log('debug',
-          'Blackrock Utilities > [3] \'isJSON\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_IS_JSON');
+      o.log('debug',
+          'Utilities > [3] \'isJSON\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_IS_JSON');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [4]) Setup Random String Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupRandomString
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupRandomString = function UtilitiesModuleSetupRandomString(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupRandomString = function UtilitiesIPLSetupRandomString(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupRandomStringOp(observer, evt) {
       /**
        * Generate Random String
+       *
+       * @public
        * @memberof Server.Modules.Utilities
-       * @name randomString
-       * @function
+       * @function randomString
        * @param {number} length - Length of Random String to Generate
        * @return {string} text - The generated random string
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
-      mod.randomString = evt.methods.randomString = function UtilitiesModuleRandomString(length) {
+      mod.randomString = evt.methods.randomString = function UtilitiesRandomString(length) {
         let text = '';
         const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         for (let i = 0; i < length; i++) {
@@ -224,30 +253,48 @@
         }
         return text;
       };
-      log('debug',
-          'Blackrock Utilities > [4] \'randomString\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_RANDOM_STRING');
+      o.log('debug',
+          'Utilities > [4] \'randomString\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_RANDOM_STRING');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [5]) Setup Object Length Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupObjectLength
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupObjectLength = function UtilitiesModuleSetupObjectLength(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupObjectLength = function UtilitiesIPLSetupObjectLength(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupObjectLengthOp(observer, evt) {
       /**
        * Get Object Length
+       *
+       * @public
        * @memberof Server.Modules.Utilities
-       * @name objectLength
-       * @function
+       * @function objectLength
        * @param {object} object - The Javascript Object
        * @return {number} length - The size of the object (number of keys)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
-      mod.objectLength = evt.methods.objectLength = function UtilitiesModuleObjectLength(object) {
+      mod.objectLength = evt.methods.objectLength = function UtilitiesObjectLength(object) {
         let length = 0;
         for ( const key in object ) {
           // eslint-disable-next-line no-prototype-builtins
@@ -257,42 +304,96 @@
         }
         return length;
       };
-      log('debug',
-          'Blackrock Utilities > [5] \'objectLength\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_OBJ_LENGTH');
+      o.log('debug',
+          'Utilities > [5] \'objectLength\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_OBJ_LENGTH');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [6]) Setup Get Current Date in ISO Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetCurrentDateInISO
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetCurrentDateInISO = function UtilitiesModuleSetupGetCurrentDateInISO(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function UtilitiesModuleGetCurrentDateInISO() {
+  pipelines.init.setupGetCurrentDateInISO = function UtilitiesIPLSetupGetCurrentDateInISO(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetCurrentDateInISOOp(observer, evt) {
+      /**
+       * Get Current Date In ISO
+       *
+       * @public
+       * @function getCurrentDateInISO
+       * @memberof Server.Modules.Utilities
+       * @return {string} currentDateISO - Current Date in ISO
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getCurrentDateInISO = evt.methods.getCurrentDateInISO = function UtilitiesGetCurrentDateInISO() {
         let currentDate = new Date();
-        currentDate = currentDate.toISOString();
-        return currentDate;
+        return currentDate.toISOString();
       };
-      log('debug',
-          'Blackrock Utilities > [6] \'getCurrentDateInISO\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_GET_CURRENT_DATE_IN_ISO');
+      o.log('debug',
+          'Utilities > [6] \'getCurrentDateInISO\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_CURRENT_DATE_IN_ISO');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [7]) Setup Get Current Date in ISO Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupValidateString
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupValidateString = function UtilitiesModuleSetupValidateString(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.validateString = evt.methods.validateString = function UtilitiesModuleValidateString(text, validator) {
+  pipelines.init.setupValidateString = function UtilitiesIPLSetupValidateString(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupValidateStringOp(observer, evt) {
+      /**
+       * Validate String
+       *
+       * @public
+       * @function validateString
+       * @memberof Server.Modules.Utilities
+       * @param {string} text - Input String to Validate
+       * @param {object} validator - Validator for String
+       * @param {string} validator.whitelist - Whitelist to validate against
+       * @param {string} validator.regex - Regex to Validate Against
+       * @param {boolean} validator.email - Whether to validate as email (True | False)
+       * @return {boolean} result - Result of Validation
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.validateString = evt.methods.validateString = function UtilitiesValidateString(text, validator) {
         if (!validator) return false;
         if (!text) return true;
         if (validator.whitelist) {
@@ -321,22 +422,48 @@
           } else return false;
         } else return false;
       };
-      log('debug',
-          'Blackrock Utilities > [7] \'validateString\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_VALIDATE_STRING');
+      o.log('debug',
+          'Utilities > [7] \'validateString\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_VALIDATE_STRING');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [8]) Setup Clone Object Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupCloneObject
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupCloneObject = function UtilitiesModuleSetupCloneObject(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.cloneObject = evt.methods.cloneObject = function UtilitiesModuleCloneObject(src) {
+  pipelines.init.setupCloneObject = function UtilitiesIPLSetupCloneObject(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupCloneObjectOp(observer, evt) {
+      /**
+       * Clone Object
+       *
+       * @public
+       * @function cloneObject
+       * @memberof Server.Modules.Utilities
+       * @param {object} src - Source Object
+       * @return {object} target - Target Object
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.cloneObject = evt.methods.cloneObject = function UtilitiesCloneObject(src) {
         const target = {};
         for (const prop in src) {
           // eslint-disable-next-line no-prototype-builtins
@@ -344,9 +471,9 @@
         }
         return target;
       };
-      log('debug',
-          'Blackrock Utilities > [8] \'cloneObject\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_CLONE_OBJ');
+      o.log('debug',
+          'Utilities > [8] \'cloneObject\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_CLONE_OBJ');
       observer.next(evt);
     }, source);
   };
@@ -354,40 +481,84 @@
 
   /**
    * (Internal > Stream Methods [9]) Setup Load Module Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupLoadModule
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupLoadModule = function UtilitiesModuleSetupLoadModule(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.modules.loadModule = evt.methods.modules.loadModule = function UtilitiesModuleLoadModule(name) {
+  pipelines.init.setupLoadModule = function UtilitiesIPLSetupLoadMod(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupLoadModOp(observer, evt) {
+      /**
+       * Load Module
+       *
+       * @public
+       * @function loadModule
+       * @memberof Server.Modules.Utilities
+       * @param {string} name - Module Name
+       * @return {Server.Modules.Core.Module} module - Loaded Module
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.loadModule = evt.methods.loadModule = function UtilitiesLoadMod(name) {
         return require(name + '.js');
       };
-      log('debug',
-          'Blackrock Utilities > [9] \'loadModule\' Method Attached To This Module',
-          {}, 'UTILITIES_BOUND_LOAD_MOD');
+      o.log('debug',
+          'Utilities > [9] \'loadModule\' Method Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_LOAD_MOD');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [10]) Setup Parse CSV Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupCsvParse
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupCsvParse = function UtilitiesModuleSetupCsvParse(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupCsvParse = function UtilitiesIPLSetupCsvParse(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupCsvParseOp(observer, evt) {
       /**
        * Parses CSV
+       *
+       * @public
        * @memberof Server.Modules.Utilities
-       * @name parse
-       * @function
+       * @function parseCsv
        * @param {string} inputString - String of raw text data in CSV format
        * @param {object} options - Options object. Can set options.delimiter to something other than a comma
        * @param {function} cb - Callback function
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
-      mod.csv.parse = evt.methods.csv.parse = function UtilitiesModuleCsvParse(inputString, options, cb) {
+      mod.parseCsv = evt.methods.parseCsv = function UtilitiesCsvParse(inputString, options, cb) {
         try {
           if (!inputString || !(typeof inputString === 'string' || inputString instanceof String)) {
             const error = {message: 'Input string not provided or not in string format'};
@@ -445,131 +616,243 @@
           if (cb) cb(err, null);
         }
       };
-      log('debug',
-          'Blackrock Utilities > [10] \'parse\' Method Attached To \'csv\' Object On This Module',
-          {}, 'UTILITIES_BOUND_CSV_PARSE');
+      o.log('debug',
+          'Utilities > [10] \'parse\' Method Attached To \'csv\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_CSV_PARSE');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [11]) Setup Crypto Encrypt Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupEncrypt
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupEncrypt = function UtilitiesModuleSetupEncrypt(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupEncrypt = function UtilitiesIPLSetupEncrypt(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupEncryptOp(observer, evt) {
       /**
        * Symmetric Encryption of Text String, Given Key
+       *
+       * @public
        * @memberof Server.Modules.Utilities
-       * @name encrypt
-       * @function
+       * @function encrypt
        * @param {string} text - String of text to encrypt
        * @param {string} key - RSA key to use to encrypt the string
        * @param {string} encoding - Encoding for output. Supports - 'buffer', 'binary', 'hex' or 'base64'.
        * @return {string} encrypted - Encrypted String
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
        */
-      mod.crypto.encrypt = evt.methods.crypto.encrypt = function UtilitiesModuleEncrypt(text, key, encoding) {
+      mod.encrypt = evt.methods.encrypt = function UtilitiesEncrypt(text, key, encoding) {
         const NodeRSA = require('./_support/node-rsa');
         key = new NodeRSA(key);
+        // noinspection JSUnresolvedFunction
         return key.encrypt(text, encoding);
       };
-      log('debug',
-          'Blackrock Utilities > [11] \'encrypt\' Method Attached To \'crypto\' Object On This Module',
-          {}, 'UTILITIES_BOUND_CRYPTO_ENCRYPT');
+      o.log('debug',
+          'Utilities > [11] \'encrypt\' Method Attached To \'crypto\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_CRYPTO_ENCRYPT');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [12]) Setup Crypto Decrypt Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupDecrypt
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupDecrypt = function UtilitiesModuleSetupDecrypt(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupDecrypt = function UtilitiesIPLSetupDecrypt(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupDecryptOp(observer, evt) {
       /**
-        * Symmetric Decryption of Text String, Given Key
-        * @memberof Server.Modules.Utilities
-        * @name decrypt
-        * @function
-        * @param {string} text - String of text to decrypt
-        * @param {string} key - RSA key to use to decrypt the string
-        * @param {string} encoding - Encoding for output. Supports - 'buffer', 'json' or 'utf8'
-        * @return {string} decrypted - Decrypted string
-        */
-      mod.crypto.decrypt = evt.methods.crypto.decrypt = function UtilitiesModuleDecrypt(text, key, encoding) {
+       * Symmetric Decryption of Text String, Given Key
+       *
+       * @public
+       * @memberof Server.Modules.Utilities
+       * @function decrypt
+       * @param {string} text - String of text to decrypt
+       * @param {string} key - RSA key to use to decrypt the string
+       * @param {string} encoding - Encoding for output. Supports - 'buffer', 'json' or 'utf8'
+       * @return {string} decrypted - Decrypted string
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.decrypt = evt.methods.decrypt = function UtilitiesDecrypt(text, key, encoding) {
         const NodeRSA = require('./_support/node-rsa');
         key = new NodeRSA(key);
+        // noinspection JSUnresolvedFunction
         return key.decrypt(text, encoding);
       };
-      log('debug',
-          'Blackrock Utilities > [12] \'decrypt\' Method Attached To \'crypto\' Object On This Module',
-          {}, 'UTILITIES_BOUND_CRYPTO_DECRYPT');
+      o.log('debug',
+          'Utilities > [12] \'decrypt\' Method Attached To \'crypto\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_CRYPTO_DECRYPT');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [13]) Setup XML Parsing Library
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupXML
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
    * @see https://github.com/NaturalIntelligence/fast-xml-parser
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupXML = function UtilitiesModuleSetupXML(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupXML = function UtilitiesIPLSetupXML(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupXMLOp(observer, evt) {
+      /**
+       * Load Module
+       *
+       * @public
+       * @memberof Server.Modules.Utilities
+       * @name xml
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
       mod.xml = evt.methods.xml = require('./_support/xml/parser.js');
-      log('debug',
-          'Blackrock Utilities > [13] XML Parser Library Attached To This Module',
-          {}, 'UTILITIES_BOUND_XML_PARSER_LIB');
+      o.log('debug',
+          'Utilities > [13] XML Parser Library Attached To This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_XML_PARSER_LIB');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [14]) Setup Get Memory Use Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetMemoryUse
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetMemoryUse = function UtilitiesModuleSetupGetMemoryUse(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.system.getMemoryUse = function UtilitiesModuleGetMemoryUse(type) {
+  pipelines.init.setupGetMemoryUse = function UtilitiesIPLSetupGetMemoryUse(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetMemoryUseOp(observer, evt) {
+      /**
+       * Get Memory Use
+       *
+       * @public
+       * @function getMemoryUse
+       * @memberof Server.Modules.Utilities
+       * @param {string} type - Type
+       * @return {number} module - Memory Use
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getMemoryUse = mod.system.getMemoryUse = function UtilitiesGetMemoryUse(type) {
         const used = process.memoryUsage();
-        if (type && used[type]) {
-          return used[type];
-        } else {
+        if (type && used[type]) return used[type];
+        else {
           let memoryUse = 0;
           // eslint-disable-next-line guard-for-in
           for (const key in used) {
+            // noinspection JSUnfilteredForInLoop
             memoryUse += used[key];
           }
           return memoryUse;
         }
       };
-      log('debug',
-          'Blackrock Utilities > [14] \'getMemoryUse\' Method Attached To \'system\' Object On This Module',
-          {}, 'UTILITIES_BOUND_GET_MEM_USE');
+      o.log('debug',
+          'Utilities > [14] \'getMemoryUse\' Method Attached To \'system\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_MEM_USE');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [15]) Setup Get CPU Load Method
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetCpuLoad
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetCpuLoad = function UtilitiesModuleSetupGetCpuLoad(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.system.getCpuLoad = function UtilitiesModuleGetCpuLoad(cb) {
+  pipelines.init.setupGetCpuLoad = function UtilitiesIPLSetupGetCpuLoad(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetCpuLoadOp(observer, evt) {
+      /**
+       * Get CPU Load
+       *
+       * @public
+       * @function getCpuLoad
+       * @memberof Server.Modules.Utilities
+       * @param {function} cb - Callback Function
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getCpuLoad = mod.system.getCpuLoad = function UtilitiesGetCpuLoad(cb) {
         const os = require('os');
-        const cpuAverage = function UtilitiesModuleGetCpuLoadCpuAvgFn() {
-          let totalIdle = 0; let totalTick = 0;
-          const cpus = os.cpus();
+        const cpuAverage = function UtilitiesGetCpuLoadCpuAvgFn() {
+          let totalIdle = 0; let totalTick = 0; const cpus = os.cpus();
           for (let i = 0, len = cpus.length; i < len; i++) {
             const cpu = cpus[i];
             // eslint-disable-next-line guard-for-in
@@ -581,7 +864,7 @@
           return {idle: totalIdle / cpus.length, total: totalTick / cpus.length};
         };
         const startMeasure = cpuAverage();
-        setTimeout(function UtilitiesModuleGetCpuLoadTimeout() {
+        setTimeout(function UtilitiesGetCpuLoadTimeout() {
           const endMeasure = cpuAverage();
           const idleDifference = endMeasure.idle - startMeasure.idle;
           const totalDifference = endMeasure.total - startMeasure.total;
@@ -589,40 +872,91 @@
           cb(percentageCPU);
         }, 100);
       };
-      log('debug',
-          'Blackrock Utilities > [15] \'getCpuLoad\' Method Attached To \'system\' Object On This Module',
-          {}, 'UTILITIES_BOUND_GET_CPU_LOAD');
+      o.log('debug',
+          'Utilities > [15] \'getCpuLoad\' Method Attached To \'system\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_CPU_LOAD');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [16]) Setup Get Start Time
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetStartTime
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetStartTime = function UtilitiesModuleSetupGetStartTime(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.system.getStartTime = function UtilitiesModuleGetStartTime() {
+  pipelines.init.setupGetStartTime = function UtilitiesIPLSetupGetStartTime(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetStartTimeOp(observer, evt) {
+      /**
+       * Get Start Time
+       *
+       * @public
+       * @function getStartTime
+       * @memberof Server.Modules.Utilities
+       * @return {*} time - Start Time
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getStartTime = mod.system.getStartTime = function UtilitiesGetStartTime() {
         return process.hrtime();
       };
-      log('debug',
-          'Blackrock Utilities > [16] \'getStartTime\' Method Attached To \'system\' Object On This Module',
-          {}, 'UTILITIES_BOUND_GET_START_TIME');
+      o.log('debug',
+          'Utilities > [16] \'getStartTime\' Method Attached To \'system\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_START_TIME');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [17]) Setup Get End Time
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetEndTime
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetEndTime = function UtilitiesModuleSetupGetEndTime(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.system.getEndTime = function UtilitiesModuleGetEndTime(start) {
+  pipelines.init.setupGetEndTime = function UtilitiesIPLSetupGetEndTime(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetEndTimeOp(observer, evt) {
+      /**
+       * Get End Time
+       *
+       * @public
+       * @function getEndTime
+       * @memberof Server.Modules.Utilities
+       * @param {*} start - Start Time
+       * @return {*} end - End Time
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getEndTime = mod.system.getEndTime = function UtilitiesGetEndTime(start) {
         const precision = 3;
         const elapsed = process.hrtime(start)[1] / 1000000;
         let end = process.hrtime(start)[0];
@@ -631,28 +965,52 @@
         // start = process.hrtime();
         return end;
       };
-      log('debug',
-          'Blackrock Utilities > [17] \'getEndTime\' Method Attached To \'system\' Object On This Module',
-          {}, 'UTILITIES_BOUND_GET_END_TIME');
+      o.log('debug',
+          'Utilities > [17] \'getEndTime\' Method Attached To \'system\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_END_TIME');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [18]) Setup Get Object Memory Usage
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupGetObjectMemoryUsage
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
    *
    * @description
-   * Derived From: sizeof.js
-   * A function to calculate the approximate memory usage of objects
-   * Created by Kate Morley - http://code.iamkate.com/
-   * @see http://creativecommons.org/publicdomain/zero/1.0/legalcode
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetObjectMemoryUsage = function UtilitiesModuleSetupGetObjectMemoryUsage(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.system.getObjectMemoryUsage = function UtilitiesModuleGetObjectMemoryUsage(object) {
+  pipelines.init.setupGetObjectMemoryUsage = function UtilitiesIPLSetupGetObjectMemoryUsage(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupGetObjectMemoryUsageOp(observer, evt) {
+      /**
+       * Get Object Memory Usage
+       *
+       * @public
+       * @function getObjectMemoryUsage
+       * @memberof Server.Modules.Utilities
+       * @param {object} object - Object to get Memory Usage Of
+       * @return {number} size - Object Size
+       * @see http://creativecommons.org/publicdomain/zero/1.0/legalcode
+       * @see http://code.iamkate.com/
+       * @author Kate Morley
+       *
+       * @description
+       * Derived From: sizeof.js
+       * A function to calculate the approximate memory usage of objects
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getObjectMemoryUsage = mod.system.getObjectMemoryUsage = function UtilitiesGetObjectMemoryUsage(object) {
         const objects = [object];
         let size = 0;
         for (let index = 0; index < objects.length; index ++) {
@@ -663,69 +1021,179 @@
             case 'object':
               if (Object.prototype.toString.call(objects[index]) !== '[object Array]') {
                 // eslint-disable-next-line guard-for-in
-                for (const key in objects[index]) size += 2 * key.length;
+                for (const key in objects[index]) {
+                  // noinspection JSUnfilteredForInLoop
+                  size += 2 * key.length;
+                }
               }
               // eslint-disable-next-line guard-for-in
               for (const key in objects[index]) {
                 let processed = false;
                 for (let search = 0; search < objects.length; search ++) {
+                  // noinspection JSUnfilteredForInLoop
                   if (objects[search] === objects[index][key]) {
                     processed = true;
                     break;
                   }
                 }
-                if (!processed) objects.push(objects[index][key]);
+                if (!processed) {
+                  // noinspection JSUnfilteredForInLoop
+                  objects.push(objects[index][key]);
+                }
               }
           }
         }
         return size;
       };
-      log('debug',
-          'Blackrock Utilities > [18] \'getObjectMemoryUsage\' Method Attached To \'system\' Object On This Module',
-          {}, 'UTILITIES_BOUND_GET_OBJ_MEM_USE');
+      o.log('debug',
+          'Utilities > [18] \'getObjectMemoryUsage\' Method Attached To \'system\' Object On This Module',
+          {module: mod.name}, 'UTILITIES_BOUND_GET_OBJ_MEM_USE');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [19]) Setup Simplify Methods
+   *
    * @private
+   * @memberof Server.Modules.Utilities
+   * @function pipelines.init.setupSimplify
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
    * @see https://www.reddit.com/r/javascript/comments/9zhvuw/is_there_a_better_way_to_check_for_nested_object/
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupSimplify = function UtilitiesModuleSetupSimplify(source) {
-    return lib.rxOperator(function(observer, evt) {
-      mod.isUndefined = function UtilitiesModuleSimplifyIsUndefined(value) {
+  pipelines.init.setupSimplify = function UtilitiesIPLSetupSimplify(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function UtilitiesIPLSetupSimplifyOp(observer, evt) {
+      /**
+       * Is Undefined?
+       *
+       * @public
+       * @function isUndefined
+       * @memberof Server.Modules.Utilities
+       * @param {*} value - Value to Check
+       * @return {boolean} result - Result of Check (True | False)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.isUndefined = function UtilitiesIPLSimplifyIsUndefined(value) {
         return typeof value === 'undefined';
       };
-      mod.isNull = function UtilitiesModuleSimplifyIsNull(value) {
+      /**
+       * Is Null?
+       *
+       * @public
+       * @function isNull
+       * @memberof Server.Modules.Utilities
+       * @param {*} value - Value to Check
+       * @return {boolean} result - Result of Check (True | False)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.isNull = function UtilitiesIPLSimplifyIsNull(value) {
         return value === null;
       };
-      mod.isNil = function UtilitiesModuleSimplifyIsNil(value) {
+      /**
+       * Is Nil?
+       *
+       * @public
+       * @function isNil
+       * @memberof Server.Modules.Utilities
+       * @param {*} value - Value to Check
+       * @return {boolean} result - Result of Check (True | False)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.isNil = function UtilitiesIPLSimplifyIsNil(value) {
         return mod.isUndefined(value) || mod.isNull(value);
       };
-      mod.path = function UtilitiesModuleSimplifyPath(object, keys) {
+      /**
+       * Path
+       *
+       * @public
+       * @function path
+       * @memberof Server.Modules.Utilities
+       * @param {object} object - Object
+       * @param {array} keys - Keys
+       * @return {*} result - Result
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.path = function UtilitiesIPLSimplifyPath(object, keys) {
         return keys.reduce((object, key) => {
           let value;
           return mod.isNil(object) || mod.isNil(value = object[key]) ? null : value;
         }, object);
       };
-      mod.prop = function UtilitiesModuleSimplifyProp(object, key) {
+      /**
+       * Prop
+       *
+       * @public
+       * @function prop
+       * @memberof Server.Modules.Utilities
+       * @param {object} object - Object
+       * @param {string} key - Key
+       * @return {*} result - Result
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.prop = function UtilitiesIPLSimplifyProp(object, key) {
         return mod.path(object, key.split('.'));
       };
-      mod.assign = function UtilitiesModuleSimplifyAssign(obj, keyPath, value) {
+      /**
+       * Assign
+       *
+       * @public
+       * @function prop
+       * @memberof Server.Modules.Utilities
+       * @param {object} obj - Object
+       * @param {string} keyPath - Key Path
+       * @param {string} value - Value
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.assign = function UtilitiesIPLSimplifyAssign(obj, keyPath, value) {
         const lastKeyIndex = keyPath.length-1;
         for (let i = 0; i < lastKeyIndex; ++ i) {
           const key = keyPath[i];
-          if (!(key in obj)) {
-            obj[key] = {};
-          }
+          if (!(key in obj)) obj[key] = {};
           obj = obj[key];
         }
         obj[keyPath[lastKeyIndex]] = value;
       };
-      log('debug', 'Blackrock Utilities > [19] Setup Simplify Coding Methods', {}, 'UTILITIES_BOUND_SIMPLIFY_LIB');
+      o.log('debug', 'Utilities > [19] Setup Simplify Coding Methods',
+          {module: mod.name}, 'UTILITIES_BOUND_SIMPLIFY_LIB');
       observer.next(evt);
     }, source);
   };

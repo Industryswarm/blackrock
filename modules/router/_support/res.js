@@ -16,7 +16,7 @@
     this.interface = '';
     this.router = '';
     this.view = false;
-    this.service = '';
+    this.app = '';
     this.statusCode = 200;
   };
 
@@ -33,7 +33,7 @@
     if (initObj.type) this.type = initObj.type;
     if (initObj.interface) this.interface = initObj.interface;
     if (initObj.router) this.router = initObj.router;
-    if (initObj.service) this.service = initObj.service;
+    if (initObj.app) this.app = initObj.app;
     if (initObj.headers) this.headers = [];
     this.headersSent = false;
     this.locals = [];
@@ -135,7 +135,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       msgId: this.msgId,
       response: {
         body: null,
@@ -196,7 +196,7 @@
     const msg = {
       type: this.type,
       interface: this.interface,
-      service: this.service,
+      app: this.app,
       router: this.router,
       msgId: this.msgId,
       response: {
@@ -268,7 +268,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       msgId: this.msgId,
       response: {
         body: null,
@@ -304,7 +304,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       msgId: this.msgId,
       response: {
         body: body,
@@ -337,7 +337,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       msgId: this.msgId,
       response: {
         body: body,
@@ -397,7 +397,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       msgId: this.msgId,
       response: {
         body: null,
@@ -432,7 +432,7 @@
       type: this.type,
       interface: this.interface,
       router: this.router,
-      service: this.service,
+      app: this.app,
       headers: this.headers,
       msgId: this.msgId,
       response: {

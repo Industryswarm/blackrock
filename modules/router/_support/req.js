@@ -26,8 +26,8 @@
     this.query = {};
     this.route = {};
     this.secure = false;
-    this.service = {};
-    this.serviceName = '';
+    this.app = {};
+    this.appName = '';
     this.signedCookies = {};
     this.stale = false;
     this.subdomains = [];
@@ -74,8 +74,8 @@
     }
     if (initObj.body) this.body = initObj.body;
     if (initObj.internal) this.internal = initObj.internal;
-    if (initObj.serviceName) this.serviceName = initObj.serviceName;
-    if (initObj.service) this.service = initObj.service;
+    if (initObj.appName) this.appName = initObj.appName;
+    if (initObj.app) this.app = initObj.app;
     return this;
   };
 

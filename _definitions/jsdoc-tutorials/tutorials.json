@@ -5,8 +5,8 @@
   "server-configuration": {
     "title": "Server Configuration"
   },
-  "service-filesystem-structure": {
-    "title": "Service Filesystem Structure"
+  "app-filesystem-structure": {
+    "title": "App Filesystem Structure"
   },
   "advanced-routing": {
     "title": "Advanced Routing"

@@ -1,5 +1,59 @@
 {
 
+  "app-engine": {
+    "allow": {
+      "cfg": true,
+      "pkg": true,
+      "fetchBasePath": true,
+      "shutdown": false,
+      "globals": true,
+      "modules": {
+        "cli": [],
+        "daemon": [],
+        "errorhandler": [],
+        "farm": [],
+        "generator": [],
+        "i18n": ["init", "t", "use", "exists", "getFixedT", "changeLanguage", "loadNamespaces", "loadLanguages",
+          "reloadResources", "setDefaultNamespace", "dir", "format", "createInstance", "cloneInstance",
+          "on", "off", "getResource", "addResource", "addResources", "addResourceBundle", "hasResourceBundle",
+          "getDataByLanguage", "getResourceBundle", "removeResourceBundle", "createAppInstances"],
+        "installer": [],
+        "jobs": ["add", "remove"],
+        "logger": ["log"],
+        "router": [],
+        "sandbox": [],
+        "app-engine": ["app(appName)", "appStats"],
+        "utilities": ["randomString", "uuid4", "isJSON", "objectLength", "getCurrentDateInISO", "validateString",
+          "cloneObject", "modules.loadModule", "csv.parse", "crypto.encrypt", "crypto.decrypt",
+          "xml", "system.getMemoryUse", "system.getCpuLoad", "system.getStartTime", "system.getEndTime",
+          "system.getObjectMemoryUsage", "isUndefined", "isNull", "isNil", "path", "prop", "assign"],
+        "http": ["client.request", "client.get", "client.post", "client.put", "client.delete",
+          "get", "hook.add", "hook.remove"],
+        "websockets": [],
+        "axon": [],
+        "nanomsg": [],
+        "ssh": [],
+        "zeromq": []
+      }
+    },
+    "runtime": {
+      "apps": {
+        "allowLoad": true,
+        "allowUnload": true,
+        "allowOverride": false
+      },
+      "controllers": {
+        "allowLoad": true,
+        "allowUnload": true,
+        "allowOverride": false
+      }
+    },
+    "sandbox": {
+      "default": false,
+      "allowOverride": false
+    }
+  },
+
 
   "cli": {},
 
@@ -10,16 +64,16 @@
   "core": {
     "banner": "Blackrock Application Server (Default)",
     "maxObjectListeners": 100,
-    "modules": ["cli", "core", ".configure", "daemon", "errorhandler", ".farm", ".generator", "i18n",
-                ".installer", "jobs", "logger", "router", ".sandbox", "services", ".swagger", ".universe", "utilities"],
-    "interfaces": [".axon", "http", ".nanomsg", ".ssh", "websockets", ".zeromq"],
+    "modules": ["cli", "core", ".configure", "daemon", "error-handler", "farm", "generator", "i18n",
+                "installer", "jobs", "logger", "router", "sandbox", "app-engine", "utilities"],
+    "interfaces": [".axon", "http", "nanomsg", "ssh", "websockets", "zeromq"],
     "startupModules": ["logger", "utilities", "daemon", "cli"],
     "timeouts": {
       "loadDependencies": 5000,
       "closeModules": 5000
     },
     "locations": {
-      "services": "/opt/is-blackrock/services",
+      "apps": "/opt/is-blackrock/apps",
       "cache": "/opt/is-blackrock/cache"
     }
   },
@@ -28,7 +82,10 @@
   "daemon": {},
 
 
-  "errorhandler": {
+  "data-access": {},
+
+
+  "error-handler": {
     "enabled": true,
     "timeout": 5000
   },
@@ -50,6 +107,11 @@
 
 
   "installer": {},
+
+
+  "jobs": {
+    "enabled": true
+  },
 
 
   "interfaces": {
@@ -77,8 +139,6 @@
   },
 
 
-  "jobs": {},
-
 
   "logger": {
     "enabled": true,
@@ -105,7 +165,7 @@
     "instances": {
       "RouterOne": {
         "interfaces": ["*"],
-        "services": ["*"]
+        "apps": ["*"]
       }
     }
   },
@@ -114,68 +174,6 @@
   "sandbox": {},
 
 
-  "services": {
-    "allow": {
-      "cfg": true,
-      "pkg": true,
-      "fetchBasePath": true,
-      "getCurrentService": true,
-      "shutdown": false,
-      "globals": true,
-      "modules": {
-        "cli": [],
-        "daemon": [],
-        "errorhandler": [],
-        "farm": [],
-        "generator": [],
-        "i18n": ["init", "t", "use", "exists", "getFixedT", "changeLanguage", "loadNamespaces", "loadLanguages",
-                 "reloadResources", "setDefaultNamespace", "dir", "format", "createInstance", "cloneInstance",
-                 "on", "off", "getResource", "addResource", "addResources", "addResourceBundle", "hasResourceBundle",
-                 "getDataByLanguage", "getResourceBundle", "removeResourceBundle", "createServiceInstances"],
-        "identity": [], 
-        "installer": [],
-        "jobs": ["add", "remove", "jobs.add", "jobs.remove"], 
-        "logger": ["log"],
-        "router": [],
-        "sandbox": [],
-        "services": ["service(serviceName)", "serviceStats"],
-        "universe": [], 
-        "utilities": ["randomString", "uuid4", "isJSON", "objectLength", "getCurrentDateInISO", "validateString",
-                      "cloneObject", "modules.loadModule", "csv.parse", "crypto.encrypt", "crypto.decrypt",
-                      "xml", "system.getMemoryUse", "system.getCpuLoad", "system.getStartTime", "system.getEndTime",
-                      "system.getObjectMemoryUsage", "isUndefined", "isNull", "isNil", "path", "prop", "assign"],
-        "http": ["client.request", "client.get", "client.post", "client.put", "client.delete",
-                 "get", "hook.add", "hook.remove"],
-        "websockets": [],
-        "axon": [],
-        "nanomsg": [],
-        "ssh": [],
-        "zeromq": []
-      }
-    },
-    "runtime": {
-      "services": {
-        "allowLoad": true,
-        "allowUnload": true,
-        "allowOverride": false
-      },
-      "controllers": {
-        "allowLoad": true,
-        "allowUnload": true,
-        "allowOverride": false
-      }
-    },
-    "sandbox": {
-      "default": false,
-      "allowOverride": false
-    }
-  },
-
-
-  "universe": {},
-
 
   "utilities": {}
-
-
 }

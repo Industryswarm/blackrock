@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackrock.industryswarm.com/schemas/validate.header.schema.v0.4.1.json",
+  "description": "Blackrock Header Schema",
+  "type": "object",
+  "required": [ "format" ],
+  "properties": {
+    "format": {
+      "description": "File Format (JSON Schema Reference)",
+      "type": "string"
+    },
+    "id": {
+      "description": "Unique Document Identifier",
+      "type": "string"
+    },
+    "name": {
+      "description": "Friendly Document Name",
+      "type": "string"
+    },
+    "type": {
+      "description": "Document Type",
+      "type": "string"
+    },
+    "status": {
+      "description": "Document Status",
+      "type": "string"
+    },
+    "owner": {
+      "description": "Document Owner",
+      "type": "object",
+      "required": [ "email" ],
+      "properties": {
+        "email": {
+          "description": "Document Owner's Email Address",
+          "type": "string"
+        }
+      }
+    },
+    "created": {
+      "description": "Created Definition Object",
+      "type": "object",
+      "required": [ "date", "author" ],
+      "properties": {
+        "date": {
+          "description": "Date Document Was Created",
+          "type": "string"
+        },
+        "author": {
+          "description": "Document Author",
+          "type": "object",
+          "required": [ "email" ],
+          "properties": {
+            "email": {
+              "description": "Document Author's Email Address",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "modified": {
+      "description": "Modified Definition Object",
+      "type": "object",
+      "required": [ "date", "author" ],
+      "properties": {
+        "date": {
+          "description": "Date Document Was Last Modified",
+          "type": "string"
+        },
+        "editor": {
+          "description": "Document Editor",
+          "type": "object",
+          "required": [ "email" ],
+          "properties": {
+            "email": {
+              "description": "Document Editor's Email Address",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

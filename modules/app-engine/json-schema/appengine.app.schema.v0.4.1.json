@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackrock.industryswarm.com/schemas/services.service.schema.v0.4.1.json",
+  "description": "Blackrock Service Definition File",
+  "type": "object",
+  "required": [ "header", "content" ],
+  "properties": {
+    "header": {
+      "description": "File Header",
+      "allOf": [
+        { "$ref":  "validate.header.schema.v0.4.1.json" },
+        {
+          "type": "object",
+          "properties":  {
+            "format": {
+              "description": "File Format",
+              "type": "string",
+              "enum": [
+                "https://blackrock.industryswarm.com/schemas/services.service.schema.v0.4.1.json"
+              ]
+            }
+          },
+          "required": [ "format" ]
+        }
+      ]
+    },
+    "content": {
+      "description": "File Content",
+      "type": "object",
+      "required": [ "name", "active", "host" ],
+      "properties": {
+        "name": {
+          "description": "The short, hyphen-separated name of the service that this file describes",
+          "type": "string"
+        },
+        "active": {
+          "description": "Whether this service is Active (ie; will be loaded) - True | False",
+          "type": "boolean"
+        },
+        "host": {
+          "description": "The host name this service responds on",
+          "type": "string"
+        },
+        "basePath": {
+          "description": "The first path element, which this is to be the root for this service",
+          "type": "string"
+        },
+        "exposeDefinition": {
+          "description": "Whether to expose the Swagger 2.0 Definition at the /service.json route - True | False",
+          "type": "boolean"
+        },
+        "db": {
+          "description": "Database Object. Contains any database connection details required by the service",
+          "type": "object",
+          "properties": {
+            "host": {
+              "description": "Database Hostname",
+              "type": "string"
+            },
+            "port": {
+              "description": "Database Port",
+              "type": "number"
+            },
+            "user": {
+              "description": "Database Username",
+              "type": "string"
+            },
+            "password": {
+              "description": "Database Password",
+              "type": "string"
+            },
+            "schema": {
+              "description": "Name of Schema To Load Within Database",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

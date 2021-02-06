@@ -1,19 +1,14 @@
 !function DaemonModuleWrapper() {
-  // eslint-disable-next-line no-extend-native
-  String.prototype.endsWith = function DaemonEndsWith(suffix) {
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
-  };
-  let core; let mod; let log; let daemonize;
-  const pipelines = {}; const streamFns = {}; let lib; let rx;
-
+  let core; let mod; let o = {}; const pipelines = function() {};
 
   /**
    * Blackrock Daemon Module
    *
+   * @public
    * @class Server.Modules.Daemon
    * @augments Server.Modules.Core.Module
-   * @param {Server.Modules.Core} coreObj - The Parent Core Object
-   * @return {Server.Modules.Daemon} module - The Daemon Module
+   * @param {Server.Modules.Core} coreObj - The Core Module Singleton
+   * @return {Server.Modules.Daemon} module - The Daemon Module Singleton
    *
    * @description This is the Daemon Module of the Blackrock Application Server.
    * It allows the user to run the application server as a system daemon, as
@@ -24,229 +19,273 @@
    * @copyright Copyright (c) 2021 Darren Smith
    * @license Licensed under the LGPL license.
    */
-  module.exports = function DaemonModuleConstructor(coreObj) {
-    core = coreObj; mod = new core.Mod('Daemon'); log = core.module('logger').log;
+  module.exports = function DaemonModule(coreObj) {
+    if (mod) return mod;
+    core = coreObj; mod = new core.Mod('Daemon'); o.log = core.module('logger').log;
     core.on('updateLogFn', function() {
-      log = core.module('logger').log;
+      o.log = core.module('logger').log;
     });
-    log('debug', 'Blackrock Daemon Module > Initialising...', {}, 'DAEMON_INIT');
-    lib = core.lib; rx = lib.rxjs;
-    process.nextTick(function() {
-      const Pipeline = pipelines.setupDaemonModule();
-      new Pipeline({}).pipe();
+    o.log('debug', 'Daemon > Initialising...', {module: mod.name}, 'MODULE_INIT');
+    process.nextTick(function DaemonModuleInitPipeline() {
+      pipelines.init();
     });
     return mod;
   };
 
 
   /**
-   * Event Stream Pipeline...
-   */
-
-  /**
-   * (Internal > Pipeline [1]) Setup Daemon
+   * (Internal > Pipeline [1]) Init Pipeline
+   *
    * @private
-   * @return {object} pipeline - The Pipeline Object
+   * @memberof Server.Modules.Daemon
+   * @name init
+   * @ignore
+   * @function
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * pipelines.init();
    */
-  pipelines.setupDaemonModule = function DaemonModuleSetupPipeline() {
-    return new core.Base().extend({
-      constructor: function DaemonModuleSetupPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function DaemonModuleSetupPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function DaemonModuleSetupPipelinePipe() {
-        log('debug',
-            'Blackrock Daemon Module > Server Initialisation Pipeline Created - Executing Now:',
-            {}, 'DAEMON_EXEC_INIT_PIPELINE');
-        const self = this; const stream = rx.bindCallback((cb) => {
-          self.callback(cb);
-        })();
-        stream.pipe(
+  pipelines.init = function DaemonInitPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}).pipe(
 
-            // Fires once on server initialisation:
-            streamFns.registerWithCLI,
-            streamFns.listenToStart,
+        // Fires once on server initialisation:
+        pipelines.init.registerWithCLI,
+        pipelines.init.listenToStart,
 
-            // Fires on provision of daemon command from CLI:
-            streamFns.checkNameAndInit,
-            streamFns.setupCallbacks,
-            streamFns.checkRoot,
-            streamFns.startDaemon,
-            streamFns.stopDaemon,
-            streamFns.restartDaemon,
-            streamFns.statusDaemon
+        // Fires on provision of daemon command from CLI:
+        pipelines.init.checkNameAndInit,
+        pipelines.init.setupCallbacks,
+        pipelines.init.checkRoot,
+        pipelines.init.startDaemon,
+        pipelines.init.stopDaemon,
+        pipelines.init.restartDaemon,
+        pipelines.init.statusDaemon
 
-        ).subscribe();
-      },
-    });
+    ).subscribe();
   };
 
 
   /**
-   * Daemon Stream Processing Functions...
-   * (Fires Once on Server Initialisation)
-   */
-
-  /**
-   * (Internal > Stream Methods [0]) Register With CLI
+   * (Internal > Init Pipeline Methods [1]) Register With CLI
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name registerWithCLI
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.registerWithCLI = function DaemonModuleRegisterWithCLI(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Daemon Module > [0] Daemon registering with CLI...', {}, 'DAEMON_REGISTER_WITH_CLI');
-      core.isLoaded('cli').then(function(cliMod) {
+  pipelines.init.registerWithCLI = function DaemonIPLRegWithCLI(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLRegWithCLIOp(observer, evt) {
+      o.log('debug', 'Daemon > [0] Daemon registering with CLI...', {module: mod.name},
+          'MODULE_REGISTER_WITH_CLI');
+      core.module.isLoaded('cli').then(function DaemonIPLCLIIsModLoaded(cliMod) {
         cliMod.register([
-          {'cmd': 'start', 'params': '\t\t', 'info': 'Starts the daemon server', 'fn': function(params) {
+          {'cmd': 'start', 'params': '\t\t', 'info': 'Starts the daemon server',
+            'fn': function DaemonIPLCLIRegOne(params) {
             core.emit('DAEMON_INIT_DAEMON', {'command': 'start', 'params': params});
           }},
-          {'cmd': 'stop', 'params': '\t\t', 'info': 'Stops the daemon server', 'fn': function(params) {
+          {'cmd': 'stop', 'params': '\t\t', 'info': 'Stops the daemon server',
+            'fn': function DaemonIPLCLIRegTwo(params) {
             core.emit('DAEMON_INIT_DAEMON', {'command': 'stop', 'params': params});
           }},
-          {'cmd': 'status', 'params': '\t\t', 'info': 'Gets the status of the daemon server', 'fn': function(params) {
+          {'cmd': 'status', 'params': '\t\t', 'info': 'Gets the status of the daemon server',
+            'fn': function DaemonIPLCLIRegThree(params) {
             core.emit('DAEMON_INIT_DAEMON', {'command': 'status', 'params': params});
           }},
-          {'cmd': 'restart', 'params': '\t', 'info': 'Restarts the daemon server', 'fn': function(params) {
+          {'cmd': 'restart', 'params': '\t', 'info': 'Restarts the daemon server',
+            'fn': function DaemonIPLCLIRegFour(params) {
             core.emit('DAEMON_INIT_DAEMON', {'command': 'restart', 'params': params});
           }},
         ]);
-      }).catch(function(err) {
-        log('error',
-            'Blackrock Daemon Module > Failed to register with CLI - CLI module not loaded',
-            err, 'DAEMON_CLI_MOD_NOT_LOADED');
+      }).catch(function DaemonIPLCLIRegFail(err) {
+        o.log('error',
+            'Daemon > Failed to register with CLI - CLI module not loaded',
+            {module: mod.name, error: err}, 'CLI_MOD_NOT_LOADED');
       });
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [1]) Listen to Start Endpoint
+   * (Internal > Init Pipeline Methods [2]) Listen to Start Endpoint
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name listenToStart
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.listenToStart = function DaemonModulePipelineFnsListenToStart(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Daemon Module > [1a] Listener created for \'DAEMON_INIT_DAEMON\' event',
-          {}, 'DAEMON_LISTENER_CREATED');
-      core.on('DAEMON_INIT_DAEMON', function DaemonModuleListenToStartStartDaemonCb(daemonParams) {
+  pipelines.init.listenToStart = function DaemonIPLListenToStart(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLListenToStartOp(observer, evt) {
+      o.log('debug',
+          'Daemon > [1a] Listener created for \'DAEMON_INIT_DAEMON\' event',
+          {module: mod.name}, 'DAEMON_LISTENER_CREATED');
+      core.on('DAEMON_INIT_DAEMON', function DaemonIPLListenToStartDaemonCb(daemonParams) {
         core.stopActivation = true;
-        log('debug',
-            'Blackrock Daemon Module > [1b] \'DAEMON_INIT_DAEMON\' Event Received',
-            {}, 'DAEMON_LISTENER_EVT_RECEIVED');
+        o.log('debug',
+            'Daemon > [1b] \'DAEMON_INIT_DAEMON\' Event Received',
+            {module: mod.name}, 'DAEMON_LISTENER_EVT_RECEIVED');
         evt.name = core.pkg().name;
         evt.isChildProcess = process.send;
         evt.command = daemonParams.command;
         if (!process.send) {
           observer.next(evt);
         } else {
-          log('fatal',
-              'Blackrock Daemon Module > Initiated, but running in daemon mode. Terminating...',
-              {}, 'DAEMON_RUNNING_IN_DAEMON_MODE_TERM');
+          o.log('fatal',
+              'Daemon > Initiated, but running in daemon mode. Terminating...',
+              {module: mod.name}, 'DAEMON_RUNNING_IN_DAEMON_MODE_TERM');
         }
       });
     }, source);
   };
 
-
   /**
-   * Daemon Stream Processing Functions...
-   * (Fires on provision of daemon command from CLI)
-   */
-
-  /**
-   * (Internal > Stream Methods [2]) Check Daemon Name And Init Daemon
+   * (Internal > Init Pipeline Methods [3]) Check Daemon Name And Init Daemon
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name checkNameAndInit
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.checkNameAndInit = function DaemonModulePipelineFnsCheckNameAndInit(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.checkNameAndInit = function DaemonIPLCheckNameAndInit(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLCheckNameAndInitOp(observer, evt) {
       if (!evt.name) {
-        log('error',
-            'Blackrock Daemon Module > Name not passed correctly to daemon module',
-            {}, 'DAEMON_INCORRECT_NAME');
+        o.log('error',
+            'Daemon > Name not passed correctly to daemon module',
+            {module: mod.name}, 'DAEMON_INCORRECT_NAME');
         process.exit();
       }
-      daemonize = require('./_support/daemonize');
+      o.daemonize = require('./_support/daemonize');
       const strippedName = evt.name.replace(/-/g, '');
-      evt.daemon = daemonize.setup({
+      evt.daemon = o.daemonize.setup({
         main: '../../../' + core.pkg().main,
         name: strippedName,
         pidfile: '/var/run/' + strippedName + '.pid',
         cwd: process.cwd(),
         silent: true,
       });
-      log('debug',
-          'Blackrock Daemon Module > [2] Daemon Name Checked & Daemon Initialised',
-          {}, 'DAEMON_NAME_CHECKED_AND_INIT');
+      o.log('debug',
+          'Daemon > [2] Daemon Name Checked & Daemon Initialised',
+          {module: mod.name}, 'DAEMON_NAME_CHECKED_AND_INIT');
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [3]) Setup Daemon Callbacks
+   * (Internal > Init Pipeline Methods [3]) Setup Daemon Callbacks
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name setupCallbacks
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupCallbacks = function DaemonModulePipelineFnsSetupCallbacks(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupCallbacks = function DaemonIPLSetupCb(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLSetupCbOp(observer, evt) {
       evt.daemon
-          .on('starting', function DaemonModulePipelineFnsSetupCallbacksOnStarting() {
-            console.log('Blackrock Daemon Module > Starting...\n');
+          .on('starting', function DaemonIPLSetupCbOnStarting() {
+            console.log('Daemon > Starting...\n');
           })
-          .on('started', function DaemonModulePipelineFnsSetupCallbacksOnStarted(pid) {
-            console.log('Blackrock Daemon Module > Started. PID: ' + pid + '\n');
+          .on('started', function DaemonIPLSetupCbOnStarted(pid) {
+            console.log('Daemon > Started. PID: ' + pid + '\n');
             process.exit();
           })
-          .on('stopping', function DaemonModulePipelineFnsSetupCallbacksOnStopping() {
-            console.log('Blackrock Daemon Module > Stopping...\n');
+          .on('stopping', function DaemonIPLSetupCbOnStopping() {
+            console.log('Daemon > Stopping...\n');
           })
-          .on('running', function DaemonModulePipelineFnsSetupCallbacksOnRunning(pid) {
-            console.log('Blackrock Daemon Module > Already running. PID: ' + pid + '\n');
+          .on('running', function DaemonIPLSetupCbOnRunning(pid) {
+            console.log('Daemon > Already running. PID: ' + pid + '\n');
             process.exit();
           })
-          .on('notrunning', function DaemonModulePipelineFnsSetupCallbacksOnNotRunning() {
-            console.log('Blackrock Daemon Module > Not running\n');
+          .on('notrunning', function DaemonIPLSetupCbOnNotRunning() {
+            console.log('Daemon > Not running\n');
             process.exit();
           })
-          .on('error', function DaemonModulePipelineFnsSetupCallbacksOnError(err) {
-            console.log('Blackrock Daemon Module > Failed to start:  ' + err.message + '\n');
+          .on('error', function DaemonIPLSetupCbOnError(err) {
+            console.log('Daemon > Failed to start:  ' + err.message + '\n');
             process.exit();
           });
       if (evt.command === 'restart') {
-        evt.daemon.on('stopped', function DaemonModulePipelineFnsSetupCallbacksOnStoppedForRestart(pid) {
-          console.log('Blackrock Daemon Module > Stopped (' + pid + ')\n');
+        evt.daemon.on('stopped', function DaemonIPLSetupCbOnStoppedForRestart(pid) {
+          console.log('Daemon > Stopped (' + pid + ')\n');
           evt.daemon.start();
         });
       } else {
-        evt.daemon.on('stopped', function DaemonModulePipelineFnsSetupCallbacksOnStopped(pid) {
-          console.log('Blackrock Daemon Module > Stopped(' + pid + ')\n');
+        evt.daemon.on('stopped', function DaemonIPLSetupCbOnStopped(pid) {
+          console.log('Daemon > Stopped(' + pid + ')\n');
           process.exit();
         });
       }
-      log('debug',
-          'Blackrock Daemon Module > [3] Setup callbacks for daemon',
-          {}, 'DAEMON_CALLBACKS_SETUP');
+      o.log('debug',
+          'Daemon > [3] Setup callbacks for daemon',
+          {module: mod.name}, 'DAEMON_CALLBACKS_SETUP');
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [4]) Check Root
+   * (Internal > Init Pipeline Methods [4]) Check Root
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name checkRoot
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.checkRoot = function DaemonModulePipelineFnsCheckRoot(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.checkRoot = function DaemonIPLCheckRoot(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLCheckRootOp(observer, evt) {
       if ((evt.command === 'start' || evt.command === 'stop' || evt.command === 'restart') && process.getuid() !== 0) {
-        console.log('Blackrock Daemon Module > Expected to run as root\n');
+        console.log('Daemon > Expected to run as root\n');
         process.exit();
       } else {
         observer.next(evt);
@@ -255,69 +294,110 @@
   };
 
   /**
-   * (Internal > Stream Methods [5]) Start Daemon
+   * (Internal > Init Pipeline Methods [5]) Start Daemon
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name startDaemon
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.startDaemon = function DaemonModulePipelineFnsStartDaemon(source) {
-    return lib.rxOperator(function(observer, evt) {
-      if (evt.command === 'start') {
-        evt.daemon.start();
-      }
+  pipelines.init.startDaemon = function DaemonIPLStartDaemon(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLStartDaemonOp(observer, evt) {
+      if (evt.command === 'start') evt.daemon.start();
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [6]) Stop Daemon
+   * (Internal > Init Pipeline Methods [6]) Stop Daemon
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name stopDaemon
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.stopDaemon = function DaemonModulePipelineFnsStopDaemon(source) {
-    return lib.rxOperator(function(observer, evt) {
-      if (evt.command === 'stop') {
-        evt.daemon.stop();
-      }
+  pipelines.init.stopDaemon = function DaemonIPLStopDaemon(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLStopDaemonOp(observer, evt) {
+      if (evt.command === 'stop') evt.daemon.stop();
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [7]) Restart Daemon
+   * (Internal > Init Pipeline Methods [7]) Restart Daemon
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name restartDaemon
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.restartDaemon = function DaemonModulePipelineFnsRestartDaemon(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.restartDaemon = function DaemonIPLRestartDaemon(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLRestartDaemonOp(observer, evt) {
       if (evt.command === 'restart') {
         const status = evt.daemon.status();
-        if (status) {
-          evt.daemon.stop();
-        } else {
-          evt.daemon.start();
-        }
+        if (status) evt.daemon.stop();
+        else evt.daemon.start();
       }
       observer.next(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream Methods [8]) Status of Daemon
+   * (Internal > Init Pipeline Methods [8]) Status of Daemon
+   *
    * @private
+   * @memberof Server.Modules.Daemon
+   * @name statusDaemon
+   * @ignore
+   * @function
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.statusDaemon = function DaemonModulePipelineFnsStatusDaemon(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.statusDaemon = function DaemonIPLStatusDaemon(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function DaemonIPLStatusDaemonOp(observer, evt) {
       if (evt.command === 'status') {
         if (evt.daemon.status()) {
-          console.log('Blackrock Daemon Module > Daemon is running\n');
+          console.log('Daemon > Daemon is running\n');
           process.exit();
         } else {
-          console.log('Blackrock Daemon Module > Daemon is not running\n');
+          console.log('Daemon > Daemon is not running\n');
           process.exit();
         }
       }

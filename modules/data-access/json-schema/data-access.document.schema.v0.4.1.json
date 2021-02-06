@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackrock.industryswarm.com/schemas/data.document.schema.v0.4.1.json",
+  "description": "Configuration File for the Blackrock Application Server",
+  "type": "object",
+  "required": [ "header", "content" ],
+  "properties": {
+    "header": {
+      "allOf": [
+        { "$ref":  "validate.header.schema.v0.4.1.json" },
+        {
+          "type": "object",
+          "properties":  {
+            "format": {
+              "description": "File Format",
+              "type": "string",
+              "enum": [
+                "https://blackrock.industryswarm.com/schemas/core.config.schema.v0.4.1.json"
+              ]
+            }
+          },
+          "required": [ "format" ]
+        }
+      ]
+    },
+    "content": {
+      "description": "Configuration Data Body",
+      "type": "object"
+    }
+  }
+}

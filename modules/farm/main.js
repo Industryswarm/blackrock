@@ -1,12 +1,10 @@
 !function FarmModuleWrapper() {
-  let core; let mod; let log; const pipelines = {}; const streamFns = {};
-  let lib; let rx; let scuttleBucketInstance; let jobServer = false; let serverModel;
-  let serverEmitter; const farmServers = {}; const utils = {};
-
+  let core; let mod; let o = {}; const pipelines = function() {};
 
   /**
    * Blackrock Farm Module
    *
+   * @public
    * @class Server.Modules.Farm
    * @augments Server.Modules.Core.Module
    * @param {Server.Modules.Core} coreObj - The Parent Core Object
@@ -20,85 +18,80 @@
    * PLEASE NOTE: This interface is undergoing development and
    * is not yet functional.
    *
+   * @example
+   * Tbc...
+   *
    * @author Darren Smith
    * @copyright Copyright (c) 2021 Darren Smith
    * @license Licensed under the LGPL license.
    */
-  module.exports = function FarmModuleConstructor(coreObj) {
-    core = coreObj; mod = new core.Mod('Farm'); mod.log = log = core.module('logger').log;
-    log('debug', 'Blackrock Farm > Initialising...', {}, 'FARM_INIT');
-    lib = core.lib; rx = lib.rxjs;
+  module.exports = function FarmModule(coreObj) {
+    if (mod) return mod;
+    core = coreObj; mod = new core.Mod('Farm'); o.log = core.module('logger').log;
+    o.farmServers = {}; o.utils = {}; o.jobServer = false;
+    o.log('debug', 'Blackrock Farm > Initialising...', {module: mod.name}, 'MODULE_INIT');
     process.nextTick(function() {
-      const Pipeline = pipelines.setupFarmModule();
-      new Pipeline({}).pipe();
+      pipelines.init();
     });
     return mod;
   };
 
 
   /**
-   * =====================
-   * Event Stream Pipeline
-   * =====================
+   * (Internal > Pipeline [1]) Init Pipeline
+   *
+   * @private
+   * @memberof Server.Modules.Generator
+   * @function registerWithCLI
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
+  pipelines.runInitPipeline = function FarmInitPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}).pipe(
 
+        // Fires once on server initialisation:
+        pipelines.init.loadScuttlebutt,
+        pipelines.init.createModelAndServer,
+        pipelines.init.persistToDisk,
+        pipelines.init.setupUpdateListener,
+        pipelines.init.connectToSeeds,
+        pipelines.init.setupGetAndSetMethods,
+        pipelines.init.setupIsJobServer,
+        pipelines.init.setupEventEmitter,
+        pipelines.init.setupUpdateRouter,
+        pipelines.init.updateServerStatus,
+        pipelines.init.inactivateStaleServers,
+        pipelines.init.toggleLocalAsJobServer,
+        pipelines.init.checkAndVoteOnJobServerRoles
 
-  /**
-   * (Internal > Pipeline [1]) Setup Farm Module
-   * @return {object} pipeline - The Pipeline Object
-   */
-  pipelines.setupFarmModule = function FarmModuleSetupPipeline() {
-    return new core.Base().extend({
-      constructor: function FarmModuleSetupPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function FarmModuleSetupPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function FarmModuleSetupPipelinePipe() {
-        log('debug',
-            'Blackrock Farm > Server Initialisation Pipeline Created - Executing Now:',
-            {}, 'FARM_EXEC_INIT_PIPELINE');
-        const self = this; const stream = rx.bindCallback((cb) => {
-          self.callback(cb);
-        })();
-        stream.pipe(
-
-            // Fires once on server initialisation:
-            streamFns.loadScuttlebutt,
-            streamFns.createModelAndServer,
-            streamFns.persistToDisk,
-            streamFns.setupUpdateListener,
-            streamFns.connectToSeeds,
-            streamFns.setupGetAndSetMethods,
-            streamFns.setupIsJobServer,
-            streamFns.setupEventEmitter,
-            streamFns.setupUpdateRouter,
-            streamFns.updateServerStatus,
-            streamFns.inactivateStaleServers,
-            streamFns.toggleLocalAsJobServer,
-            streamFns.checkAndVoteOnJobServerRoles
-
-        ).subscribe();
-      },
-    });
+    ).subscribe();
   };
-
-
-  /**
-   * =====================================
-   * Farm Stream Processing Functions
-   * (Fires Once on Server Initialisation)
-   * =====================================
-   */
 
   /**
    * (Internal > Stream Methods [1]) Load Scuttlebutt
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function loadScuttlebutt
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    * */
-  streamFns.loadScuttlebutt = function FarmModuleLoadScuttlebutt(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.loadScuttlebutt = function FarmIPLLoadScuttlebutt(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLLoadScuttlebuttOp(observer, evt) {
       evt.lib = {
         sb: {
           Model: require('./_support/scuttlebutt/model'),
@@ -108,63 +101,74 @@
         },
         net: require('net'),
       };
-      log('debug', 'Blackrock Farm > [1] Loaded Scuttlebutt Libraries', {}, 'FARM_LOADED_SCUTTLEBUTT');
+      o.log('debug', 'Farm > [1] Loaded Scuttlebutt Libraries',
+          {module: mod.name}, 'FARM_LOADED_SCUTTLEBUTT');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [2]) Create Model And Server
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function createModelAndServer
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.createModelAndServer = function FarmModuleCreateModelAndServer(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [2] Attempting to create model and start server', {}, 'FARM_SERVER_STARTING');
+  pipelines.init.createModelAndServer = function FarmIPLCreateModel(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLCreateModelOp(observer, evt) {
+      o.log('debug', 'Blackrock Farm > [2] Attempting to create model and start server',
+          {module: mod.name}, 'FARM_SERVER_STARTING');
       let farm;
+      // noinspection JSUnresolvedVariable
       if (core.cfg().farm) {
+        // noinspection JSUnresolvedVariable
         farm = core.cfg().farm;
-      } else {
-        farm = {};
-      }
+      } else farm = {};
       let port;
-      if (farm.server && farm.server.port) {
-        port = farm.server.port;
-      } else {
-        port = 8000;
-      }
-      utils.isPortTaken(port, function FarmModuleCreateModelAndServerPortTakenCallback(err, result) {
+      if (farm.server && farm.server.port) port = farm.server.port;
+      else port = 8000;
+      o.utils.isPortTaken(port, function FarmIPLCreateModelPortTakenCb(err, result) {
         if (result !== false) {
           evt.serverNotStarted = true;
-          log('error',
-              'Blackrock Farm > Cannot start Scuttlebutt as the defined port (' + port + ') is already in use',
-              {}, 'FARM_SERVER_PORT_IN_USE');
+          o.log('error',
+              'Farm > Cannot start Scuttlebutt as the defined port (' + port + ') is already in use',
+              {module: mod.name}, 'FARM_SERVER_PORT_IN_USE');
           observer.next(evt);
           return;
         }
         const sl = evt.lib.sb;
-        const create = function FarmModuleCreateModelAndServerCreateScuttleBucket() {
+        const create = function FarmIPLCreateModelCreateScuttleBucket() {
           return new sl.ScuttleBucket()
               .add('model', new sl.Model())
               .add('events', new sl.Events('evts'));
         };
-        scuttleBucketInstance = create();
-        evt.lib.net.createServer(function FarmModuleCreateModelAndServerCreateServerCallback(stream) {
-          const ms = scuttleBucketInstance.createStream();
+        o.scuttleBucketInstance = create();
+        evt.lib.net.createServer(function FarmIPLCreateModelCreateServerCb(stream) {
+          const ms = o.scuttleBucketInstance.createStream();
           stream.pipe(ms).pipe(stream);
-          ms.on('error', function FarmModuleCreateModelAndServerOnMSError() {
+          ms.on('error', function FarmIPLCreateModelOnMSErr() {
             stream.destroy();
           });
-          stream.on('error', function FarmModuleCreateModelAndServerOnStreamError() {
+          stream.on('error', function FarmIPLCreateModelOnStreamErr() {
             ms.destroy();
           });
         }).listen(port, function() {
-          log('debug',
-              'Blackrock Farm > Created New Scuttlebutt Model + TCP Server Listening On Port ' + port,
-              {}, 'FARM_SERVER_STARTED');
+          o.log('debug',
+              'Farm > Created New Scuttlebutt Model + TCP Server Listening On Port ' + port,
+              {module: mod.name}, 'FARM_SERVER_STARTED');
         });
-        serverModel = scuttleBucketInstance.get('model');
-        serverEmitter = scuttleBucketInstance.get('events');
+        o.serverModel = o.scuttleBucketInstance.get('model');
+        o.serverEmitter = o.scuttleBucketInstance.get('events');
         observer.next(evt);
       });
     }, source);
@@ -172,33 +176,41 @@
 
   /**
    * (Internal > Stream Methods [3]) Persist To Disk (NOT WORKING)
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function persistToDisk
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.persistToDisk = function FarmModulePersistToDisk(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [3] Setting Up Disk Persistence...', {}, 'FARM_INIT_DISK_PERS');
+  pipelines.init.persistToDisk = function FarmIPLPersistToDisk(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLPersistToDiskOp(observer, evt) {
+      o.log('debug', 'Farm > [3] Setting Up Disk Persistence...',
+          {module: mod.name}, 'FARM_INIT_DISK_PERS');
       let farm;
+      // noinspection JSUnresolvedVariable
       if (core.cfg().farm) {
+        // noinspection JSUnresolvedVariable
         farm = core.cfg().farm;
-      } else {
-        farm = {};
-      }
+      } else farm = {};
       let cache;
-      if (farm.server && farm.server.cache) {
-        cache = farm.server.cache;
-      } else {
-        cache = null;
-      }
+      if (farm.server && farm.server.cache) cache = farm.server.cache;
+      else cache = null;
       if (cache) {
         const file = core.fetchBasePath('cache') + '/' + cache;
         const fs = require('fs');
-        if (!fs.existsSync(file)) {
-          fs.closeSync(fs.openSync(file, 'w'));
-        }
-        fs.createReadStream(file).pipe(scuttleBucketInstance.createWriteStream());
-        scuttleBucketInstance.on('sync', function FarmModulePersistToDiskSyncCallback() {
-          scuttleBucketInstance.createReadStream().pipe(fs.createWriteStream(file));
+        if (!fs.existsSync(file)) fs.closeSync(fs.openSync(file, 'w'));
+        fs.createReadStream(file).pipe(o.scuttleBucketInstance.createWriteStream());
+        o.scuttleBucketInstance.on('sync', function FarmIPLPersistToDiskSyncCallback() {
+          o.scuttleBucketInstance.createReadStream().pipe(fs.createWriteStream(file));
         });
       }
       observer.next(evt);
@@ -207,14 +219,42 @@
 
   /**
    * (Internal > Stream Methods [4]) Setup Update Listener
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function setupUpdateListener
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupUpdateListener = function FarmModuleSetupUpdateListener(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [4] Setting Up Update Listener...', {}, 'FARM_INIT_UPDATE_LISTENER');
-      mod.updateListener = function FarmModuleUpdateListener(fn) {
-        return serverModel.on('update', fn);
+  pipelines.init.setupUpdateListener = function FarmSetupUpdateListener(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmSetupUpdateListenerOp(observer, evt) {
+      o.log('debug', 'Farm > [4] Setting Up Update Listener...',
+          {module: mod.name}, 'FARM_INIT_UPDATE_LISTENER');
+      /**
+       * Update Listener
+       *
+       * @public
+       * @memberof Server.Modules.Farm
+       * @function updateListener
+       * @param {function} fn - Callback For Listener
+       * @return {*} result - Lookup Value
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.updateListener = function FarmUpdateListener(fn) {
+        return o.serverModel.on('update', fn);
       };
       observer.next(evt);
     }, source);
@@ -222,26 +262,38 @@
 
   /**
    * (Internal > Stream Methods [5]) Connect To Seed
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function connectToSeeds
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.connectToSeeds = function FarmModuleConnectToSeeds(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [5] Connecting To Seed Server...', {}, 'FARM_CONNECTING_TO_SEED_SERVER');
+  pipelines.init.connectToSeeds = function FarmIPLConnectToSeeds(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLConnectToSeedsOp(observer, evt) {
+      o.log('debug', 'Farm > [5] Connecting To Seed Server...',
+          {module: mod.name}, 'FARM_CONNECTING_TO_SEED_SERVER');
       const connectToSeed = function FarmModuleConnectToSeed(host, port) {
         const stream = evt.lib.net.connect(port);
-        const ms = scuttleBucketInstance.createStream();
+        const ms = o.scuttleBucketInstance.createStream();
         stream.pipe(ms).pipe(stream);
       };
-      if (evt.serverNotStarted) {
-        return evt;
-      }
+      if (evt.serverNotStarted) return evt;
       let farm;
+      // noinspection JSUnresolvedVariable
       if (core.cfg().farm) {
+        // noinspection JSUnresolvedVariable
         farm = core.cfg().farm;
-      } else {
-        farm = {};
-      }
+      } else farm = {};
+      // noinspection JSUnresolvedVariable
       if (farm.seeds) {
         for (let i = 0; i < farm.seeds.length; i++) {
           const host = farm.seeds[i].split(':')[0];
@@ -255,17 +307,61 @@
 
   /**
    * (Internal > Stream Methods [6]) Setup "Get From Store" & "Set Against Store" Methods
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function setupGetAndSetMethods
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetAndSetMethods = function FarmModuleSetupGetAndSetMethods(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [6] Setting Up Model Get & Set Methods...', {}, 'FARM_SETUP_MODEL_GET_SET');
-      mod.get = function FarmModuleGetDataValue(key) {
-        return serverModel.get(key);
+  pipelines.init.setupGetAndSetMethods = function FarmIPLSetupGetAndSetMethods(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLSetupGetAndSetMethodsOp(observer, evt) {
+      o.log('debug', 'Farm > [6] Setting Up Model Get & Set Methods...',
+          {module: mod.name}, 'FARM_SETUP_MODEL_GET_SET');
+      /**
+       * Get Method
+       *
+       * @public
+       * @memberof Server.Modules.Farm
+       * @function get
+       * @param {string} key - Lookup Key
+       * @return {*} result - Lookup Value
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.get = function FarmGetDataValue(key) {
+        return o.serverModel.get(key);
       };
-      mod.set = function FarmModuleSetDataValue(key, value) {
-        return serverModel.set(key, value);
+      /**
+       * Set Method
+       *
+       * @public
+       * @memberof Server.Modules.Farm
+       * @function set
+       * @param {string} key - Lookup Key
+       * @param {*} value - Value to Set
+       * @return {*} result - Result
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.set = function FarmSetDataValue(key, value) {
+        return o.serverModel.set(key, value);
       };
       observer.next(evt);
     }, source);
@@ -273,14 +369,41 @@
 
   /**
    * (Internal > Stream Methods [7]) Setup the "isJobServer()" Method
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function setupIsJobServer
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupIsJobServer = function FarmModuleSetupIsJobServer(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [7] Setting Up \'isJobServer\' Method...', {}, 'FARM_SETUP_IS_JOB_SERVER_METHOD');
-      mod.isJobServer = function FarmModuleIsJobServer() {
-        return jobServer;
+  pipelines.init.setupIsJobServer = function FarmIPLSetupIsJobServer(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLSetupIsJobServerOp(observer, evt) {
+      o.log('debug', 'Farm > [7] Setting Up \'isJobServer\' Method...',
+          {module: mod.name}, 'FARM_SETUP_IS_JOB_SERVER_METHOD');
+      /**
+       * Is Job Server?
+       *
+       * @public
+       * @memberof Server.Modules.Farm
+       * @function isJobServer
+       * @return {boolean} result - Is Job Server Result (True | False)
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.isJobServer = function FarmIsJobServer() {
+        return o.jobServer;
       };
       observer.next(evt);
     }, source);
@@ -288,21 +411,34 @@
 
   /**
    * (Internal > Stream Methods [8]) Setup Distributed Event Emitter
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function setupEventEmitter
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupEventEmitter = function FarmModuleSetupEventEmitter(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [8] Setting Up Event Emitter...', {}, 'FARM_SETUP_EMITTER');
+  pipelines.init.setupEventEmitter = function FarmIPLSetupEventEmitter(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLSetupEventEmitterOp(observer, evt) {
+      o.log('debug', 'Farm > [8] Setting Up Event Emitter...',
+          {module: mod.name}, 'FARM_SETUP_EMITTER');
       mod.events = {
-        emit: function FarmModuleEventEmitterEmit(event, data) {
-          return serverEmitter.emit(event, data);
+        emit: function FarmEventEmitterEmit(event, data) {
+          return o.serverEmitter.emit(event, data);
         },
-        on: function FarmModuleEventEmitterOn(event, listener) {
-          return serverEmitter.on(event, listener);
+        on: function FarmEventEmitterOn(event, listener) {
+          return o.serverEmitter.on(event, listener);
         },
-        history: function FarmModuleEventEmitterHistory(filter) {
-          return serverEmitter.history(filter);
+        history: function FarmEventEmitterHistory(filter) {
+          return o.serverEmitter.history(filter);
         },
       };
       observer.next(evt);
@@ -311,20 +447,33 @@
 
   /**
    * (Internal > Stream Methods [9]) Setup Update Router
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function setupUpdateRouter
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupUpdateRouter = function FarmModuleSetupUpdateRouter(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug', 'Blackrock Farm > [9] Setting Up The Update Router...', {}, 'FARM_SETUP_UPDATE_ROUTER');
-      serverModel.on('update', function FarmModuleSetupUpdateRouterOnUpdate(f1) {
+  pipelines.init.setupUpdateRouter = function FarmIPLSetupUpdateRouter(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLSetupUpdateRouterOp(observer, evt) {
+      o.log('debug', 'Farm > [9] Setting Up The Update Router...',
+          {module: mod.name}, 'FARM_SETUP_UPDATE_ROUTER');
+      o.serverModel.on('update', function FarmIPLSetupUpdateRouterOnUpdate(f1) {
         let key = f1[0]; let val = f1[1];
         if (key.startsWith('servers')) {
           key = key.split('[');
           const serverUri = key[1].slice(0, -1);
           if (core.module('utilities').isJSON(val)) {
             val = JSON.parse(val);
-            farmServers[serverUri] = val;
+            o.farmServers[serverUri] = val;
           }
         }
       });
@@ -334,26 +483,36 @@
 
   /**
    * (Internal > Stream Methods [10]) Setup Job to Update Server Status Every 2 Seconds
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function updateServerStatus
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
    *
+   * @description
    * This method sets up a new job to fetch the latest heartbeat from the Logger module
    * AND to count the number of servers in the farm, and then to update the farm-wide property
    * for this server with the latest information from these sources. This job runs every 2 seconds.
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.updateServerStatus = function FarmModuleUpdateServerStatus(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...',
-          {}, 'FARM_SETUP_HEARTBEAT_JOB');
-      const dayjs = lib.dayjs;
-      setInterval(function FarmModuleUpdateServerStatusInterval() {
+  pipelines.init.updateServerStatus = function FarmIPLUpdateServerStatus(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLUpdateServerStatusOp(observer, evt) {
+      o.log('debug',
+          'Farm > [10] Setting Up Job to Update Server Status With Latest Heartbeat...',
+          {module: mod.name}, 'FARM_SETUP_HEARTBEAT_JOB');
+      // noinspection JSUnresolvedVariable
+      const dayjs = core.lib.dayjs;
+      setInterval(function FarmUpdateServerStatusInt() {
         const latestHeartbeat = core.module('logger').getLatestHeartbeat();
         let serverCount = 0;
-        for (const key in farmServers) {
-          if (farmServers[key].status === 'active') {
-            serverCount++;
-          }
+        for (const key in o.farmServers) {
+          // noinspection JSUnfilteredForInLoop
+          if (o.farmServers[key].status === 'active') serverCount++;
         }
         latestHeartbeat.peerCount = serverCount;
         core.module('logger').updateLatestHeartbeat('peerCount', latestHeartbeat.peerCount);
@@ -362,6 +521,7 @@
           lastUpdated: dayjs().format(),
           heartbeat: latestHeartbeat,
         });
+        // noinspection JSUnresolvedVariable
         mod.set('servers[127.0.0.1:' + core.cfg().farm.server.port + ']', val);
       }, 2000);
       observer.next(evt);
@@ -370,26 +530,40 @@
 
   /**
    * (Internal > Stream Methods [11]) Setup Job to Inactivate Stale Servers
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function inactivateStaleServers
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
    *
+   * @description
    * This method sets up a local job that runs every 2 seconds. The job checks
    * the lastUpdated property against each server in the farm and if it was updated
    * more than 3 seconds ago, it's status will be updated within the farm-wide
    * properties to become "inactive"
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.inactivateStaleServers = function FarmModuleInactivateStaleServers(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Farm > [11] Setting Up Job to Inactivate Stale Servers...',
-          {}, 'FARM_SETUP_INACTIVATE_STALE_JOB');
-      const dayjs = lib.dayjs;
-      setInterval(function FarmModuleInactivateStaleServersInterval() {
+  pipelines.init.inactivateStaleServers = function FarmIPLInactivateStaleServers(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLInactivateStaleServersOp(observer, evt) {
+      o.log('debug',
+          'Farm > [11] Setting Up Job to Inactivate Stale Servers...',
+          {module: mod.name}, 'FARM_SETUP_INACTIVATE_STALE_JOB');
+      // noinspection JSUnresolvedVariable
+      const dayjs = core.lib.dayjs;
+      // noinspection JSUnfilteredForInLoop
+      setInterval(function FarmIPLInactivateStaleServersInt() {
         const currentDateStamp = dayjs();
         // eslint-disable-next-line guard-for-in
-        for (const server in farmServers) {
-          const lastUpdated = dayjs(farmServers[server].lastUpdated);
-          if (currentDateStamp.diff(lastUpdated) > 3000 && farmServers[server].status === 'active') {
+        for (const server in o.farmServers) {
+          // noinspection JSUnfilteredForInLoop
+          const lastUpdated = dayjs(o.farmServers[server].lastUpdated);
+          // noinspection JSUnfilteredForInLoop
+          if (currentDateStamp.diff(lastUpdated) > 3000 && o.farmServers[server].status === 'active') {
             const val = JSON.stringify({
               status: 'inactive',
               lastUpdated: dayjs().format(),
@@ -404,32 +578,41 @@
 
   /**
    * (Internal > Stream Methods [12]) Toggle Local Server as Job Server if Not In Farm
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function toggleLocalAsJobServer
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
    *
+   * @description
    * This method waits 10 seconds following server boot to see whether it ends up joining
    * a server farm. If it does not, then the "Primary Job Server" Role is automatically
    * applied to this server. If it later joins a farm then it will relinquish this role.
    * If no other servers in the farm have this role then selection will be based on a vote.
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.toggleLocalAsJobServer = function FarmModuleToggleAsJobServer(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.toggleLocalAsJobServer = function FarmIPLToggleAsJobServer(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLToggleAsJobServerOp(observer, evt) {
       let serverCount = 0;
-      for (const key in farmServers) {
-        if (farmServers[key].status === 'active') {
-          serverCount++;
-        }
+      for (const key in o.farmServers) {
+        // noinspection JSUnfilteredForInLoop
+        if (o.farmServers[key].status === 'active') serverCount++;
       }
       if (serverCount <= 1) {
-        jobServer = true;
-        log('debug',
-            'Blackrock Farm > [12] This stand-alone server has been toggled as the Primary Job Server',
-            {}, 'FARM_IS_PRIMARY_JOB_SERVER');
+        o.jobServer = true;
+        o.log('debug',
+            'Farm > [12] This stand-alone server has been toggled as the Primary Job Server',
+            {module: mod.name}, 'FARM_IS_PRIMARY_JOB_SERVER');
       } else {
-        log('debug',
-            'Blackrock Farm > [12] This server is part of a farm and ' +
+        o.log('debug',
+            'Farm > [12] This server is part of a farm and ' +
             'may be allocated the Primary Job Server role in the future',
-            {}, 'FARM_NOT_PRIMARY_JOB_SERVER');
+            {module: mod.name}, 'FARM_NOT_PRIMARY_JOB_SERVER');
       }
       observer.next(evt);
     }, source);
@@ -437,9 +620,15 @@
 
   /**
    * (Internal > Stream Methods [13]) Check & Vote On Job Server Roles
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function checkAndVoteOnJobServerRoles
+   * @ignore
    * @param {observable} source - Source Observable
    * @return {observable} destination - Destination Observable
    *
+   * @description
    * This method sets up a job that only runs where there is > 1 server in the farm
    * (ie; not for stand-alone servers). When run, the job checks the farm-wide
    * properties - "PrimaryJobServer" and "SecondaryJobServer". If either of
@@ -450,34 +639,42 @@
    * the last vote is discarded. The servers that receive the most votes will automatically
    * assign themselves the corresponding role and will update the farm-wide property for
    * the role that they were allocated with a value of their server IP + port.
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.checkAndVoteOnJobServerRoles = function FarmModuleCheckAndVoteOnJobServerRoles(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.checkAndVoteOnJobServerRoles = function FarmIPLCheckAndVoteOnJobServerRoles(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function FarmIPLCheckAndVoteOnJobServerRolesOp(observer, evt) {
       observer.next(evt);
     }, source);
   };
 
 
   /**
-   * ===============
-   * Utility Methods
-   * ===============
-   */
-
-  /**
    * (Internal > Utilities) Checks if a port is already taken or in use
+   *
+   * @private
+   * @memberof Server.Modules.Farm
+   * @function utils.isPortTaken
+   * @ignore
    * @param {number} port - The port number to check
    * @param {function} cb - Callback function
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  utils.isPortTaken = function FarmModuleIsPortTaken(port, cb) {
+  o.utils.isPortTaken = function FarmUtilsIsPortTaken(port, cb) {
     const tester = require('net').createServer()
-        .once('error', function FarmModuleIsPortTakenOnError(err) {
-          if (err.code !== 'EADDRINUSE') {
-            return cb(err);
-          } cb(null, true);
+        .once('error', function FarmUtilsIsPortTakenOnErr(err) {
+          if (err.code !== 'EADDRINUSE') return cb(err);
+          cb(null, true);
         })
-        .once('listening', function FarmModuleIsPortTakenOnListening() {
-          tester.once('close', function() {
+        .once('listening', function FarmUtilsIsPortTakenOnListen() {
+          tester.once('close', function FarmUtilsIsPortTakenOnClose() {
             cb(null, false);
           }).close();
         })

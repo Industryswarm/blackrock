@@ -1,236 +1,223 @@
 !function LoggerModuleWrapper() {
-  // eslint-disable-next-line no-extend-native
-  String.prototype.endsWith = function LoggerEndsWith(suffix) {
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
-  };
-  let core; let mod; let fileStream; let log; let newLog; let logOverride = false;
-  const pipelines = {}; const streamFns = {}; let consoleEnabled = false; let coreObjTimeout = 500;
-  let lib; let rx; let op; let analyticsStore = {sessionEventCount: 0}; const latestHeartbeat = {};
-  let daemonInControl = false; let modIsLoaded = false; let logBuffer = []; const fs = require('fs');
-
+  let core; let mod; const o = {}; const pipelines = function() {};
 
   /**
    * Blackrock Logger Module
    *
+   * @public
    * @class Server.Modules.Logger
    * @augments Server.Modules.Core.Module
-   * @param {Server.Modules.Core} coreObj - The Parent Core Object
-   * @return {Server.Modules.Logger} module - The Logger Module
+   * @param {Server.Modules.Core} coreObj - The Core Module Singleton
+   * @return {Server.Modules.Logger} module - The Logger Module Singleton
    *
    * @description This is the Logger Module of the Blackrock Application Server.
    * It provides a logging method that can be used throughout the framework /
-   * application server, as well as directly from within services. It has routing
+   * application server, as well as directly from within apps. It has routing
    * capabilities, allowing log events to be routed to - the Console, a Log File
    * on the filesystem, ElasticSearch and emitted directly to the Core Module instance.
+   *
+   * @example
+   * const loggerModule = req.core.module('logger');
    *
    * @author Darren Smith
    * @copyright Copyright (c) 2021 Darren Smith
    * @license Licensed under the LGPL license.
    */
-  module.exports = function LoggerModuleConstructor(coreObj) {
+  module.exports = function LoggerModule(coreObj) {
+    if (mod) return mod;
+    // eslint-disable-next-line no-extend-native
+    String.prototype.endsWith = function LoggerEndsWith(suffix) {
+      return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
     if (process.send) {
       fs.appendFileSync('/tmp/blackrock-daemon-fix.txt', 'Daemon Fix\n');
       fs.unlinkSync('/tmp/blackrock-daemon-fix.txt');
     }
-    if (modIsLoaded) {
-      return mod;
-    }
+    o.logBuffer = []; o.daemonInControl = false; o.logOverride = false;
+    o.coreObjTimeout = 500; o.consoleEnabled = false; o.analyticsStore = {sessionEventCount: 0};
+    o.latestHeartbeat = {}; o.logBuffer = []; o.fs = require('fs');
     core = coreObj; mod = new core.Mod('Logger');
-    mod.log = log = function LoggerModuleQuickLog(level, logMsg, attrObj, evtName) {
-      if (logOverride) {
-        return newLog(level, logMsg, attrObj);
-      }
+    o.log = mod.log = function LoggerModuleQuickLog(level, logMsg, attrObj, evtName) {
+      if (o.logOverride) return o.newLog(level, logMsg, attrObj);
       let currentDate = new Date();
       currentDate = currentDate.toISOString();
-      const sEvt = streamFns.detectAvailableSinks({'noLog': true});
+      const sEvt = pipelines.init.detectAvailableSinks({'noLog': true});
       const evt = {
         'level': level, 'logMsg': logMsg, 'attrObj': attrObj,
         'datestamp': currentDate, 'sinks': sEvt.sinks, 'evtName': evtName,
       };
-      logBuffer.push(evt);
+      o.logBuffer.push(evt);
       return true;
     };
     let loadDependencies = false;
     core.on('CORE_START_DAEMON', function LoggerModuleOnStartDaemon() {
-      daemonInControl = true;
+      o.daemonInControl = true;
     });
-    core.on('CORE_LOAD_DEPENDENCIES', function LoggerModuleOnLoadDependencies() {
+    core.on('CORE_LOAD_DEPENDENCIES', function LoggerModuleOnLoadDep() {
       loadDependencies = true;
     });
-    log('debug', 'Blackrock Logger Module > Initialising...', {}, 'LOGGER_INIT');
-    lib = core.lib; rx = lib.rxjs; op = lib.operators;
+    o.log('debug', 'Logger > Initialising...',
+        {module: mod.name}, 'LOGGER_INIT');
     let intervalCounter = 0;
     const interval = setInterval(function LoggerModuleInitInterval() {
       if (loadDependencies) {
         clearInterval(interval);
-        const SinkPipeline = pipelines.sendToSinks();
-        new SinkPipeline({}).pipe();
-        const Pipeline = pipelines.setupLoggerModule();
-        new Pipeline({}).pipe();
+        pipelines.sendToSinks();
+        pipelines.init();
       }
-      if (intervalCounter >= 500) {
-        clearInterval(interval);
-      }
+      if (intervalCounter >= 500) clearInterval(interval);
       intervalCounter += 10;
     }, 10);
+    /**
+     * (Undocumented) Unload Logger Module
+     *
+     * @private
+     * @memberof Server.Modules.Logger
+     * @function unload
+     * @ignore
+     *
+     * @description
+     * Tbc...
+     *
+     * @example
+     * Tbc...
+     */
     mod.unload = function LoggerModuleUnload() {
-      log('debug',
-          'Blackrock Logger Module > Closing any open logging connections and shutting down.',
-          {}, 'LOGGER_UNLOAD');
-      if (fileStream) {
+      o.log('debug',
+          'Logger > Closing any open logging connections and shutting down.',
+          {module: mod.name}, 'LOGGER_UNLOAD');
+      if (o.fileStream) {
         // eslint-disable-next-line no-delete-var
-        delete fileStream; core.emit('module-shut-down', 'Logger');
+        // noinspection JSAnnotator
+        delete o.fileStream;
+        core.emit('module-shut-down', 'Logger');
       } else {
         core.emit('module-shut-down', 'Logger');
       }
     };
-    modIsLoaded = true;
     return mod;
   };
 
-
-  /**
-   * =====================
-   * Event Stream Pipeline
-   * =====================
-   */
-
   /**
    * (Internal > Pipeline [1]) Setup Logger Module
-   * @return {object} pipeline - The Pipeline Object
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  pipelines.setupLoggerModule = function LoggerModuleSetupPipeline() {
-    return new core.Base().extend({
-      constructor: function LoggerModuleSetupPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function LoggerModuleSetupPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function LoggerModuleSetupPipelinePipe() {
-        const self = this;
-        process.nextTick(function LoggerModuleSetupPipelineNextTick() {
-          log('debug',
-              'Blackrock Logger Module > Server Initialisation Pipeline Created - Executing Now:',
-              {}, 'LOGGER_EXEC_INIT_PIPELINE');
-          const Stream = rx.bindCallback((cb) => {
-            self.callback(cb);
-          })();
-          Stream.pipe(
+  pipelines.init = function LoggerInitPipeline() {
+    // noinspection JSUnresolvedFunction, JSUnresolvedVariable
+    core.lib.rxPipeline({}).pipe(
 
-              // Fires once on server initialisation:
-              streamFns.setupFileStream,
-              op.map((evt) => {
-                if (evt) return streamFns.detectAvailableSinks(evt);
-              }),
-              streamFns.setupViewAnalytics,
-              streamFns.setupJobs,
-              streamFns.setupGetAndUpdateLatestHeartbeat,
-              streamFns.loadCachedHeartbeats,
-              streamFns.fireServerBootAnalyticsEvent,
-              streamFns.bindEnableConsole,
-              streamFns.bindLogEndpoints
+        // Fires once on server initialisation:
+        pipelines.init.setupFileStream,
+        core.lib.operators.map((evt) => {
+          if (evt) return pipelines.init.detectAvailableSinks(evt);
+        }),
+        pipelines.init.setupViewAnalytics,
+        pipelines.init.setupJobs,
+        pipelines.init.setupGetAndUpdateLatestHeartbeat,
+        pipelines.init.loadCachedHeartbeats,
+        pipelines.init.fireServerBootAnalyticsEvent,
+        pipelines.init.bindEnableConsole,
+        pipelines.init.bindLogEndpoints
 
-          ).subscribe();
-        });
-      },
-    });
+    ).subscribe();
   };
 
   /**
    * (Internal > Pipeline [2]) Send To Sinks
-   * @return {object} pipeline - The Pipeline Object
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  pipelines.sendToSinks = function LoggerModuleSendToSinksPipeline() {
-    return new core.Base().extend({
-      constructor: function LoggerModuleSendToSinksPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function LoggerModuleSendToSinksPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function LoggerModuleSendToSinksPipelinePipe() {
-        const Stream = rx.fromEvent(mod, 'logEvent');
-        Stream.pipe(
+  pipelines.sendToSinks = function LoggerSendToSinksPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}, null, mod, 'logEvent').pipe(
 
-            // Fires once per Log Event:
-            streamFns.unbufferEvents,
-            streamFns.fanoutToSinks
+        // Fires once per Log Event:
+        pipelines.sendToSinks.unbufferEvents,
+        pipelines.sendToSinks.fanoutToSinks
 
-        ).subscribe(function LoggerModuleSendToSinksPipelineSubscribe(evt) {
-          switch (evt.activeSink) {
-            case 'console':
-              streamFns.sendToConsole(evt);
-              break;
-            case 'file':
-              streamFns.sendToFile(evt);
-              break;
-            case 'elasticsearch':
-              streamFns.sendToElasticSearch(evt);
-              break;
-            case 'core':
-              streamFns.sendToCoreObject(evt);
-              break;
-          }
-        });
-      },
+    ).subscribe(function LoggerSendToSinksPipelineSub(evt) {
+      switch (evt.activeSink) {
+        case 'console': pipelines.sendToSinks.sendToConsole(evt); break;
+        case 'file': pipelines.sendToSinks.sendToFile(evt); break;
+        case 'elasticsearch': pipelines.sendToSinks.sendToElasticSearch(evt); break;
+        case 'core': pipelines.sendToSinks.sendToCoreObject(evt); break;
+      }
     });
   };
 
   /**
    * (Internal > Pipeline [5]) Process Analytics Event
-   * @return {object} pipeline - The Pipeline Object
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.processAnalyticsEvt
+   * @ignore
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  pipelines.processAnalyticsEvent = function LoggerModuleProcessAnalyticsEventPipeline() {
-    return new core.Base().extend({
-      constructor: function LoggerModuleProcessAnalyticsEventPipelineConstructor(evt) {
-        this.evt = evt;
-      },
-      callback: function LoggerModuleProcessAnalyticsEventPipelineCallback(cb) {
-        return cb(this.evt);
-      },
-      pipe: function LoggerModuleProcessAnalyticsEventPipelinePipe() {
-        const self = this; const Stream = rx.bindCallback((cb) => {
-          self.callback(cb);
-        })();
-        Stream.pipe(
+  pipelines.processAnalyticsEvt = function LoggerProcessAnalyticsEvtPipeline() {
+    // noinspection JSUnresolvedFunction
+    core.lib.rxPipeline({}).pipe(
 
-            // Fires once per Analytics Log Event (Request) following server initialisation:
-            streamFns.processAnalyticsEvent
+        // Fires once per Analytics Log Event (Request)
+        pipelines.processAnalyticsEvt.processAnalyticsEvt
 
-        ).subscribe();
-      },
-    });
+    ).subscribe();
   };
 
 
   /**
-   * =====================================
-   * Logger Stream Processing Functions
-   * (Fires Once on Server Initialisation)
-   * =====================================
-   */
-
-  /**
    * (Internal > Stream Methods [1]) Setup File Stream
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.setupFileStream
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupFileStream = function LoggerModuleSetupFileStream(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupFileStream = function LoggerIPLSetupFileStream(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerIPLSetupFileStreamOp(observer, evt) {
       if (core.cfg().logger.sinks.file && core.cfg().logger.sinks.file.enabled === true) {
-        const fs = require('fs'); let location;
-        if (core.cfg().logger.sinks.file.location) {
-          location = core.cfg().logger.sinks.file.location;
-        } else {
-          location = core.fetchBasePath('root') + '/blackrock.log';
-        }
-        if (fs.existsSync(location)) {
-          fileStream = fs.createWriteStream(location, {flags: 'a'});
-        }
-        log('debug', 'Blackrock Logger Module  > [1] Setup the File Stream', {}, 'LOGGER_SETUP_FILE_STREAM');
+        let location;
+        if (core.cfg().logger.sinks.file.location) location = core.cfg().logger.sinks.file.location;
+        else location = core.fetchBasePath('root') + '/blackrock.log';
+        if (o.fs.existsSync(location)) o.fileStream = fs.createWriteStream(location, {flags: 'a'});
+        o.log('debug', 'Logger  > [1] Setup the File Stream',
+            {module: mod.name}, 'LOGGER_SETUP_FILE_STREAM');
       } else {
-        log('debug', 'Blackrock Logger Module > [1] Skipped Creation of File Stream', {}, 'LOGGER_NO_FILE_STREAM');
+        o.log('debug', 'Logger > [1] Skipped Creation of File Stream',
+            {module: mod.name}, 'LOGGER_NO_FILE_STREAM');
       }
       observer.next(evt);
     }, source);
@@ -238,42 +225,53 @@
 
   /**
    * (Internal > Stream Methods [2]) Detect Available Sinks
-   * @param {object} evt - The Request Event
-   * @return {object} evt - The Response Event
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.detectAvailableSinks
+   * @ignore
+   * @param {object} evt - The Incoming Event
+   * @return {object} evt - The Outgoing Event
    */
-  streamFns.detectAvailableSinks = function LoggerModuleDetectAvailableSinks(evt) {
-    evt.sinks = {};
-    evt.sinks.core = true;
-    if (core.cfg().logger.enabled === true) {
-      if (core.cfg().logger.sinks.console && core.cfg().logger.sinks.console.enabled === true) {
-        evt.sinks.console = true;
+  pipelines.init.detectAvailableSinks = function LoggerIPLDetectAvailableSinks(evt) {
+      evt.sinks = {}; evt.sinks.core = true;
+      if (core.cfg().logger.enabled === true) {
+        if (core.cfg().logger.sinks.console && core.cfg().logger.sinks.console.enabled === true) {
+          evt.sinks.console = true;
+        }
+        if (core.cfg().logger.sinks.file && core.cfg().logger.sinks.file.enabled === true) evt.sinks.file = true;
+        if (core.cfg().logger.sinks.elasticsearch && core.cfg().logger.sinks.elasticsearch.enabled === true) {
+          evt.sinks.elasticsearch = true;
+        }
+        if (!evt.noLog) {
+          o.log('debug',
+              'Logger > [2] Detected Available Log Sinks',
+              {module: mod.name, sinks: evt.sinks}, 'LOGGER_DETECTED_SINKS');
+        }
+      } else {
+        if (!evt.noLog) {
+          o.log('debug',
+              'Logger > [2] Did Not Detect Log Sinks - As Logger is Disabled in Config',
+              {module: mod.name}, 'LOGGER_DISABLED');
+        }
       }
-      if (core.cfg().logger.sinks.file && core.cfg().logger.sinks.file.enabled === true) {
-        evt.sinks.file = true;
-      }
-      if (core.cfg().logger.sinks.elasticsearch && core.cfg().logger.sinks.elasticsearch.enabled === true) {
-        evt.sinks.elasticsearch = true;
-      }
-      if (!evt.noLog) {
-        log('debug',
-            'Blackrock Logger Module > [2] Detected Available Log Sinks',
-            {'sinks': evt.sinks}, 'LOGGER_DETECTED_SINKS');
-      }
-    } else {
-      if (!evt.noLog) {
-        log('debug',
-            'Blackrock Logger Module > [2] Did Not Detect Log Sinks - As Logger is Disabled in Config',
-            {}, 'LOGGER_DISABLED');
-      }
-    }
-    return evt;
+      return evt;
   };
 
   /**
    * (Internal > Stream Methods [3]) Setup View Analytics Method
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.setupViewAnalytics
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
    *
+   * @description
+   * Tbc...
+   *
+   * @example
    * {
    *   "2000": {
    *      "01": {
@@ -295,16 +293,18 @@
    *      }
    *   }
    */
-  streamFns.setupViewAnalytics = function LoggerModuleSetupViewAnalytics(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.init.setupViewAnalytics = function LoggerIPLSetupViewAnalytics(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerIPLSetupViewAnalytics(observer, evt) {
+      // noinspection JSValidateTypes
       const ViewClass = new core.Base().extend({
-        constructor: function LoggerModuleViewAnalyticsClassConstructor() {
+        constructor: function LoggerIPLViewAnalyticsClassConstructor() {
           return this;
         },
-        callback: function LoggerModuleViewAnalyticsClassCallback(cb) {
+        callback: function LoggerIPLViewAnalyticsClassCallback(cb) {
           return cb(this.evt);
         },
-        process: function LoggerModuleViewAnalyticsClassPipe() {
+        process: function LoggerIPLViewAnalyticsClassPipe() {
           const self = this;
           const viewObject = {
             server: {dateLastBoot: '', dateCacheLastSaved: ''},
@@ -336,89 +336,63 @@
           };
         },
         getDatePartsAndPrepareStore: function LoggerModuleViewAnalyticsClassGetDateParts() {
-          const dayjs = lib.dayjs; const dateObject = dayjs().format('YYYY-MM-DD').split('-');
+          // noinspection JSUnresolvedVariable
+          const dayjs = core.lib.dayjs; const dateObject = dayjs().format('YYYY-MM-DD').split('-');
           const year = dateObject[0]; const month = dateObject[1]; const day = dateObject[2];
-          if (!analyticsStore[year]) {
-            analyticsStore[year] = {};
-          }
-          if (!analyticsStore[year][month]) {
-            analyticsStore[year][month] = {};
-          }
-          if (!analyticsStore[year][month][day]) {
-            analyticsStore[year][month][day] = [];
-          }
+          if (!o.analyticsStore[year]) o.analyticsStore[year] = {};
+          if (!o.analyticsStore[year][month]) o.analyticsStore[year][month] = {};
+          if (!o.analyticsStore[year][month][day]) o.analyticsStore[year][month][day] = [];
           return {year: year, month: month, day: day};
         },
-        sortBy: function LoggerModuleViewAnalyticsClassSortBy(array, intField, param, direction) {
+        sortBy: function LoggerIPLViewAnalyticsClassSortBy(array, intField, param, direction) {
           if (direction === 'min') {
-            array.sort(function LoggerModuleViewAnalyticsClassSortBySortFnOne(a, b) {
-              if (!a[intField] && b[intField]) {
-                return 0 - b[intField][param];
-              } else if (!a[intField] && !b[intField]) {
-                return 0;
-              } else if (a[intField] && !b[intField]) {
-                return a[intField][param] - 0;
-              } else {
-                return a[intField][param] - b[intField][param];
-              }
+            array.sort(function LoggerIPLViewAnalyticsClassSortBySortFnOne(a, b) {
+              if (!a[intField] && b[intField]) return 0 - b[intField][param];
+              else if (!a[intField] && !b[intField]) return 0;
+              else if (a[intField] && !b[intField]) return a[intField][param] - 0;
+              else return a[intField][param] - b[intField][param];
             });
           } else {
-            array.sort(function LoggerModuleViewAnalyticsClassSortBySortFnTwo(b, a) {
-              if (((a && !a[intField]) || !a) && b && b[intField]) {
-                return 0 - b[intField][param];
-              } else if (((a && !a[intField]) || !a) && ((b && !b[intField]) || !b)) {
-                return 0;
-              } else if (a && a[intField] && ((b && !b[intField]) || !b)) {
-                return a[intField][param] - 0;
-              } else {
-                return a[intField][param] - b[intField][param];
-              }
+            array.sort(function LoggerIPLViewAnalyticsClassSortBySortFnTwo(b, a) {
+              if (((a && !a[intField]) || !a) && b && b[intField]) return 0 - b[intField][param];
+              else if (((a && !a[intField]) || !a) && ((b && !b[intField]) || !b)) return 0;
+              else if (a && a[intField] && ((b && !b[intField]) || !b)) return a[intField][param] - 0;
+              else return a[intField][param] - b[intField][param];
             });
           }
           return array;
         },
-        fetchMaxValue: function LoggerModuleViewAnalyticsClassFetchMaxValue(param) {
+        fetchMaxValue: function LoggerIPLViewAnalyticsClassFetchMaxValue(param) {
           const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams;
           const msgsParams = s.msgsParams; const sortBy = this.sortBy;
           let intField;
-          if (serverParams.includes(param)) {
-            intField = 'server';
-          } else if (msgsParams.includes(param)) {
-            intField = 'msgs';
-          }
-          let daysEvts = analyticsStore[dp.year][dp.month][dp.day];
+          if (serverParams.includes(param)) intField = 'server';
+          else if (msgsParams.includes(param)) intField = 'msgs';
+          let daysEvts = o.analyticsStore[dp.year][dp.month][dp.day];
           daysEvts = sortBy(daysEvts, intField, param, 'max');
-          if (!daysEvts || !daysEvts[0] || !daysEvts[0][intField] || !daysEvts[0][intField][param]) {
-            return 0;
-          }
+          if (!daysEvts || !daysEvts[0] || !daysEvts[0][intField] || !daysEvts[0][intField][param]) return 0;
           return daysEvts[0][intField][param];
         },
-        /* fetchMinValue: function LoggerModuleViewAnalyticsClassFetchMinValue(param) {
+        /* fetchMinValue: function LoggerIPLViewAnalyticsClassFetchMinValue(param) {
           const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams;
           const msgsParams = s.msgsParams; const sortBy = this.sortBy;
           let intField;
-          if (serverParams.includes(param)) {
-            intField = 'server';
-          } else if (msgsParams.includes(param)) {
-            intField = 'msgs';
-          }
-          let daysEvts = analyticsStore[dp.year][dp.month][dp.day];
+          if (serverParams.includes(param)) intField = 'server';
+          else if (msgsParams.includes(param)) intField = 'msgs';
+          let daysEvts = o.analyticsStore[dp.year][dp.month][dp.day];
           daysEvts = sortBy(daysEvts, intField, param, 'min');
           if (!daysEvts || !daysEvts[0] || !daysEvts[0][intField] || !daysEvts[0][intField][param]) {
             return 0;
           }
           return daysEvts[0][intField][param];
         }, */
-        fetchTotalValue: function LoggerModuleViewAnalyticsClassFetchTotalValue(param) {
+        fetchTotalValue: function LoggerIPLViewAnalyticsClassFetchTotalValue(param) {
           const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams;
           const msgsParams = s.msgsParams;
           let intField;
-          if (serverParams.includes(param)) {
-            intField = 'server';
-          } else if (msgsParams.includes(param)) {
-            intField = 'msgs';
-          }
-          const daysEvts = analyticsStore[dp.year][dp.month][dp.day];
+          if (serverParams.includes(param)) intField = 'server';
+          else if (msgsParams.includes(param)) intField = 'msgs';
+          const daysEvts = o.analyticsStore[dp.year][dp.month][dp.day];
           let sumTotal = 0;
           for (let i = 0; i < daysEvts.length; i++) {
             if (daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) {
@@ -427,72 +401,76 @@
           }
           return sumTotal;
         },
-        fetchAvgValue: function LoggerModuleViewAnalyticsClassFetchAvgValue(param) {
+        fetchAvgValue: function LoggerIPLViewAnalyticsClassFetchAvgValue(param) {
           const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams;
           const msgsParams = s.msgsParams;
           let intField;
-          if (serverParams.includes(param)) {
-            intField = 'server';
-          } else if (msgsParams.includes(param)) {
-            intField = 'msgs';
-          }
-          const daysEvts = analyticsStore[dp.year][dp.month][dp.day];
+          if (serverParams.includes(param)) intField = 'server';
+          else if (msgsParams.includes(param)) intField = 'msgs';
+          const daysEvts = o.analyticsStore[dp.year][dp.month][dp.day];
           let avgValue; let sumTotal = 0; let recordCount = 0;
           for (let i = 0; i < daysEvts.length; i++) {
             if (daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) {
-              sumTotal += daysEvts[i][intField][param]; recordCount ++;
+              sumTotal += daysEvts[i][intField][param];
+              recordCount ++;
             }
           }
           // eslint-disable-next-line prefer-const
           avgValue = sumTotal / recordCount;
           return avgValue;
         },
-        fetchCount: function LoggerModuleViewAnalyticsClassFetchCount(param) {
-          const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams; const msgsParams = s.msgsParams;
+        fetchCount: function LoggerIPLViewAnalyticsClassFetchCount(param) {
+          const s = this.stub(); const dp = s.dp; const serverParams = s.serverParams;
+          const msgsParams = s.msgsParams;
           let intField;
-          if (serverParams.includes(param)) {
-            intField = 'server';
-          } else if (msgsParams.includes(param)) {
-            intField = 'msgs';
-          }
-          const daysEvts = analyticsStore[dp.year][dp.month][dp.day];
+          if (serverParams.includes(param)) intField = 'server';
+          else if (msgsParams.includes(param)) intField = 'msgs';
+          const daysEvts = o.analyticsStore[dp.year][dp.month][dp.day];
           let recordCount = 0;
           for (let i = 0; i < daysEvts.length; i++) {
-            if (daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) {
-              recordCount ++;
-            }
+            if (daysEvts[i] && daysEvts[i][intField] && daysEvts[i][intField][param]) recordCount ++;
           }
           return recordCount;
         },
       });
-      if (!mod.analytics) {
-        mod.analytics = {};
-      }
+      if (!mod.analytics) mod.analytics = {};
       const viewObject = new ViewClass();
-      mod.analytics.view = function LoggerModuleExternalViewAnalyticsMethod() {
+      mod.analytics.view = function LoggerIPLExternalViewAnalyticsFn() {
         return viewObject.process();
       };
-      log('debug',
-          'Blackrock Logger Module > [3] View Analytics Setup & Ready For Use',
-          {}, 'LOGGER_VIEW_ANALYTICS_SETUP');
+      o.log('debug',
+          'Logger > [3] View Analytics Setup & Ready For Use',
+          {module: mod.name}, 'LOGGER_VIEW_ANALYTICS_SETUP');
       observer.next(evt);
     }, source);
   };
 
   /**
    * (Internal > Stream Methods [4]) Setup Jobs
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.setupJobs
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupJobs = function LoggerModuleSetupJobs(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [4] Setting Up Heartbeat + Cache Jobs',
-          {}, 'LOGGER_SETUP_HEARTBEAT_JOBS');
+  pipelines.init.setupJobs = function LoggerIPLSetupJobs(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      o.log('debug',
+          'Logger > [4] Setting Up Heartbeat + Cache Jobs',
+          {module: mod.name}, 'LOGGER_SETUP_HEARTBEAT_JOBS');
       if (core.cfg().logger.heartbeat) {
-        const heartbeatJob = function LoggerModuleHeartbeatJob() {
+        const heartbeatJob = function LoggerIPLHeartbeatJob() {
           const beat = core.module('logger').analytics.view();
-          const roundAndLabel = function LoggerModuleRoundAndLabel(param) {
+          const roundAndLabel = function LoggerIPLRoundAndLabel(param) {
             if (param >= 1024 && param < 1048576) {
               param = Math.round(param / 1024);
               param = Number(param).toLocaleString();
@@ -508,34 +486,29 @@
             }
             return param;
           };
-          latestHeartbeat.totalReqSize = beat.msgs.totalReqSize = roundAndLabel(beat.msgs.totalReqSize);
-          latestHeartbeat.totalResSize = beat.msgs.totalResSize = roundAndLabel(beat.msgs.totalResSize);
-          latestHeartbeat.avgReqSize = beat.msgs.avgReqSize = roundAndLabel(beat.msgs.avgReqSize);
-          latestHeartbeat.avgResSize = beat.msgs.avgResSize = roundAndLabel(beat.msgs.avgResSize);
-          latestHeartbeat.avgMemUsed = beat.msgs.avgMemUsed = roundAndLabel(beat.msgs.avgMemUsed);
-          latestHeartbeat.avgCpuLoad = beat.msgs.avgCpuLoad = Math.round(beat.msgs.avgCpuLoad) + '%';
-          latestHeartbeat.totalReqCount = beat.msgs.totalReqCount;
-          latestHeartbeat.totalResCount = beat.msgs.totalResCount;
-          latestHeartbeat.avgProcessingTime = beat.msgs.avgProcessingTime;
-          latestHeartbeat.dateLastBoot = beat.msgs.dateLastBoot;
-          latestHeartbeat.dateCacheLastSaved = beat.msgs.dateCacheLastSaved;
-          if (!latestHeartbeat.peerCount) {
-            latestHeartbeat.peerCount = 1;
-          }
-          let serviceStats = {}; serviceStats.servicesMemoryUse = '0 Bytes';
-          serviceStats.servicesCount = 0; serviceStats.servicesRouteCount = 0;
-          if (core.module('services') && core.module('services').serviceStats) {
-            serviceStats = core.module('services').serviceStats();
-            serviceStats.servicesMemoryUse = roundAndLabel(serviceStats.servicesMemoryUse);
+          o.latestHeartbeat.totalReqSize = beat.msgs.totalReqSize = roundAndLabel(beat.msgs.totalReqSize);
+          o.latestHeartbeat.totalResSize = beat.msgs.totalResSize = roundAndLabel(beat.msgs.totalResSize);
+          o.latestHeartbeat.avgReqSize = beat.msgs.avgReqSize = roundAndLabel(beat.msgs.avgReqSize);
+          o.latestHeartbeat.avgResSize = beat.msgs.avgResSize = roundAndLabel(beat.msgs.avgResSize);
+          o.latestHeartbeat.avgMemUsed = beat.msgs.avgMemUsed = roundAndLabel(beat.msgs.avgMemUsed);
+          o.latestHeartbeat.avgCpuLoad = beat.msgs.avgCpuLoad = Math.round(beat.msgs.avgCpuLoad) + '%';
+          o.latestHeartbeat.totalReqCount = beat.msgs.totalReqCount;
+          o.latestHeartbeat.totalResCount = beat.msgs.totalResCount;
+          o.latestHeartbeat.avgProcessingTime = beat.msgs.avgProcessingTime;
+          o.latestHeartbeat.dateLastBoot = beat.msgs.dateLastBoot;
+          o.latestHeartbeat.dateCacheLastSaved = beat.msgs.dateCacheLastSaved;
+          if (!o.latestHeartbeat.peerCount) o.latestHeartbeat.peerCount = 1;
+          let appStats = {}; appStats.appsMemoryUse = '0 Bytes';
+          appStats.appsCount = 0; appStats.appsRouteCount = 0;
+          if (core.module('app-engine') && core.module('app-engine').appStats) {
+            appStats = core.module('app-engine').appStats();
+            appStats.appsMemoryUse = roundAndLabel(appStats.appsMemoryUse);
           }
           let runningInSandbox = 'No';
-          if (core.module('sandbox') && core.cfg().services.sandbox.default === true) {
-            runningInSandbox = 'Yes';
-          }
-
-          const loadedServiceCount = serviceStats.servicesCount + ` (` + serviceStats.servicesMemoryUse + `)`;
-          const totalRouteCtrlCount = serviceStats.servicesRouteCount + ` (` + serviceStats.servicesMemoryUse + `)`;
-          if (core.cfg().logger.heartbeat.console && consoleEnabled && !core.globals.get('silent')) {
+          if (core.module('sandbox') && core.cfg()['app-engine'].sandbox.default === true) runningInSandbox = 'Yes';
+          const loadedAppCount = appStats.appsCount + ` (` + appStats.appsMemoryUse + `)`;
+          const totalRouteCtrlCount = appStats.appsRouteCount + ` (` + appStats.appsMemoryUse + `)`;
+          if (core.cfg().logger.heartbeat.console && o.consoleEnabled && !core.globals.get('silent')) {
             console.log(`
 
     ========================================================================================================
@@ -562,12 +535,12 @@
    d8P"      "Y8b, ,d8P"      "Y8b       Server Status: ` + core.status + `
   dP'           "8a8"           \`Yd      Server Mode: Live (Stand-Alone)
   8(              "              )8      Processes Running On This Server: 1
-  I8                             8I      Loaded Module Count: ` + core.moduleCount('modules') + `
-   Yb,                         ,dP       Loaded Interface Count: ` + core.moduleCount('interfaces') + `
-    "8a,                     ,a8"        Servers In Farm: ` + latestHeartbeat.peerCount + `
+  I8                             8I      Loaded Module Count: ` + core.module.count('modules') + `
+   Yb,                         ,dP       Loaded Interface Count: ` + core.module.count('interfaces') + `
+    "8a,                     ,a8"        Servers In Farm: ` + o.latestHeartbeat.peerCount + `
       "8a,                 ,a8"          
-        "Yba             adP"            SERVICE INFORMATION:
-          \`Y8a         a8P'              Loaded Service Count: ` + loadedServiceCount + `
+        "Yba             adP"            APP INFORMATION:
+          \`Y8a         a8P'              Loaded App Count: ` + loadedAppCount + `
             \`88,     ,88'                Total Route / Controller Count: ` + totalRouteCtrlCount + `
               "8b   d8"                  Running in Sandbox: ` + runningInSandbox + `
                "8b d8"                   
@@ -578,21 +551,28 @@
      ` );
           }
         };
-        const cacheJob = function LoggerModuleCacheJob() {
-          const content = JSON.stringify(analyticsStore);
-          const fs = require('fs');
+        const cacheJob = function LoggerIPLCacheJob() {
+          const content = JSON.stringify(o.analyticsStore);
           const path = core.fetchBasePath('cache') + '/heartbeat/heartbeats.json';
-          fs.writeFile(path, content, {encoding: 'utf8', flag: 'w'},
+          o.fs.writeFile(path, content, {encoding: 'utf8', flag: 'w'},
               function LoggerModuleCacheJobWriteFileCallback(err) {});
         };
-        core.module('jobs').jobs.add({
-          id: 'CH01', name: 'Console Server Heartbeat Job',
-          type: 'recurring', delay: core.cfg().logger.heartbeat.heartbeatFreq, local: true,
-        }, heartbeatJob, {});
-        core.module('jobs').jobs.add({
-          id: 'SH02', name: 'Server Heartbeat Cache Job',
-          type: 'recurring', delay: core.cfg().logger.heartbeat.cacheFreq, local: true,
-        }, cacheJob, {});
+        core.module.isLoaded('jobs').then(function LoggerIPLIsJobsLoadedThen(jobsMod) {
+          // noinspection JSUnresolvedVariable
+          jobsMod.add({
+            id: 'CH01', name: 'Console Server Heartbeat Job',
+            type: 'recurring', delay: core.cfg().logger.heartbeat.heartbeatFreq, local: true,
+          }, heartbeatJob, {});
+          // noinspection JSUnresolvedVariable
+          jobsMod.add({
+            id: 'SH02', name: 'Server Heartbeat Cache Job',
+            type: 'recurring', delay: core.cfg().logger.heartbeat.cacheFreq, local: true,
+          }, cacheJob, {});
+        }).catch(function LoggerIPLIsJobsLoadedCatch(err) {
+          o.log('debug',
+              'Logger > [4] Cannot Load Jobs Module',
+              {module: mod.name, error: err}, 'LOGGER_NO_LOAD_JOBS');
+        });
       }
       observer.next(evt);
     }, source);
@@ -600,20 +580,63 @@
 
   /**
    * (Internal > Stream Methods [5]) Setup Get & Update Latest Heartbeat Method
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.setupGetAndUpdateLatestHeartbeat
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.setupGetAndUpdateLatestHeartbeat = function LoggerModuleSetupGetAndUpdateLatestHeartbeat(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [5] Setting up the \'getLatestHeartbeat\' and ' +
+  pipelines.init.setupGetAndUpdateLatestHeartbeat = function LoggerIPLSetupGetAndUpdateLatestHb(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      o.log('debug',
+          'Logger > [5] Setting up the \'getLatestHeartbeat\' and ' +
           '\'updateLatestHeartbeat\' Methods on Logger',
-          {}, 'LOGGER_BOUND_GET_UPDATE_HEARTBEAT_METHODS');
-      mod.getLatestHeartbeat = function LoggerModuleGetLatestHeartbeat() {
-        return latestHeartbeat;
+          {module: mod.name}, 'LOGGER_BOUND_GET_UPDATE_HEARTBEAT_METHODS');
+      /**
+       * Get Latest Heartbeat
+       *
+       * @public
+       * @memberof Server.Modules.Logger
+       * @function getLatestHeartbeat
+       * @return {object} latestHeartbeat - The Latest Heartbeat
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.getLatestHeartbeat = function LoggerGetLatestHeartbeat() {
+        return o.latestHeartbeat;
       };
-      mod.updateLatestHeartbeat = function LoggerModuleUpdateLatestHeartbeat(key, value) {
-        latestHeartbeat[key] = value;
+      /**
+       * (Undocumented) Update Latest Heartbeat
+       *
+       * @private
+       * @memberof Server.Modules.Logger
+       * @function updateLatestHeartbeat
+       * @param {string} key - Latest Heartbeat Key
+       * @param {object|*} value - Latest Heartbeat Value
+       * @return {boolean} result - Result of Updating Latest Heartbeat
+       * @ignore
+       *
+       * @description
+       * Tbc...
+       *
+       * @example
+       * Tbc...
+       */
+      mod.updateLatestHeartbeat = function LoggerUpdateLatestHeartbeat(key, value) {
+        o.latestHeartbeat[key] = value;
         return true;
       };
       observer.next(evt);
@@ -622,19 +645,31 @@
 
   /**
    * (Internal > Stream Methods [6]) Load Cached Heartbeats
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.loadCachedHeartbeats
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.loadCachedHeartbeats = function LoggerModuleLoadCachedHeartbeats(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [6] Loading cached heartbeats if they exist',
-          {}, 'LOGGER_LOAD_CACHED_HEARTBEATS');
-      setTimeout(function LoggerModuleLoadCachedHeartbeatsTimeout() {
-        const fs = require('fs');
+  pipelines.init.loadCachedHeartbeats = function LoggerIPLLoadCachedHeartbeats(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      o.log('debug',
+          'Logger > [6] Loading cached heartbeats if they exist',
+          {module: mod.name}, 'LOGGER_LOAD_CACHED_HEARTBEATS');
+      setTimeout(function LoggerIPLLoadCachedHeartbeatsTimeout() {
         const path = core.fetchBasePath('cache') + '/heartbeat/heartbeats.json';
-        fs.readFile(path, 'utf8', function LoggerModuleLoadCachedHeartbeatsReadFileCallback(err, content) {
-          if (content) analyticsStore = JSON.parse(content);
+        o.fs.readFile(path, 'utf8',
+            function LoggerIPLLoadCachedHeartbeatsReadFileCb(err, content) {
+          if (content) o.analyticsStore = JSON.parse(content);
         });
       }, 70);
       observer.next(evt);
@@ -643,17 +678,29 @@
 
   /**
    * (Internal > Stream Methods [7]) Fire the "Server Boot" Analytics Event
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.fireServerBootAnalyticsEvent
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.fireServerBootAnalyticsEvent = function LoggerModuleFireServerBootAnalyticsEvent(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [7] Firing the "Server Boot" Analytics Event',
-          {}, 'LOGGER_FIRE_SERVER_BOOT_EVT');
-      setTimeout(function LoggerModuleFireBootAnalyticsEventTimeout() {
-        const dayjs = lib.dayjs;
-        mod.analytics.log({'server': {'dateLastBoot': dayjs().format()}});
+  pipelines.init.fireServerBootAnalyticsEvent = function LoggerIPLFireServerBootAnalyticsEvt(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerIPLFireServerBootAnalyticsEvtOp(observer, evt) {
+      o.log('debug',
+          'Logger > [7] Firing the "Server Boot" Analytics Event',
+          {module: mod.name}, 'LOGGER_FIRE_SERVER_BOOT_EVT');
+      setTimeout(function LoggerIPLFireServerBootAnalyticsEvtTimeout() {
+        // noinspection JSUnresolvedFunction
+        mod.analytics.log({'server': {'dateLastBoot': core.lib.dayjs().format()}});
       }, 70);
       observer.next(evt);
     }, source);
@@ -661,19 +708,47 @@
 
   /**
    * (Internal > Stream Methods [8]) Binds the 'enableConsole' method to this module
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.bindEnableConsole
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.bindEnableConsole = function LoggerModuleBindEnableConsole(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [8a] Binding \'enableConsole\' method to this module',
-          {}, 'LOGGER_BOUND_ENABLE_CONSOLE');
-      mod.enableConsole = function LoggerModuleEnableConsole() {
-        log('debug',
-            'Blackrock Logger Module > [8b] \'enableConsole\' has been called',
-            {}, 'LOGGER_ENABLE_CONSOLE_CALLED');
-        consoleEnabled = true;
+  pipelines.init.bindEnableConsole = function LoggerIPLBindEnableConsole(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerIPLBindEnableConsoleOp(observer, evt) {
+      o.log('debug',
+          'Logger > [8a] Binding \'enableConsole\' method to this module',
+          {module: mod.name}, 'LOGGER_BOUND_ENABLE_CONSOLE');
+      /**
+       * (Undocumented) Enable Console
+       *
+       * @private
+       * @memberof Server.Modules.Logger
+       * @function enableConsole
+       * @ignore
+       *
+       * @description
+       * This method is called internally to enable the console (switch from caching log requests directed
+       * at the console to actually sending them through to the console), once the Logger Module has
+       * finished initialising.
+       *
+       * @example
+       * Tbc...
+       */
+      mod.enableConsole = function LoggerBindEnableConsole() {
+        o.log('debug',
+            'Logger > [8b] \'enableConsole\' has been called',
+            {module: mod.name}, 'LOGGER_ENABLE_CONSOLE_CALLED');
+        o.consoleEnabled = true;
       };
       observer.next(evt);
     }, source);
@@ -681,85 +756,158 @@
 
   /**
    * (Internal > Stream Methods [9]) Bind Log Endpoints
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.init.bindLogEndpoints
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.bindLogEndpoints = function LoggerModuleBindLogEndpoints(source) {
-    return lib.rxOperator(function(observer, evt) {
-      log('debug',
-          'Blackrock Logger Module > [9] Bound Analytics & Log Endpoint On The Logger Module',
-          {}, 'LOGGER_BOUND_ANALYTICS_LOG_ENDPOINTS');
-      logOverride = true;
-      mod.log = log = newLog = function LoggerModuleLog(level, logMsg, attrObj, evtName) {
+  pipelines.init.bindLogEndpoints = function LoggerIPLBindLogEndpoints(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerIPLBindLogEndpointsOp(observer, evt) {
+      o.log('debug',
+          'Logger > [9] Bound Analytics & Log Endpoint On The Logger Module',
+          {module: mod.name}, 'LOGGER_BOUND_ANALYTICS_LOG_ENDPOINTS');
+      o.logOverride = true;
+      /**
+       * Log an Event
+       *
+       * @public
+       * @memberof Server.Modules.Logger
+       * @function log
+       * @param {string} level - Log Level (startup|error|warning|debug|[custom])
+       * @param {string} logMsg - Log Message
+       * @param {object} [attrObj] - Attributes Object
+       * @param {string} [evtName] - Event Name
+       * @return {boolean} result - Result (True|False)
+       *
+       * @description
+       * This method is the main method used to log new events in the Blackrock Application Server. You
+       * must pass it a 'level' (startup|error|warning|debug|[custom]) and message at a minimum. The
+       * Attributes Object and Event Name are optional.
+       *
+       * @example
+       * const log = req.core.module('logger').log;
+       * log('debug', 'This is a sample message', {type: "sample"}, 'SAMPLE_MSG');
+       * // If Console Enabled, Output Is: 'XXXX-XX-XX XX-XX-XX (debug) This is a sample message'
+       */
+      mod.log = o.log = o.newLog = function LoggerModuleLog(level, logMsg, attrObj, evtName) {
         let currentDate = new Date();
         currentDate = currentDate.toISOString();
         const evt2 = {
-          'datestamp': currentDate,
-          'level': level,
-          'logMsg': logMsg,
-          'attrObj': attrObj,
-          'evtName': evtName,
-          'sinks': evt.sinks,
+          'datestamp': currentDate, 'level': level, 'logMsg': logMsg,
+          'attrObj': attrObj, 'evtName': evtName, 'sinks': evt.sinks,
         };
         mod.emit('logEvent', evt2);
         observer.next();
         return true;
       };
-      if (!daemonInControl) core.emit('updateLogFn');
-      if (!mod.analytics) mod.analytics = {};
+      if (!o.daemonInControl) core.emit('updateLogFn');
+      if (!mod.analytics) {
+        /**
+         * Analytics Logger Object
+         *
+         * @public
+         * @memberof Server.Modules.Logger
+         * @property {function} log - Log Method
+         *
+         * @description
+         * This method is used internally to track server analytics such as up time, total and average number
+         * of requests and responses going through the Router Module, Etc...
+         *
+         * @example
+         * Tbc...
+         */
+        mod.analytics = {};
+      }
+      /**
+       * Log an Analytics Event
+       *
+       * @public
+       * @memberof Server.Modules.Logger
+       * @function analytics.log
+       * @param {object} query - Analytics Log Query
+       *
+       * @description
+       * This method is used internally to track server analytics such as up time, total and average number
+       * of requests and responses going through the Router Module, Etc...
+       *
+       * @example
+       * Tbc...
+       */
       mod.analytics.log = function LoggerModuleAnalyticsLog(query) {
         const evt2 = {};
         evt2.analyticsEvent = {'query': query};
-        const ISPipeline = pipelines.processAnalyticsEvent();
-        new ISPipeline(evt2).pipe();
+        pipelines.processAnalyticsEvt();
       };
     }, source);
   };
 
 
   /**
-   * ==================================
-   * Logger Stream Processing Functions
-   * (Fires Once For Each Log Event)
-   * ==================================
-   */
-
-  /**
-   * (Internal > Stream  Methods [1]) Buffer Log Events Until Console Enabled
+   * (Internal > Stream  Methods [1]) Un-Buffer Log Events When Console Enabled
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.unbufferEvents
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.unbufferEvents = function LoggerModuleUnbufferEvents(source) {
-    return lib.rxOperator(function(observer, evt) {
-      if (consoleEnabled && logBuffer) {
-        for (let i = 0; i < logBuffer.length; i++) {
-          observer.next(logBuffer[i]);
+  pipelines.sendToSinks.unbufferEvents = function LoggerSTSPLUnbufferEvents(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
+      if (o.consoleEnabled && o.logBuffer) {
+        for (let i = 0; i < o.logBuffer.length; i++) {
+          observer.next(o.logBuffer[i]);
         }
         observer.next(evt);
-        logBuffer = [];
-      } else {
-        logBuffer.push(evt);
-      }
+        o.logBuffer = [];
+      } else o.logBuffer.push(evt);
     }, source);
   };
 
   /**
-   * (Internal > Stream  Methods [2]) Fanout To Sinks
+   * (Internal > Stream  Methods [2]) Fan-Out To Sinks
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.fanoutToSinks
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.fanoutToSinks = function LoggerModuleFanoutToSinks(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.sendToSinks.fanoutToSinks = function LoggerModuleFanoutToSinks(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function(observer, evt) {
       // eslint-disable-next-line guard-for-in
       for (const sink in evt.sinks) {
         let evt2 = {
-          'level': evt.level,
-          'logMsg': evt.logMsg,
-          'attrObj': evt.attrObj,
-          'evtName': evt.evtName,
-          'sinks': evt.sinks,
+          'level': evt.level, 'logMsg': evt.logMsg, 'attrObj': evt.attrObj,
+          'evtName': evt.evtName, 'sinks': evt.sinks,
         };
         if (evt.datestamp) evt2.datestamp = evt.datestamp;
+        // noinspection JSUnfilteredForInLoop
         switch (sink) {
           case 'console': evt2.activeSink = 'console'; observer.next(evt2); evt2 = {}; break;
           case 'file': evt2.activeSink = 'file'; observer.next(evt2); evt2 = {}; break;
@@ -773,18 +921,22 @@
 
 
   /**
-   *  ===============================
-   *  Logger Stream Sink Functions
-   *  (Fires Once For Each Log Event)
-   *  ===============================
-   */
-
-  /**
    * (Internal > Stream Methods [2.5]) Send Log Event to Core Object Event Emitter
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.sendToCoreObject
+   * @ignore
    * @param {object} evt - The Request Event
    * @return {object} evt - The Response Event
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.sendToCoreObject = function LoggerModuleSendToCoreObject(evt) {
+  pipelines.sendToSinks.sendToCoreObject = function LoggerModuleSendToCoreObject(evt) {
     const level = evt.level; const logMsg = evt.logMsg; const attrObj = evt.attrObj;
     const currentDate = evt.datestamp; const evtName = evt.evtName;
     let logMessage; let logMod; const logMsgSplit = logMsg.split('>');
@@ -792,31 +944,40 @@
     if (logMsgSplit && logMsgSplit[1]) logMessage = logMsgSplit[1].trim(); else logMessage = '';
     setTimeout(function() {
       const emitObj = {
-        'datestamp': currentDate,
-        'evtName': evtName,
-        'level': level,
-        'module': logMod,
-        'msg': logMessage,
-        'attr': attrObj,
+        'datestamp': currentDate, 'evtName': evtName, 'level': level,
+        'module': logMod, 'msg': logMessage, 'attr': attrObj,
       };
       core.emit('log', emitObj);
       if (evtName) core.emit(evtName, emitObj);
       if (logMod) core.emit(logMod, emitObj);
-      if (coreObjTimeout > 0) coreObjTimeout --;
-    }, coreObjTimeout);
+      if (o.coreObjTimeout > 0) o.coreObjTimeout --;
+    }, o.coreObjTimeout);
     return evt;
   };
 
   /**
    * (Internal > Stream Methods [3]) Send Log Event to Console
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.sendToConsole
+   * @ignore
    * @param {object} evt - The Request Event
    * @return {object} evt - The Response Event
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.sendToConsole = function LoggerModuleSendToConsole(evt) {
+  pipelines.sendToSinks.sendToConsole = function LoggerModuleSendToConsole(evt) {
     const level = evt.level; const logMsg = evt.logMsg; const attrObj = evt.attrObj; const currentDate = evt.datestamp;
     if (evt.activeSink === 'console' && !core.globals.get('silent')) {
+      // noinspection JSUnresolvedVariable
       if (core.cfg().logger.levels.includes(level)) {
         console.log(currentDate + ' (' + level + ') ' + logMsg);
+        // noinspection JSUnresolvedVariable
         if (attrObj && Object.keys(attrObj).length >= 1 && core.cfg().logger.logMetadataObjects) {
           console.log(attrObj);
         }
@@ -827,16 +988,30 @@
 
   /**
    * (Internal > Stream Methods [4]) Send Log Event to Console
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.sendToFile
+   * @ignore
    * @param {object} evt - The Request Event
    * @return {object} evt - The Response Event
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.sendToFile = function LoggerModuleSendToFile(evt) {
-    const level = evt.level; const logMsg = evt.logMsg; const attrObj = evt.attrObj; const currentDate = evt.datestamp;
+  pipelines.sendToSinks.sendToFile = function LoggerModuleSendToFile(evt) {
+    const level = evt.level; const logMsg = evt.logMsg;
+    const attrObj = evt.attrObj; const currentDate = evt.datestamp;
     if (evt.activeSink === 'file') {
-      if (fileStream && core.cfg().logger.levels.includes(level)) {
-        fileStream.write(currentDate + ' (' + level +') ' + logMsg + '\n\n');
+      // noinspection JSUnresolvedVariable
+      if (o.fileStream && core.cfg().logger.levels.includes(level)) {
+        o.fileStream.write(currentDate + ' (' + level +') ' + logMsg + '\n\n');
+        // noinspection JSUnresolvedVariable
         if (attrObj && core.cfg().logger.logMetadataObjects === true) {
-          fileStream.write(JSON.stringify(attrObj));
+          o.fileStream.write(JSON.stringify(attrObj));
         }
       }
     }
@@ -845,11 +1020,23 @@
 
   /**
    * (Internal > Stream Methods [5]) Send Log Event to ElasticSearch
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.sendToSinks.sendToElasticSearch
+   * @ignore
    * @param {object} evt - The Request Event
    * @return {object} evt - The Response Event
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
+   * Tbc...
    */
-  streamFns.sendToElasticSearch = function LoggerModuleSendToElasticSearch(evt) {
-    const level = evt.level; const logMsg = evt.logMsg; const attrObj = evt.attrObj; const currentDate = evt.datestamp;
+  pipelines.sendToSinks.sendToElasticSearch = function LoggerModuleSendToElasticSearch(evt) {
+    const level = evt.level; const logMsg = evt.logMsg;
+    const attrObj = evt.attrObj; const currentDate = evt.datestamp;
     if (evt.activeSink === 'elasticsearch') {
       const httpModule = core.module('http', 'interface');
       if (!httpModule) return;
@@ -858,6 +1045,7 @@
       indexBucket = indexBucket[0];
       const index = core.cfg().logger.sinks.elasticsearch['base_index'] + '-' + indexBucket;
       const baseUri = core.cfg().logger.sinks.elasticsearch['base_uri'];
+      // noinspection JSUnresolvedVariable
       if (core.cfg().logger.levels.includes(level)) {
         const body = {
           'timestamp': currentDate,
@@ -865,6 +1053,7 @@
           'message': logMsg,
           'attributes': attrObj,
         };
+        // noinspection JSUnresolvedVariable
         if (attrObj && core.cfg().logger.logMetadataObjects === true) body.attributes = attrObj;
         client.request({
           'url': baseUri + '/' + index + '/_doc/',
@@ -880,16 +1069,19 @@
 
 
   /**
-   * ===============================
-   * Logger Analytics Sink Functions
-   * (Fires Once For Each Log Event)
-   * ===============================
-   */
-
-  /**
    * (Internal > Stream Methods [6]) Process Analytics Event
+   *
+   * @private
+   * @memberof Server.Modules.Logger
+   * @function pipelines.processAnalyticsEvt.processAnalyticsEvt
+   * @ignore
    * @param {observable} source - The Source Observable
    * @return {observable} destination - The Destination Observable
+   *
+   * @description
+   * Tbc...
+   *
+   * @example
    *   {
    *      "server": {
    *         "dateLastBoot": "2020-12-20 00:00:00",
@@ -904,33 +1096,32 @@
    *      }
    *   }
    */
-  streamFns.processAnalyticsEvent = function LoggerModuleProcessAnalyticsEvent(source) {
-    return lib.rxOperator(function(observer, evt) {
+  pipelines.processAnalyticsEvt.processAnalyticsEvt = function LoggerPAEPLProcessAnalyticsEvt(source) {
+    // noinspection JSUnresolvedFunction
+    return core.lib.rxOperator(function LoggerPAEPLProcessAnalyticsEvtOp(observer, evt) {
       if (evt.analyticsEvent) {
-        const query = evt.analyticsEvent.query; const dayjs = lib.dayjs;
+        const query = evt.analyticsEvent.query;
+        // noinspection JSUnresolvedVariable
+        const dayjs = core.lib.dayjs;
         const dateObject = dayjs().format('YYYY-MM-DD').split('-');
         const year = dateObject[0]; const month = dateObject[1]; const day = dateObject[2];
-        if (!analyticsStore[year]) {
-          analyticsStore[year] = {};
-        }
-        if (!analyticsStore[year][month]) {
-          analyticsStore[year][month] = {};
-        }
-        if (!analyticsStore[year][month][day]) {
-          analyticsStore[year][month][day] = [];
-        }
+        if (!o.analyticsStore[year]) o.analyticsStore[year] = {};
+        if (!o.analyticsStore[year][month]) o.analyticsStore[year][month] = {};
+        if (!o.analyticsStore[year][month][day]) o.analyticsStore[year][month][day] = [];
         // eslint-disable-next-line guard-for-in
         for (const param1 in query) {
           // eslint-disable-next-line guard-for-in
           for (const param2 in query[param1]) {
-            if (!analyticsStore[year][month][day][analyticsStore.sessionEventCount]) {
-              analyticsStore[year][month][day][analyticsStore.sessionEventCount] = {};
-              analyticsStore[year][month][day][analyticsStore.sessionEventCount][param1] = {};
+            if (!o.analyticsStore[year][month][day][o.analyticsStore.sessionEventCount]) {
+              o.analyticsStore[year][month][day][o.analyticsStore.sessionEventCount] = {};
+              o.analyticsStore[year][month][day][o.analyticsStore.sessionEventCount][param1] = {};
             }
-            analyticsStore[year][month][day][analyticsStore.sessionEventCount][param1][param2] = query[param1][param2];
+            const dateAnalyticsEvtStore = o.analyticsStore[year][month][day];
+            // noinspection JSUnfilteredForInLoop
+            dateAnalyticsEvtStore[o.analyticsStore.sessionEventCount][param1][param2] = query[param1][param2];
           }
         }
-        analyticsStore.sessionEventCount ++;
+        o.analyticsStore.sessionEventCount ++;
       }
       observer.next(evt);
     }, source);

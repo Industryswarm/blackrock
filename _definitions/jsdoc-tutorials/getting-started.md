@@ -1,6 +1,4 @@
-# Getting Started With Blackrock
-
-###### <br/>
+<br/>
 
 ## Introduction
 

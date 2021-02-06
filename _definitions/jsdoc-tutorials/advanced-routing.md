@@ -1,6 +1,4 @@
-# Advanced Routing Within Blackrock
-
-###### <br/>
+<br/>
 
 ## Introduction
 

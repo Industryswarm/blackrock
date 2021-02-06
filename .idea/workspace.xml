@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="SCOPE_TYPE" value="3" />
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="5186cb3f-0b69-4d9d-8aa1-3e41a6665f5a" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/is-blackrock.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/_definitions/jsdoc-namespaces/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/interfaces/http/_support/delete.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/interfaces/http/_support/template-engines/handlebars.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/interfaces/zeromq/_support/stub.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/app-engine/json-schema/appengine.app.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/base/delete.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/base/index.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.base.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.config.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.header.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.interface.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.module.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/json-schema/core.package.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/core/support/stub.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/data-access/json-schema/data-access.document.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/data-access/json-schema/data-access.dump.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/data-access/json-schema/data-access.index.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/data-access/main.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/error-handler/main.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/generator/templates/controller-method.js.template" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/generator/templates/controller.js.template" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/i18n/json-schema/i18n.lang.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/logger/json-schema/logger.heartbeat.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/logger/json-schema/logger.trace.schema.v0.4.1.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/utilities/_support/transform/transform.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/utilities/_support/validate/libraries/ajv7.min.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules/utilities/_support/validate/validate.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/config-templates/is-blackrock-default.json" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/config-templates/is-blackrock-default.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/data-templates/database.json.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/data-templates/document.json.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/data-templates/index.json.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/generator-templates/controller-method.js.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/generator-templates/controller.js.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/i18n-templates/lang.json.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-config/jsdoc-conf.json" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-config/jsdoc-conf.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/advanced-routing.md" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/advanced-routing.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/getting-started.md" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/getting-started.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/server-configuration.md" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/server-configuration.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/service-filesystem-structure.md" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/app-filesystem-structure.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/tutorials.json" beforeDir="false" afterPath="$PROJECT_DIR$/_definitions/jsdoc-tutorials/tutorials.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_definitions/service-templates/service.json.template" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/-_definitions_jsdoc-namespaces_interfaces.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/-_definitions_jsdoc-namespaces_modules.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.Axon.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.HTTP.Client.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.HTTP.Hook.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.HTTP.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.NanoMSG.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.SSH.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.WebSockets.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.ZeroMQ.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Interfaces.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.CLI.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Configure.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Core.Globals.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Core.Interface.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Core.Module.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Core.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Daemon.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Data.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.ErrorHandler.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Farm.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Generator.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Installer.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Jobs.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Logger.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Router.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Sandbox.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Services.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Universe.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.Utilities.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.Modules.i18n.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/Server.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/classes.list.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/fonts/glyphicons-halflings-regular.eot" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/fonts/glyphicons-halflings-regular.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/fonts/glyphicons-halflings-regular.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/fonts/glyphicons-halflings-regular.woff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/fonts/glyphicons-halflings-regular.woff2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/img/glyphicons-halflings-white.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/img/glyphicons-halflings.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/index.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_axon_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_http_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_nanomsg_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_ssh_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_websockets_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/interfaces_zeromq_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_cli_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_configure_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_core_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_daemon_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_data_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_errorhandler_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_farm__support_monotonic-timestamp.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_farm_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_generator_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_i18n_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_installer_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_jobs_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_logger_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_router__support_req.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_router__support_res.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_router_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_sandbox_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_services_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_universe_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/modules_utilities_main.js.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/namespaces.list.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/docstrap.lib.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/fulltext-search-ui.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/fulltext-search.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/lunr.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/prettify/Apache-License-2.0.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/prettify/jquery.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/prettify/lang-css.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/prettify/prettify.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/sunlight.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/scripts/toc.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/darkstrap.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/prettify-tomorrow.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.cerulean.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.cosmo.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.cyborg.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.darkly.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.darkstrap.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.dibs-bootstrap.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.flatly.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.journal.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.lumen.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.paper.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.readable.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.sandstone.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.simplex.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.slate.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.spacelab.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.superhero.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.united.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/site.yeti.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/sunlight.dark.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/styles/sunlight.default.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/tutorial-advanced-routing.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/tutorial-getting-started.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/tutorial-server-configuration.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/tutorial-service-filesystem-structure.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_docs/tutorials.list.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/axon/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/axon/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/.travis.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/file.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/file.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/incoming_form.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/incoming_form.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/json_parser.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/json_parser.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/multipart_parser.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/multipart_parser.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/octet_parser.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/octet_parser.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/lib/querystring_parser.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/formidable/querystring_parser.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/formidable/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/_support/mustache.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/_support/template-engines/mustache.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/http/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/http/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/nanomsg/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/nanomsg/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/ssh/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/ssh/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/websockets/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/websockets/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interfaces/zeromq/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/interfaces/zeromq/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/cli/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/cli/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/configure/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/configure/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/core/_support/dayjs.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/core/base/dayjs.min.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/core/_support/eventemitter2.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/core/base/eventemitter2.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/core/_support/index.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/core/_support/rxjs.umd.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/core/base/rxjs.umd.min.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/core/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/core/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/daemon/_support/constants.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/daemon/_support/constants.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/daemon/_support/daemonize.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/daemon/_support/daemonize.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/daemon/_support/wrapper.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/daemon/_support/wrapper.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/daemon/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/daemon/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/data/main.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/errorhandler/main.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/farm/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/farm/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/generator/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/generator/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/i18n/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/i18n/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/installer/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/installer/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/jobs/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/jobs/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/logger/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/logger/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/router/_support/req.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/router/_support/req.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/router/_support/res.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/router/_support/res.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/router/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/router/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/sandbox/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/sandbox/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/services/_support/filewalker.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/app-engine/_support/filewalker.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/services/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/app-engine/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/universe/main.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/utilities/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/modules/utilities/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="SCHEME" value="Project" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="PackageJsonUpdateNotifier">
+    <dismissed value="$PROJECT_DIR$/package.json" />
+  </component>
+  <component name="ProjectId" id="1nfsYtiEfHw8JkdltIPUxGpftcI" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="JavaScript" />
+    <property name="javascript.nodejs.core.library.configured.version" value="15.3.0" />
+    <property name="javascript.nodejs.core.library.typings.version" value="14.14.22" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/modules/services" />
+    <property name="nodejs_interpreter_path" value="$USER_HOME$/Historical Node Versions/v15.8.0/node" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="settings.nodejs" />
+    <property name="ts.external.directory.path" value="$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/modules/services" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/interfaces/http/_support/formidable" />
+      <recent name="$PROJECT_DIR$/interfaces/http/_support/template-engines" />
+      <recent name="$PROJECT_DIR$/_definitions/jsdoc-namespaces" />
+      <recent name="$PROJECT_DIR$/_definitions/jsdoc-tutorials" />
+      <recent name="$PROJECT_DIR$/modules/utilities/_support/validate" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="is-blackrock" type="NodeJSConfigurationType" application-parameters="start console" path-to-node="/usr/local/Cellar/node/15.3.0/bin/node" path-to-js-file="index.js" working-dir="$PROJECT_DIR$">
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="5186cb3f-0b69-4d9d-8aa1-3e41a6665f5a" name="Default Changelist" comment="" />
+      <created>1611792530024</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1611792530024</updated>
+      <workItem from="1611792532946" duration="9285000" />
+      <workItem from="1611887014547" duration="1431000" />
+      <workItem from="1611888496093" duration="11000" />
+      <workItem from="1611888540191" duration="2000" />
+      <workItem from="1611888588980" duration="6300000" />
+      <workItem from="1611897204040" duration="45297000" />
+      <workItem from="1611983813858" duration="4963000" />
+      <workItem from="1611989718672" duration="2775000" />
+      <workItem from="1612043603896" duration="2285000" />
+      <workItem from="1612055816439" duration="10573000" />
+      <workItem from="1612084088023" duration="2049000" />
+      <workItem from="1612087685377" duration="62000" />
+      <workItem from="1612087769948" duration="18689000" />
+      <workItem from="1612173069736" duration="21927000" />
+      <workItem from="1612253839282" duration="17836000" />
+      <workItem from="1612343284608" duration="12147000" />
+      <workItem from="1612385910960" duration="809000" />
+      <workItem from="1612439814341" duration="98000" />
+      <workItem from="1612439934388" duration="1773000" />
+      <workItem from="1612442380365" duration="580000" />
+      <workItem from="1612469511392" duration="17595000" />
+      <workItem from="1612524714193" duration="2773000" />
+      <workItem from="1612529872224" duration="3585000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
